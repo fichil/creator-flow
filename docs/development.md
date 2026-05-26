@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.2.5 AI Planning Workflow，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、Topic Candidate、Script Draft 和 Storyboard 的本地 fake provider 工作流。
+本文档面向 v0.3 Batch 1 Rendering Workflow，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、Topic Candidate、Script Draft、Storyboard 和 backend-only fake render metadata 工作流。
 
 ## 环境要求
 
@@ -115,6 +115,7 @@ uv run --extra test pytest
 - 超过 10 MB 的文件上传拒绝与残留文件清理。
 - 非法文件素材类型和不允许的 MIME 类型拒绝。
 - archived 项目禁止继续添加文本、链接或文件素材。
+- Topic Candidate、Script Draft、Storyboard 和 FakeRenderer backend API 的本地 deterministic workflow。
 
 ## API Smoke Checklist
 
@@ -236,6 +237,51 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/projects/$($project.id)/storyboards
 ```
 
 生成接口会写入 `storyboard_generation_runs`、`storyboard_drafts`、`storyboard_scenes` 和 `storyboard_draft_sources`。如果项目没有素材、没有 selected topic candidate、没有 selected script draft，或项目已归档，会返回 `409`。已归档项目仍允许查询已有分镜草稿。
+
+## Backend Fake Render API 验证
+
+v0.3 Batch 1 新增了 backend-only 的 fake render API。该后端 API 只使用本地 deterministic `FakeRenderer`，不联网、不读取密钥、不调用真实 `FFmpeg`，不调用 TTS，不生成字幕，也不生成真实 MP4 文件；本批只保存 fake render job 和 artifact metadata。
+
+可以在 backend 启动后用 PowerShell 手动验证：
+
+```powershell
+$project = Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/projects `
+  -ContentType "application/json" `
+  -Body '{"title":"Render API test","description":"Local fake renderer verification"}'
+
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/materials/text" `
+  -ContentType "application/json" `
+  -Body '{"material_type":"text","title":"Imported note","text_content":"A user supplied note for fake rendering."}'
+
+$topicResult = Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/topic-candidates/generate" `
+  -ContentType "application/json" `
+  -Body '{"candidate_count":1}'
+
+$topicId = $topicResult.candidates[0].id
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/topic-candidates/$topicId/select"
+
+$scriptResult = Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/script-drafts/generate" `
+  -ContentType "application/json" `
+  -Body '{"script_count":1}'
+
+$scriptId = $scriptResult.script_drafts[0].id
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/script-drafts/$scriptId/select"
+
+$storyboardResult = Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/storyboards/generate" `
+  -ContentType "application/json" `
+  -Body '{"storyboard_count":1}'
+
+$storyboardId = $storyboardResult.storyboards[0].id
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/storyboards/$storyboardId/select"
+
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/renders" `
+  -ContentType "application/json" `
+  -Body '{"requested_format":"mp4","requested_aspect_ratio":"9:16","requested_resolution":"1080x1920"}'
+
+Invoke-RestMethod "http://127.0.0.1:8000/api/projects/$($project.id)/renders"
+```
+
+创建接口会写入 `render_jobs` 和 `render_artifacts`，并将 render job 同步标记为 `succeeded`。`render_artifacts.storage_path` 是 deterministic fake path，例如 `data/local/fake-renders/project-{project_id}/render-{render_job_id}.mp4`，但不会创建真实文件。如果项目没有 selected storyboard、selected storyboard 没有 scenes，或项目已归档，会返回 `409`。已归档项目仍允许查询已有 render jobs。
 
 ## Topic Candidate UI 验证
 
@@ -399,9 +445,9 @@ Remove-Item .\uploads\* -Recurse -Force -ErrorAction SilentlyContinue
 
 - 未实现真实 OpenAI、Claude、Gemini 或其他 LLM Provider 接入。
 - 未实现 API key、secret 或 token 保存，也没有 Provider 配置页面。
-- 未实现 `ImageProvider`、`TTSProvider`、`TrendSourceProvider`、`PublisherProvider` 或真实 `VideoRenderer`。
+- 未实现 `ImageProvider`、`TTSProvider`、`TrendSourceProvider`、`PublisherProvider` 或真实 `VideoRenderer`；当前只有 backend-only `FakeRenderer` metadata workflow。
 - 未实现素材方案生成、OCR、图片内容分析或自动抓取链接内容。
-- 未实现 `FFmpeg` 渲染、TTS、字幕生成或视频/音频/图片生成。
+- 未实现 `FFmpeg` 渲染、TTS、字幕生成或真实视频/音频/图片生成。
 - 未实现 `Review Queue` 完整业务流程。
 - 未实现定时生成、`GenerationSchedule` 或 Scheduler。
 - 未实现抖音或其他平台发布。
