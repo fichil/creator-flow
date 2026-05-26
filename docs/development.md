@@ -144,6 +144,30 @@ smoke 脚本会验证：
 
 smoke 脚本会写入本地 SQLite 运行时数据；这些数据位于 Git 忽略路径中，不得提交。
 
+## Backend Topic Candidate API 验证
+
+v0.2 Batch 1 新增了 backend-only 的候选选题 API。当前只使用本地 deterministic `FakeLLMProvider`，不联网、不读取密钥、不调用真实 LLM，也没有前端 UI。
+
+可以在 backend 启动后用 PowerShell 手动验证：
+
+```powershell
+$project = Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/projects `
+  -ContentType "application/json" `
+  -Body '{"title":"Topic API test","description":"Local fake provider verification"}'
+
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/materials/text" `
+  -ContentType "application/json" `
+  -Body '{"material_type":"text","title":"Imported note","text_content":"A user supplied note for topic planning."}'
+
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/topic-candidates/generate" `
+  -ContentType "application/json" `
+  -Body '{"candidate_count":3}'
+
+Invoke-RestMethod "http://127.0.0.1:8000/api/projects/$($project.id)/topic-candidates"
+```
+
+生成接口会写入 `topic_generation_runs`、`topic_candidates` 和 `topic_candidate_sources`。如果项目没有素材会返回 `409`；如果项目已归档，生成和选择候选都会返回 `409`，但仍允许查询已有候选。
+
 ## 验证项目与素材导入
 
 1. 启动 backend。

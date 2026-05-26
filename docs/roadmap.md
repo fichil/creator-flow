@@ -65,6 +65,8 @@
 
 目标：支持从用户素材到选题、脚本和分镜的核心策划流程。
 
+当前 Batch 1 方向：先实现 backend-only 的 Provider interface、`FakeLLMProvider`、Topic Candidate 数据模型、生成 API、选择 API 和测试。该批只使用本地 deterministic fake provider，不接真实 AI，不保存密钥，不实现前端 UI。
+
 范围：
 
 - Provider 接口定义。
