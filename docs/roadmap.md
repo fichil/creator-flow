@@ -69,6 +69,8 @@
 
 当前 Batch 2 方向：实现 Topic Candidate frontend UI for fake provider workflow，让用户可以在项目详情页查看候选、生成 fake 候选并选择一个候选；archived 项目保持只读。
 
+当前 Batch 3 方向：实现 Script Draft backend workflow based on selected TopicCandidate and explicit UserMaterial，继续使用本地 deterministic fake provider，不接真实 AI，不实现前端 UI。
+
 范围：
 
 - Provider 接口定义。

@@ -168,6 +168,37 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/projects/$($project.id)/topic-candi
 
 生成接口会写入 `topic_generation_runs`、`topic_candidates` 和 `topic_candidate_sources`。如果项目没有素材会返回 `409`；如果项目已归档，生成和选择候选都会返回 `409`，但仍允许查询已有候选。
 
+## Backend Script Draft API 验证
+
+v0.2 Batch 3 新增了 backend-only 的脚本草稿 API。当前只使用本地 deterministic `FakeLLMProvider`，不联网、不读取密钥、不调用真实 LLM，也没有 Script Draft 前端 UI。
+
+可以在 backend 启动后用 PowerShell 手动验证：
+
+```powershell
+$project = Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/projects `
+  -ContentType "application/json" `
+  -Body '{"title":"Script API test","description":"Local fake script draft verification"}'
+
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/materials/text" `
+  -ContentType "application/json" `
+  -Body '{"material_type":"text","title":"Imported note","text_content":"A user supplied note for script drafting."}'
+
+$topicResult = Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/topic-candidates/generate" `
+  -ContentType "application/json" `
+  -Body '{"candidate_count":1}'
+
+$topicId = $topicResult.candidates[0].id
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/topic-candidates/$topicId/select"
+
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/script-drafts/generate" `
+  -ContentType "application/json" `
+  -Body '{"script_count":2}'
+
+Invoke-RestMethod "http://127.0.0.1:8000/api/projects/$($project.id)/script-drafts"
+```
+
+生成接口会写入 `script_generation_runs`、`script_drafts` 和 `script_draft_sources`。如果项目没有素材、没有 selected topic candidate，或项目已归档，会返回 `409`。已归档项目仍允许查询已有脚本草稿。
+
 ## Topic Candidate UI 验证
 
 v0.2 Batch 2 在项目详情页新增了 Topic Candidates 区块。当前仍然只使用本地 deterministic `FakeLLMProvider`，不接真实 AI，不提供 Provider 配置，也不保存 API key、secret 或 token。

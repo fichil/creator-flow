@@ -29,9 +29,41 @@ class TopicCandidateDraft:
     rationale: str
 
 
+@dataclass(frozen=True)
+class SelectedTopicCandidate:
+    id: int
+    title: str
+    angle: str
+    audience: str
+    hook: str
+    rationale: str
+
+
+@dataclass(frozen=True)
+class ScriptGenerationInput:
+    project_title: str
+    project_description: str | None
+    topic_candidate: SelectedTopicCandidate
+    materials: list[TopicGenerationMaterial]
+    script_count: int = 2
+
+
+@dataclass(frozen=True)
+class ScriptDraftCandidate:
+    title: str
+    opening_hook: str
+    body: str
+    call_to_action: str
+    estimated_duration_seconds: int
+    rationale: str
+
+
 class LLMProvider(Protocol):
     provider_name: str
     provider_version: str
 
     def generate_topic_candidates(self, input: TopicGenerationInput) -> list[TopicCandidateDraft]:
+        ...
+
+    def generate_script_drafts(self, input: ScriptGenerationInput) -> list[ScriptDraftCandidate]:
         ...

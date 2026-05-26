@@ -1,5 +1,5 @@
 from app.providers.fake_llm import FakeLLMProvider
-from app.providers.llm import TopicGenerationInput, TopicGenerationMaterial
+from app.providers.llm import ScriptGenerationInput, SelectedTopicCandidate, TopicGenerationInput, TopicGenerationMaterial
 
 
 def _input(candidate_count: int = 3) -> TopicGenerationInput:
@@ -7,6 +7,36 @@ def _input(candidate_count: int = 3) -> TopicGenerationInput:
         project_title="Creator workflow",
         project_description="Turn imported notes into reviewable short video ideas.",
         candidate_count=candidate_count,
+        materials=[
+            TopicGenerationMaterial(
+                id=1,
+                material_type="text",
+                title="Build note",
+                text_content="A deterministic planning workflow is easier to test.",
+            ),
+            TopicGenerationMaterial(
+                id=2,
+                material_type="image",
+                title="Screenshot",
+                original_file_name="planning-board.png",
+            ),
+        ],
+    )
+
+
+def _script_input(script_count: int = 2) -> ScriptGenerationInput:
+    return ScriptGenerationInput(
+        project_title="Creator workflow",
+        project_description="Turn imported notes into reviewable short video ideas.",
+        script_count=script_count,
+        topic_candidate=SelectedTopicCandidate(
+            id=10,
+            title="Creator workflow: Problem-first topic",
+            angle="Turn a concrete friction point into a short, useful story",
+            audience="Developers and creators facing similar workflow blocks",
+            hook="Here is the small workflow problem that quietly slowed this project down.",
+            rationale="Based on explicit imported materials.",
+        ),
         materials=[
             TopicGenerationMaterial(
                 id=1,
@@ -76,3 +106,59 @@ def test_fake_llm_provider_clamps_candidate_count():
 
     assert len(provider.generate_topic_candidates(_input(candidate_count=0))) == 1
     assert len(provider.generate_topic_candidates(_input(candidate_count=6))) == 5
+
+
+def test_fake_llm_provider_outputs_deterministic_script_drafts():
+    provider = FakeLLMProvider()
+
+    first = provider.generate_script_drafts(_script_input())
+    second = provider.generate_script_drafts(_script_input())
+
+    assert first == second
+    assert len(first) == 2
+    assert first[0].title
+    assert first[0].opening_hook
+    assert first[0].body
+    assert first[0].estimated_duration_seconds > 0
+
+
+def test_fake_llm_provider_script_generation_does_not_need_api_key(monkeypatch):
+    provider = FakeLLMProvider()
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    drafts = provider.generate_script_drafts(_script_input())
+
+    assert len(drafts) == 2
+
+
+def test_fake_llm_provider_script_generation_ignores_ai_key_environment(monkeypatch):
+    provider = FakeLLMProvider()
+    monkeypatch.setenv("OPENAI_API_KEY", "first-value")
+    first = provider.generate_script_drafts(_script_input())
+    monkeypatch.setenv("OPENAI_API_KEY", "second-value")
+    second = provider.generate_script_drafts(_script_input())
+
+    assert first == second
+
+
+def test_fake_llm_provider_script_generation_does_not_read_image_file_content(monkeypatch):
+    provider = FakeLLMProvider()
+
+    def fail_if_opened(*args, **kwargs):
+        raise AssertionError("FakeLLMProvider must not read local image files")
+
+    monkeypatch.setattr("builtins.open", fail_if_opened)
+
+    drafts = provider.generate_script_drafts(_script_input())
+
+    assert len(drafts) == 2
+    assert "image" in drafts[0].body
+
+
+def test_fake_llm_provider_clamps_script_count():
+    provider = FakeLLMProvider()
+
+    assert len(provider.generate_script_drafts(_script_input(script_count=0))) == 1
+    assert len(provider.generate_script_drafts(_script_input(script_count=4))) == 3
