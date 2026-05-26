@@ -199,6 +199,44 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/projects/$($project.id)/script-draf
 
 生成接口会写入 `script_generation_runs`、`script_drafts` 和 `script_draft_sources`。如果项目没有素材、没有 selected topic candidate，或项目已归档，会返回 `409`。已归档项目仍允许查询已有脚本草稿。
 
+## Backend Storyboard API 验证
+
+v0.2 Batch 5 新增了 backend-only 的分镜草稿 API。该后端 API 只使用本地 deterministic `FakeLLMProvider`，不联网、不读取密钥、不调用真实 LLM，也不生成图片、音频、字幕或视频。本批没有 Storyboard 前端 UI。
+
+可以在 backend 启动后用 PowerShell 手动验证：
+
+```powershell
+$project = Invoke-RestMethod -Method Post http://127.0.0.1:8000/api/projects `
+  -ContentType "application/json" `
+  -Body '{"title":"Storyboard API test","description":"Local fake storyboard verification"}'
+
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/materials/text" `
+  -ContentType "application/json" `
+  -Body '{"material_type":"text","title":"Imported note","text_content":"A user supplied note for storyboard planning."}'
+
+$topicResult = Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/topic-candidates/generate" `
+  -ContentType "application/json" `
+  -Body '{"candidate_count":1}'
+
+$topicId = $topicResult.candidates[0].id
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/topic-candidates/$topicId/select"
+
+$scriptResult = Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/script-drafts/generate" `
+  -ContentType "application/json" `
+  -Body '{"script_count":1}'
+
+$scriptId = $scriptResult.script_drafts[0].id
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/script-drafts/$scriptId/select"
+
+Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id)/storyboards/generate" `
+  -ContentType "application/json" `
+  -Body '{"storyboard_count":1}'
+
+Invoke-RestMethod "http://127.0.0.1:8000/api/projects/$($project.id)/storyboards"
+```
+
+生成接口会写入 `storyboard_generation_runs`、`storyboard_drafts`、`storyboard_scenes` 和 `storyboard_draft_sources`。如果项目没有素材、没有 selected topic candidate、没有 selected script draft，或项目已归档，会返回 `409`。已归档项目仍允许查询已有分镜草稿。
+
 ## Topic Candidate UI 验证
 
 v0.2 Batch 2 在项目详情页新增了 Topic Candidates 区块。当前仍然只使用本地 deterministic `FakeLLMProvider`，不接真实 AI，不提供 Provider 配置，也不保存 API key、secret 或 token。
