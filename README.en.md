@@ -6,13 +6,13 @@ creator-flow is an open-source AI short-video content pipeline for turning user-
 
 ## Status
 
-`v0.3 Rendering Workflow - Batch 1 Fake Renderer Domain Foundation`
+`v0.3 Rendering Workflow - Batch 3 Fake Subtitle Domain Foundation`
 
-This repository has completed the v0.1 local runnable skeleton, the v0.2 AI Planning Workflow, and the v0.3 Batch 1 backend-only fake rendering domain foundation. The current planning path uses a local deterministic `FakeLLMProvider` to generate and select Topic Candidates, Script Drafts, and Storyboards from explicitly imported materials, including storyboard scenes on the project detail page; the backend can also create fake render jobs and fake video artifact metadata from a selected Storyboard.
+This repository has completed the v0.1 local runnable skeleton, the v0.2 AI Planning Workflow, and v0.3 Batch 1 through Batch 3 of the fake rendering/subtitle foundation. The current planning path uses a local deterministic `FakeLLMProvider` to generate and select Topic Candidates, Script Drafts, and Storyboards from explicitly imported materials, including storyboard scenes on the project detail page; the backend can also create fake render jobs, fake video artifact metadata, fake subtitle drafts, and subtitle cues from a selected Storyboard.
 
 Local development instructions are available in [`docs/development.md`](docs/development.md).
 
-Real OpenAI, Claude, Gemini, or other LLM integrations are still not implemented. The app does not store API keys, secrets, or tokens and does not call real AI services. v0.3 has started with a fake rendering domain foundation, but real MP4 rendering, FFmpeg, TTS, subtitles, scheduled generation, platform publishing, production deployment, and user accounts are still not implemented.
+Real OpenAI, Claude, Gemini, or other LLM integrations are still not implemented. The app does not store API keys, secrets, or tokens and does not call real AI services. v0.3 has started with a fake rendering/subtitle foundation, but real MP4 rendering, FFmpeg, TTS, real subtitle files, scheduled generation, platform publishing, production deployment, and user accounts are still not implemented.
 This version is not production ready.
 
 ## Local Quick Start
@@ -48,7 +48,7 @@ Common verification commands:
 - Feed post-publication metrics back into future content review and topic optimization.
 - Use Douyin as the first publishing platform while preserving a multi-platform architecture through Provider abstractions.
 
-Topic Candidate, Script Draft, and Storyboard generation and selection are implemented in v0.2 with a local fake provider. v0.3 has started with fake render jobs and artifact metadata. Real AI, subtitles, asset plans, real MP4 rendering, publishing, scheduling, and metrics feedback remain future planned capabilities.
+Topic Candidate, Script Draft, and Storyboard generation and selection are implemented in v0.2 with a local fake provider. v0.3 has started with fake render jobs, artifact metadata, fake subtitle drafts, and subtitle cues. Real AI, real subtitle files, asset plans, real MP4 rendering, publishing, scheduling, and metrics feedback remain future planned capabilities.
 
 ## Current Local Capabilities
 
@@ -60,6 +60,7 @@ Topic Candidate, Script Draft, and Storyboard generation and selection are imple
 - Generate and select Script Drafts from a selected Topic Candidate.
 - Generate Storyboards from a selected Topic Candidate, selected Script Draft, and explicit materials, then inspect ordered scenes.
 - Create fake render jobs from a selected Storyboard and persist deterministic fake video artifact metadata; no real MP4 file is generated yet.
+- Create fake subtitle drafts from a selected Storyboard and persist deterministic subtitle cue metadata; no real `.srt` / `.vtt`, audio, or video file is generated yet.
 - View existing materials and planning drafts on archived projects while preventing further generation or selection.
 - Store project and material metadata in local `SQLite`.
 - Store uploaded files under local `uploads/`, excluded from Git.
