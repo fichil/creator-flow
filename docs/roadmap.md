@@ -29,7 +29,7 @@
 
 目标：建立最小可运行的本地应用骨架，为后续功能提供基础。
 
-状态：In Progress。
+状态：Release Candidate。
 
 范围：
 
