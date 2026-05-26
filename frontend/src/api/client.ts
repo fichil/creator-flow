@@ -180,6 +180,30 @@ export type RenderJob = {
   artifact: RenderArtifact | null;
 };
 
+export type SubtitleCue = {
+  id: number;
+  subtitle_draft_id: number;
+  cue_order: number;
+  start_time_seconds: number;
+  end_time_seconds: number;
+  text: string;
+  created_at: string;
+};
+
+export type SubtitleDraft = {
+  id: number;
+  project_id: number;
+  script_draft_id: number;
+  storyboard_draft_id: number;
+  generator_name: string;
+  generator_version: string;
+  status: "draft" | "selected" | "dismissed";
+  selected_at: string | null;
+  created_at: string;
+  updated_at: string;
+  cues: SubtitleCue[];
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -282,6 +306,23 @@ export function createRenderJob(projectId: number): Promise<RenderJob> {
   return request<RenderJob>(`/api/projects/${projectId}/renders`, {
     method: "POST",
     body: JSON.stringify({ requested_format: "mp4", requested_aspect_ratio: "9:16", requested_resolution: "1080x1920" }),
+  });
+}
+
+export function getSubtitleDrafts(projectId: number): Promise<SubtitleDraft[]> {
+  return request<SubtitleDraft[]>(`/api/projects/${projectId}/subtitle-drafts`);
+}
+
+export function createSubtitleDraft(projectId: number): Promise<SubtitleDraft> {
+  return request<SubtitleDraft>(`/api/projects/${projectId}/subtitle-drafts`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export function selectSubtitleDraft(projectId: number, subtitleDraftId: number): Promise<SubtitleDraft> {
+  return request<SubtitleDraft>(`/api/projects/${projectId}/subtitle-drafts/${subtitleDraftId}/select`, {
+    method: "POST",
   });
 }
 

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectDetailPage } from "./ProjectDetailPage";
-import type { ProjectDetail, RenderJob, ScriptDraft, Storyboard, TopicCandidate } from "../api/client";
+import type { ProjectDetail, RenderJob, ScriptDraft, Storyboard, SubtitleDraft, TopicCandidate } from "../api/client";
 
 const baseProject: ProjectDetail = {
   id: 1,
@@ -163,19 +163,67 @@ const renderJobOne: RenderJob = {
   },
 };
 
+const subtitleDraftOne: SubtitleDraft = {
+  id: 1301,
+  project_id: 1,
+  script_draft_id: 502,
+  storyboard_draft_id: 802,
+  generator_name: "fake_subtitle_generator",
+  generator_version: "0.1",
+  status: "draft",
+  selected_at: null,
+  created_at: "2026-05-26T08:16:00Z",
+  updated_at: "2026-05-26T08:16:00Z",
+  cues: [
+    {
+      id: 1402,
+      subtitle_draft_id: 1301,
+      cue_order: 2,
+      start_time_seconds: 12,
+      end_time_seconds: 30,
+      text: "Use deterministic subtitle cue metadata.",
+      created_at: "2026-05-26T08:16:00Z",
+    },
+    {
+      id: 1401,
+      subtitle_draft_id: 1301,
+      cue_order: 1,
+      start_time_seconds: 0,
+      end_time_seconds: 12,
+      text: "Start with the selected storyboard.",
+      created_at: "2026-05-26T08:16:00Z",
+    },
+  ],
+};
+
+const subtitleDraftTwo: SubtitleDraft = {
+  ...subtitleDraftOne,
+  id: 1302,
+  status: "selected",
+  selected_at: "2026-05-26T08:17:00Z",
+  cues: subtitleDraftOne.cues.map((cue) => ({
+    ...cue,
+    id: cue.id + 10,
+    subtitle_draft_id: 1302,
+  })),
+};
+
 type ServerOptions = {
   project?: ProjectDetail;
   candidates?: TopicCandidate[];
   scriptDrafts?: ScriptDraft[];
   storyboards?: Storyboard[];
   renderJobs?: RenderJob[];
+  subtitleDrafts?: SubtitleDraft[];
   generateError?: string;
   generateScriptDraftsError?: string;
   generateStoryboardsError?: string;
   createRenderError?: string;
+  createSubtitleDraftError?: string;
   selectError?: string;
   selectScriptDraftError?: string;
   selectStoryboardError?: string;
+  selectSubtitleDraftError?: string;
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -193,6 +241,7 @@ function installFetchMock(options: ServerOptions = {}) {
   let scriptDrafts = [...(options.scriptDrafts ?? [])];
   let storyboards = [...(options.storyboards ?? [])];
   let renderJobs = [...(options.renderJobs ?? [])];
+  let subtitleDrafts = [...(options.subtitleDrafts ?? [])];
   const calls: string[] = [];
   const bodies: Record<string, string | undefined> = {};
 
@@ -217,6 +266,9 @@ function installFetchMock(options: ServerOptions = {}) {
     }
     if (method === "GET" && url.pathname === "/api/projects/1/renders") {
       return jsonResponse(renderJobs);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/subtitle-drafts") {
+      return jsonResponse(subtitleDrafts);
     }
     if (method === "POST" && url.pathname === "/api/projects/1/topic-candidates/generate") {
       if (options.generateError) {
@@ -328,6 +380,24 @@ function installFetchMock(options: ServerOptions = {}) {
       renderJobs = [renderJobOne];
       return jsonResponse(renderJobOne);
     }
+    if (method === "POST" && url.pathname === "/api/projects/1/subtitle-drafts") {
+      if (options.createSubtitleDraftError) {
+        return jsonResponse({ detail: options.createSubtitleDraftError }, 409);
+      }
+      subtitleDrafts = [subtitleDraftOne];
+      return jsonResponse(subtitleDraftOne);
+    }
+    if (method === "POST" && url.pathname === "/api/projects/1/subtitle-drafts/1301/select") {
+      if (options.selectSubtitleDraftError) {
+        return jsonResponse({ detail: options.selectSubtitleDraftError }, 409);
+      }
+      subtitleDrafts = subtitleDrafts.map((subtitleDraft) => ({
+        ...subtitleDraft,
+        status: (subtitleDraft.id === 1301 ? "selected" : "draft") as SubtitleDraft["status"],
+        selected_at: subtitleDraft.id === 1301 ? "2026-05-26T08:18:00Z" : null,
+      }));
+      return jsonResponse(subtitleDrafts.find((subtitleDraft) => subtitleDraft.id === 1301));
+    }
     return jsonResponse({ detail: "not found" }, 404);
   });
 
@@ -343,6 +413,7 @@ async function renderProject(options?: ServerOptions) {
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/script-drafts"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/storyboards"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/renders"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/subtitle-drafts"));
   return server;
 }
 
@@ -655,6 +726,121 @@ describe("ProjectDetailPage storyboards", () => {
 
     const storyboardCard = screen.getByLabelText("Storyboard: Storyboard walkthrough");
     fireEvent.click(within(storyboardCard).getByRole("button", { name: "Select" }));
+
+    expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
+  });
+});
+
+describe("ProjectDetailPage subtitle drafts", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("requests and shows the subtitle drafts panel when the project detail page loads", async () => {
+    const server = await renderProject();
+
+    expect(server.calls).toContain("GET /api/projects/1/subtitle-drafts");
+    expect(screen.getByText("Subtitle Drafts")).toBeTruthy();
+    expect(screen.getByText("No subtitle drafts yet.")).toBeTruthy();
+  });
+
+  it("shows subtitle draft metadata and cues", async () => {
+    await renderProject({ storyboards: [storyboardTwo], subtitleDrafts: [subtitleDraftOne] });
+
+    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
+    expect(within(subtitleDraftCard).getByText("Subtitle draft #1301")).toBeTruthy();
+    expect(within(subtitleDraftCard).getByText("fake_subtitle_generator 0.1")).toBeTruthy();
+    expect(within(subtitleDraftCard).getByText("draft")).toBeTruthy();
+    expect(within(subtitleDraftCard).getByText("#802")).toBeTruthy();
+    expect(within(subtitleDraftCard).getByText("Start with the selected storyboard.")).toBeTruthy();
+    expect(within(subtitleDraftCard).getByText("Use deterministic subtitle cue metadata.")).toBeTruthy();
+    expect(within(subtitleDraftCard).getByText("0s - 12s")).toBeTruthy();
+    expect(within(subtitleDraftCard).getByText("12s - 30s")).toBeTruthy();
+  });
+
+  it("shows subtitle cues sorted by cue order", async () => {
+    await renderProject({ storyboards: [storyboardTwo], subtitleDrafts: [subtitleDraftOne] });
+
+    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
+    const cueItems = within(subtitleDraftCard).getAllByTestId("subtitle-cue");
+    expect(cueItems.map((cue) => cue.getAttribute("data-cue-order"))).toEqual(["1", "2"]);
+  });
+
+  it("creates a fake subtitle draft and refreshes subtitle drafts after creation succeeds", async () => {
+    const server = await renderProject({ storyboards: [storyboardTwo] });
+
+    await waitFor(() =>
+      expect((screen.getByRole("button", { name: "Create fake subtitle draft" }) as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create fake subtitle draft" }));
+
+    await screen.findByText("Subtitle draft #1301");
+    expect(server.calls).toContain("POST /api/projects/1/subtitle-drafts");
+    expect(server.bodies["POST /api/projects/1/subtitle-drafts"]).toBe("{}");
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/subtitle-drafts")).toHaveLength(2);
+  });
+
+  it("selects a subtitle draft and refreshes subtitle drafts after selection succeeds", async () => {
+    const server = await renderProject({ storyboards: [storyboardTwo], subtitleDrafts: [subtitleDraftOne, subtitleDraftTwo] });
+
+    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
+    fireEvent.click(within(subtitleDraftCard).getByRole("button", { name: "Select" }));
+
+    await waitFor(() => expect(screen.getByLabelText("Subtitle draft 1301").getAttribute("data-status")).toBe("selected"));
+    expect(server.calls).toContain("POST /api/projects/1/subtitle-drafts/1301/select");
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/subtitle-drafts")).toHaveLength(2);
+  });
+
+  it("disables fake subtitle creation and selection for archived projects while keeping drafts visible", async () => {
+    await renderProject({
+      project: { ...baseProject, status: "archived" },
+      storyboards: [storyboardTwo],
+      subtitleDrafts: [subtitleDraftOne],
+    });
+
+    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
+    expect(screen.getByText("Subtitle draft #1301")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Create fake subtitle draft" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((within(subtitleDraftCard).getByRole("button", { name: "Select" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText("Archived projects are read-only.")[0]).toBeTruthy();
+  });
+
+  it("disables fake subtitle creation when there is no selected storyboard", async () => {
+    await renderProject({ storyboards: [storyboardOne] });
+
+    await screen.findByText("Select a storyboard before creating fake subtitle drafts.");
+    expect((screen.getByRole("button", { name: "Create fake subtitle draft" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("shows a visible error when fake subtitle creation fails", async () => {
+    await renderProject({ createSubtitleDraftError: "subtitle service unavailable", storyboards: [storyboardTwo] });
+
+    await waitFor(() =>
+      expect((screen.getByRole("button", { name: "Create fake subtitle draft" }) as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create fake subtitle draft" }));
+
+    expect(await screen.findByText("subtitle service unavailable")).toBeTruthy();
+  });
+
+  it("shows a visible error when subtitle selection fails", async () => {
+    await renderProject({
+      selectSubtitleDraftError: "archived project cannot select subtitle drafts",
+      storyboards: [storyboardTwo],
+      subtitleDrafts: [subtitleDraftOne],
+    });
+
+    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
+    fireEvent.click(within(subtitleDraftCard).getByRole("button", { name: "Select" }));
 
     expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
   });
