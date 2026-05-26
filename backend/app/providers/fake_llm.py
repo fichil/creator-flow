@@ -1,6 +1,12 @@
 import hashlib
 
-from app.providers.llm import TopicCandidateDraft, TopicGenerationInput, TopicGenerationMaterial
+from app.providers.llm import (
+    ScriptDraftCandidate,
+    ScriptGenerationInput,
+    TopicCandidateDraft,
+    TopicGenerationInput,
+    TopicGenerationMaterial,
+)
 
 
 class FakeLLMProvider:
@@ -9,7 +15,7 @@ class FakeLLMProvider:
 
     def generate_topic_candidates(self, input: TopicGenerationInput) -> list[TopicCandidateDraft]:
         candidate_count = min(max(input.candidate_count, 1), 5)
-        seed = _stable_seed(input)
+        seed = _stable_topic_seed(input)
         material_summary = _summarize_materials(input.materials)
         project_title = _clean(input.project_title) or "Untitled Project"
         description_hint = _clean(input.project_description) or "imported creator materials"
@@ -67,9 +73,93 @@ class FakeLLMProvider:
             )
         return candidates
 
+    def generate_script_drafts(self, input: ScriptGenerationInput) -> list[ScriptDraftCandidate]:
+        script_count = min(max(input.script_count, 1), 3)
+        seed = _stable_script_seed(input)
+        material_summary = _summarize_materials(input.materials)
+        project_title = _clean(input.project_title) or "Untitled Project"
+        topic = input.topic_candidate
+        topic_title = _clean(topic.title) or "Selected topic"
+        hook = _clean(topic.hook) or "Here is the core idea worth watching."
 
-def _stable_seed(input: TopicGenerationInput) -> str:
+        templates = [
+            (
+                "Concise explainer",
+                55,
+                "Explain the selected angle with one concrete before-and-after moment.",
+                "Save this workflow note before the next planning pass.",
+            ),
+            (
+                "Build-log narrative",
+                70,
+                "Walk through the project context, the decision point, and the reusable lesson.",
+                "Pick one imported note and turn it into the next draft.",
+            ),
+            (
+                "Checklist walkthrough",
+                60,
+                "Convert the selected topic into three practical checks viewers can reuse.",
+                "Use the checklist on your own imported material.",
+            ),
+        ]
+
+        start = int(seed[:2], 16) % len(templates)
+        ordered = templates[start:] + templates[:start]
+
+        drafts: list[ScriptDraftCandidate] = []
+        for index, (label, seconds, body_direction, call_to_action) in enumerate(ordered[:script_count], start=1):
+            digest = seed[(index - 1) * 4 : index * 4]
+            body = (
+                f"1. Start from the selected topic: {topic_title}.\n"
+                f"2. Use the angle '{_clean(topic.angle)}' for {_clean(topic.audience)}.\n"
+                f"3. {body_direction}\n"
+                f"4. Ground the script in {material_summary}."
+            )
+            drafts.append(
+                ScriptDraftCandidate(
+                    title=f"{project_title}: {label} script {digest}",
+                    opening_hook=hook,
+                    body=body,
+                    call_to_action=call_to_action,
+                    estimated_duration_seconds=seconds,
+                    rationale=(
+                        f"Based on selected topic candidate {topic.id} and {material_summary}. "
+                        f"Topic rationale: {_clean(topic.rationale)}."
+                    ),
+                )
+            )
+        return drafts
+
+
+def _stable_topic_seed(input: TopicGenerationInput) -> str:
     parts = [_clean(input.project_title), _clean(input.project_description), str(input.candidate_count)]
+    for material in sorted(input.materials, key=lambda item: item.id):
+        parts.extend(
+            [
+                str(material.id),
+                _clean(material.material_type),
+                _clean(material.title),
+                _clean(material.text_content),
+                _clean(material.source_url),
+                _clean(material.original_file_name),
+            ]
+        )
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
+
+
+def _stable_script_seed(input: ScriptGenerationInput) -> str:
+    topic = input.topic_candidate
+    parts = [
+        _clean(input.project_title),
+        _clean(input.project_description),
+        str(input.script_count),
+        str(topic.id),
+        _clean(topic.title),
+        _clean(topic.angle),
+        _clean(topic.audience),
+        _clean(topic.hook),
+        _clean(topic.rationale),
+    ]
     for material in sorted(input.materials, key=lambda item: item.id):
         parts.extend(
             [
