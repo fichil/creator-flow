@@ -1062,7 +1062,7 @@ function RenderJobsPanel({
         <div>
           <h2 className="text-lg font-semibold text-stone-950">Render Jobs</h2>
           <p className="mt-1 text-sm text-stone-600">
-            FakeRenderer jobs and deterministic fake video artifact metadata for the selected storyboard.
+            FakeRenderer jobs and deterministic fake preview manifest metadata for the selected storyboard.
           </p>
         </div>
         <button
@@ -1145,45 +1145,71 @@ function RenderJobCard({ renderJob }: { renderJob: RenderJob }) {
       </dl>
 
       {renderJob.error_message && <p className="mt-3 text-sm text-red-700">{renderJob.error_message}</p>}
-      {renderJob.artifact ? (
-        <div className="mt-4 rounded border border-stone-200 bg-stone-50 p-3">
-          <h4 className="text-xs font-semibold uppercase text-stone-500">Artifact metadata</h4>
-          <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
-            <div>
-              <dt className="text-xs font-semibold uppercase text-stone-500">Type</dt>
-              <dd className="mt-1 text-stone-800">{renderJob.artifact.artifact_type}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase text-stone-500">MIME type</dt>
-              <dd className="mt-1 text-stone-800">{renderJob.artifact.mime_type}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase text-stone-500">Duration</dt>
-              <dd className="mt-1 text-stone-800">{renderJob.artifact.duration_seconds} seconds</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase text-stone-500">Dimensions</dt>
-              <dd className="mt-1 text-stone-800">
-                {renderJob.artifact.width} x {renderJob.artifact.height}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase text-stone-500">File size</dt>
-              <dd className="mt-1 text-stone-800">{renderJob.artifact.file_size_bytes} bytes</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase text-stone-500">File name</dt>
-              <dd className="mt-1 break-all text-stone-800">{renderJob.artifact.file_name}</dd>
-            </div>
-          </dl>
-          <p className="mt-3 break-all text-xs text-stone-600">{renderJob.artifact.storage_path}</p>
-        </div>
+      {renderJob.status === "succeeded" ? (
+        <PreviewArtifactMetadata artifact={renderJob.artifact} />
       ) : (
         <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
-          No artifact metadata yet.
+          Preview pending / unavailable.
         </p>
       )}
     </article>
+  );
+}
+
+function PreviewArtifactMetadata({ artifact }: { artifact: RenderJob["artifact"] }) {
+  if (!artifact) {
+    return (
+      <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
+        No preview artifact metadata available.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded border border-stone-200 bg-stone-50 p-3">
+      <h4 className="text-xs font-semibold uppercase text-stone-500">Preview manifest metadata</h4>
+      <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Artifact type</dt>
+          <dd className="mt-1 text-stone-800">{artifact.artifact_type}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">MIME type</dt>
+          <dd className="mt-1 text-stone-800">{artifact.mime_type}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">File size</dt>
+          <dd className="mt-1 text-stone-800">{artifact.file_size_bytes} bytes</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Checksum</dt>
+          <dd className="mt-1 break-all text-stone-800">{artifact.checksum_sha256 ?? "Not available"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Duration</dt>
+          <dd className="mt-1 text-stone-800">{artifact.duration_seconds} seconds</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Dimensions</dt>
+          <dd className="mt-1 text-stone-800">
+            {artifact.width} x {artifact.height}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">FPS</dt>
+          <dd className="mt-1 text-stone-800">Not available</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Subtitle draft</dt>
+          <dd className="mt-1 text-stone-800">{artifact.subtitle_draft_id ? `#${artifact.subtitle_draft_id}` : "None"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Manifest file</dt>
+          <dd className="mt-1 break-all text-stone-800">{artifact.file_name}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 break-all text-xs text-stone-600">{artifact.storage_path}</p>
+    </div>
   );
 }
 
