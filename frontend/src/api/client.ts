@@ -26,6 +26,40 @@ export type ProjectDetail = Project & {
   materials: Material[];
 };
 
+export type TopicCandidate = {
+  id: number;
+  project_id: number;
+  generation_run_id: number;
+  title: string;
+  angle: string;
+  audience: string;
+  hook: string;
+  rationale: string;
+  status: "candidate" | "selected" | "dismissed";
+  selected_at: string | null;
+  created_at: string;
+  updated_at: string;
+  source_material_ids: number[];
+};
+
+export type TopicGenerationRun = {
+  id: number;
+  project_id: number;
+  provider_name: string;
+  provider_version: string;
+  status: "running" | "succeeded" | "failed";
+  requested_candidate_count: number;
+  input_material_count: number;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+};
+
+export type GenerateTopicCandidatesResponse = {
+  run: TopicGenerationRun;
+  candidates: TopicCandidate[];
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -67,6 +101,23 @@ export function createProject(payload: { title: string; description?: string }):
 
 export function getProject(projectId: number): Promise<ProjectDetail> {
   return request<ProjectDetail>(`/api/projects/${projectId}`);
+}
+
+export function getTopicCandidates(projectId: number): Promise<TopicCandidate[]> {
+  return request<TopicCandidate[]>(`/api/projects/${projectId}/topic-candidates`);
+}
+
+export function generateTopicCandidates(projectId: number): Promise<GenerateTopicCandidatesResponse> {
+  return request<GenerateTopicCandidatesResponse>(`/api/projects/${projectId}/topic-candidates/generate`, {
+    method: "POST",
+    body: JSON.stringify({ candidate_count: 3 }),
+  });
+}
+
+export function selectTopicCandidate(projectId: number, candidateId: number): Promise<TopicCandidate> {
+  return request<TopicCandidate>(`/api/projects/${projectId}/topic-candidates/${candidateId}/select`, {
+    method: "POST",
+  });
 }
 
 export function updateProject(

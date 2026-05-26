@@ -168,6 +168,31 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/projects/$($project.id)/topic-candi
 
 生成接口会写入 `topic_generation_runs`、`topic_candidates` 和 `topic_candidate_sources`。如果项目没有素材会返回 `409`；如果项目已归档，生成和选择候选都会返回 `409`，但仍允许查询已有候选。
 
+## Topic Candidate UI 验证
+
+v0.2 Batch 2 在项目详情页新增了 Topic Candidates 区块。当前仍然只使用本地 deterministic `FakeLLMProvider`，不接真实 AI，不提供 Provider 配置，也不保存 API key、secret 或 token。
+
+验证步骤：
+
+1. 在仓库根目录启动 backend：
+
+```powershell
+.\scripts\dev-backend.ps1
+```
+
+2. 另开一个 PowerShell 启动 frontend：
+
+```powershell
+.\scripts\dev-frontend.ps1
+```
+
+3. 打开 `http://localhost:5173`，创建一个内容项目。
+4. 进入项目详情页，添加至少一条文本、摘要、项目记录、链接、图片或截图素材。
+5. 在 Topic Candidates 区块点击 `Generate Topic Candidates`。
+6. 确认页面显示候选选题的 title、angle、audience、hook、rationale、status、source material ids、created time 和 selected time。
+7. 点击某个候选的 `Select`，确认该候选显示 `Selected`，并且同一项目中只有一个候选保持 selected 状态。
+8. 归档项目后，确认已有候选仍可查看，但 `Generate Topic Candidates` 和 `Select` 不可用，并显示 `Archived projects are read-only.`。
+
 ## 验证项目与素材导入
 
 1. 启动 backend。
