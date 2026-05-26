@@ -1,83 +1,127 @@
-# Product Specification
+# 产品规格
 
-## Product Positioning
+## 产品定位
 
-creator-flow is an open-source AI short-video content pipeline. It helps users turn explicitly imported ideas, chat summaries, text, images, screenshots, and links into review-ready 9:16 MP4 videos for short-video platforms.
+creator-flow 是一个可开源的 AI 短视频内容流水线。它帮助用户将显式导入的聊天摘要、项目记录、文本、图片、截图和链接，转化为待审核的短视频草稿，并最终生成适合短视频平台发布的 9:16 MP4。
 
-The first publishing target is Douyin, but the product must remain platform-agnostic enough to support other publishing destinations later.
+首个发布平台是抖音，但产品架构必须保持平台无关，后续可扩展到其他短视频平台和其他语言用户。
 
-## User Problems
+## 用户问题
 
-- Creators have useful raw material but need help converting it into repeatable short-video workflows.
-- Programmers often solve real problems with AI but do not have a structured way to turn that process into content.
-- Manual scripting, storyboarding, subtitle preparation, and video assembly are repetitive and time-consuming.
-- Direct platform publishing is risky without clear review, approval, and privacy boundaries.
+- 中国内容创作者和开发者有大量真实经验、项目记录和 AI 辅助解决问题的过程，但缺少稳定的短视频生产流水线。
+- 程序员将真实问题、解决过程和开源项目进展转化为短视频时，需要反复完成选题、脚本、分镜、字幕和剪辑准备。
+- 创作者需要可持续的内容频率，但又不能牺牲对素材、表达和发布动作的控制。
+- 平台发布具有隐私、合规、版权和账号声誉风险，必须保留人工审核与确认。
 
-## Target Users
+## 目标用户
 
-- Programmers documenting real development problems and solutions.
-- Independent creators building technical or AI-assisted project logs.
-- Open-source maintainers who want to convert project progress into short videos.
-- Users who prefer explicit control over imported materials and final publishing decisions.
+- 主要面向中国内容创作者与中国开发者。
+- 首批场景为使用抖音发布技术型、AI 辅助型短视频的个人创作者。
+- 后续仍可支持其他语言用户与其他短视频平台。
+- 适合希望围绕真实开发过程、AI 工作流和开源项目持续输出内容的独立创作者。
 
-## Content Direction
+## 内容方向
 
-The initial content direction is:
+初始内容方向包括：
 
-- Real programmer problems.
-- AI-assisted solution walkthroughs.
-- Open-source project development logs.
+- 程序员真实问题。
+- AI 辅助解决方案。
+- 开源项目开发日志。
 
-Trend content may be used as a supporting input for topic selection, but it must not replace the user's real experience and original materials as the main account narrative.
+热点内容可以作为辅助选题来源，但账号主线必须来自用户的真实经验和原创素材。
 
-## Core User Workflow
+## 核心使用场景
 
-1. The user creates a content project.
-2. The user explicitly imports selected materials such as summaries, text, screenshots, images, or links.
-3. The system helps generate topic options and a recommended angle.
-4. The user reviews and edits the selected topic.
-5. The system drafts a script, storyboard, asset plan, voiceover text, and subtitles.
-6. The user reviews and edits the draft.
-7. The system renders a 9:16 MP4 through the script + image or screenshot + TTS + subtitles + FFmpeg path.
-8. The user reviews the rendered video.
-9. The user explicitly confirms any publishing action.
+1. 用户配置账号定位、内容类型、目标受众、内容偏好和每周生成频率。
+2. 用户显式导入近期聊天摘要、项目记录、图片、截图、文本或链接。
+3. 用户可选择是否启用公开热点信号作为辅助输入。
+4. 系统按照计划从近期显式导入素材中生成候选草稿。
+5. 系统生成选题、脚本、分镜、字幕和素材方案。
+6. 系统将自动生成的视频项目放入 `Review Queue`。
+7. 用户审核、编辑并确认草稿后，系统才可继续渲染或准备发布。
+8. 用户审核最终视频与发布信息后，才可确认发布。
+9. 发布后的指标未来可用于辅助下一轮选题优化和内容复盘。
 
-## MVP Scope
+## 核心用户工作流
 
-- Content project management.
-- Explicit material import.
-- Topic ideation from user-provided materials and optional trend inputs.
-- Script generation and editing.
-- Storyboard and asset planning.
-- TTS-backed voiceover generation through an abstract provider.
-- Subtitle generation and editing.
-- FFmpeg-based 9:16 MP4 rendering.
-- Douyin publishing preparation with mandatory human review and confirmation.
-- Provider abstractions for AI, media, rendering, trend sources, and publishing.
+1. 用户创建或选择 `ContentPlan`。
+2. 用户显式导入素材。
+3. 用户手动触发生成，或由 `Scheduler / Trigger Engine` 按配置触发生成。
+4. 系统基于用户素材和可选热点信号生成候选选题。
+5. 用户审核并选择选题。
+6. 系统生成脚本、分镜、字幕和素材方案。
+7. 系统将草稿放入 `Review Queue`。
+8. 用户审核并编辑草稿。
+9. 系统通过脚本 + 图片或截图 + TTS + 字幕 + `FFmpeg` 合成 9:16 MP4。
+10. 用户审核渲染结果。
+11. 用户明确确认后，系统才可执行发布动作。
 
-## Non-Goals
+## MVP 功能范围
 
-- No silent or automatic publishing.
-- No automatic reading of ChatGPT history or other private accounts.
-- No default pure AI text-to-video generation in the MVP path.
-- No dependency on a single AI provider or publishing platform.
-- No unmanaged storage of credentials, generated assets, private uploads, or local databases in Git.
-- No production-scale multi-tenant SaaS assumptions in the MVP.
+- 内容项目管理。
+- `ContentPlan` 的基础配置：账号定位、内容类型、目标频率和内容偏好。
+- 用户显式导入聊天摘要、文本、图片、截图和链接。
+- 基于用户素材和可选热点信号生成选题。
+- 脚本、分镜、字幕和素材方案生成与编辑。
+- Provider 抽象：`LLMProvider`、`ImageProvider`、`TTSProvider`、`VideoRenderer`、`PublisherProvider`、`TrendSourceProvider`。
+- 通过 `FFmpeg` 生成 9:16 MP4。
+- `Review Queue` 管理待审核草稿。
+- 抖音发布准备与人工确认发布。
+- 第一版可先支持手动触发生成。
+- 定时生成待审核草稿属于紧随其后的核心阶段。
 
-## Douyin Publishing Confirmation Principle
+定时生成草稿不等于静默自动发布。任何发布动作仍必须由用户明确确认。
 
-Any action that publishes, schedules, or otherwise sends content to Douyin or another platform must require user review and explicit confirmation. The system may prepare captions, metadata, files, and platform-specific checks, but it must not publish by default.
+## 明确非目标
 
-## Privacy and Material Import Boundary
+- 不实现静默自动发布。
+- 不自动读取用户私有 ChatGPT 历史。
+- 不默认扫描本地文件、浏览器状态或私人账号。
+- 不在 MVP 默认链路中依赖昂贵的纯 AI 文生视频。
+- 不将核心流程绑定到单一 AI 服务或单一发布平台。
+- 不向 Git 提交密钥、上传素材、本地数据库或生成媒体。
+- 不在 MVP 中假设完整多租户 SaaS 能力。
 
-The MVP only processes materials the user explicitly imports. It must not silently scan local files, read private chat history, scrape personal accounts, or infer consent from browser sessions. Imported materials, uploads, local databases, generated videos, audio, subtitles, and private notes must be excluded from Git.
+## 自动化边界
 
-## MVP Acceptance Criteria
+- 自动化只能生成待审核草稿。
+- 定时任务不得发布、排期发布或上传公开内容，除非用户在明确审核界面中确认。
+- 自动化只能使用用户显式导入的素材，以及用户明确启用的外部热点来源。
+- 自动化生成的草稿必须进入 `Review Queue`。
+- 用户必须能查看草稿来源、生成时间和使用的主要输入。
 
-- A user can create a content project from explicitly imported materials.
-- A user can generate and edit a topic, script, storyboard, subtitles, and asset plan.
-- A user can render a review-ready 9:16 MP4 using FFmpeg.
-- Publishing to Douyin or any other platform requires a visible review step and explicit confirmation.
-- External capabilities are accessed through provider interfaces.
-- The default workflow avoids expensive pure AI text-to-video generation.
-- Private materials, generated outputs, credentials, and local databases are not committed.
+## 热点边界
+
+- 热点只能作为选题辅助信号。
+- 必须记录热点来源、采集时间和用户是否启用。
+- 热点来源应作为外部不可信输入处理。
+- 不得直接复制第三方受版权保护的内容、素材、标题或表达。
+- 热点不能替代用户真实经验和原创素材。
+
+## 抖音发布人工确认原则
+
+任何向抖音或其他平台发布、排期发布、上传用于公开发布的动作，都必须经过用户审核与明确确认。系统可以准备视频文件、标题、描述、标签、封面建议和平台检查结果，但默认不得发布。
+
+## 隐私与素材导入边界
+
+MVP 只处理用户显式导入的素材，以及用户明确启用的公开热点来源。系统不得静默扫描本地文件、读取私有聊天历史、抓取私人账号或从浏览器会话推断授权。上传素材、本地数据库、生成视频、音频、图片、字幕和私有笔记必须排除在 Git 之外。
+
+## MVP 验收标准
+
+- 用户可以创建内容项目并显式导入素材。
+- 用户可以配置账号定位、内容类型和目标生成频率。
+- 用户可以手动触发选题、脚本、分镜、字幕和素材方案生成。
+- 系统可以通过 `FFmpeg` 从脚本、图片或截图、TTS 和字幕生成 9:16 MP4。
+- 发布到抖音或其他平台前必须出现可见审核与确认步骤。
+- 外部能力通过 Provider 接口访问。
+- 默认流程不依赖昂贵的纯 AI 文生视频。
+- 密钥、私有素材、本地数据库和生成媒体不会被提交。
+
+## Scheduled Draft Generation 阶段验收标准
+
+- 用户可以为 `ContentPlan` 配置每周生成频率。
+- `Scheduler / Trigger Engine` 可以按计划创建 `GenerationRun`。
+- 每次 `GenerationRun` 只能基于近期显式导入素材和用户启用的热点来源生成草稿。
+- 自动生成的草稿进入 `Review Queue`，状态为待审核。
+- 调度任务不能绕过用户确认执行发布。
+- 系统记录草稿生成时间、输入来源和热点来源。

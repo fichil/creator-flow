@@ -1,24 +1,25 @@
-# ADR 0001: Product Positioning
+# ADR 0001: 产品定位
 
-## Status
+## 状态
 
 Accepted
 
-## Context
+## 背景
 
-creator-flow starts with Douyin as the first publishing platform, but the core user problem is broader than one platform. Creators need a repeatable way to turn explicitly imported materials into short-video projects that can later be adapted to different destinations.
+creator-flow 以抖音作为首个发布平台，但核心用户问题并不只属于单一平台。创作者需要一套可持续的短视频内容流水线，用来把显式导入的聊天摘要、项目记录、文本、图片、截图和链接转化为可审核、可渲染、可发布的内容项目。
 
-Binding the product only to Douyin would make early implementation faster, but it would also mix platform-specific publishing details into the creative workflow and make future expansion harder.
+如果产品只绑定抖音，早期实现可能更快，但平台细节会过早进入选题、脚本、分镜、渲染和审核流程，未来扩展到其他平台会更困难。
 
-## Decision
+## 决策
 
-creator-flow will be positioned as a general AI short-video content pipeline rather than a Douyin-only tool.
+creator-flow 定位为通用 AI 短视频内容流水线，而不是抖音专用工具。
 
-Douyin will be the first target platform, but platform-specific logic must live behind provider interfaces and publishing preparation modules.
+抖音是首个目标平台，但平台相关逻辑必须放在 `PublisherProvider`、发布准备模块和平台适配层中。核心模型应围绕素材、内容计划、生成运行、脚本、分镜、渲染、审核和发布意图设计。
 
-## Consequences
+## 结果
 
-- The product can support additional short-video platforms later.
-- Core concepts such as materials, topics, scripts, storyboards, render jobs, and publish intents remain reusable.
-- The MVP must avoid naming, data model, and workflow choices that assume Douyin is the only destination.
-- Some early design work is slightly more abstract, but the architecture remains healthier for open-source contributors.
+- 项目可以后续支持其他短视频平台。
+- `ContentPlan`、`GenerationRun`、`Review Queue`、`RenderJob` 和 `PublishIntent` 等概念保持可复用。
+- MVP 需要避免把抖音作为唯一目标写死在数据模型和流程中。
+- 开源贡献者可以围绕 Provider 接口扩展平台能力。
+- 设计会稍微更抽象，但更适合长期维护和开源协作。

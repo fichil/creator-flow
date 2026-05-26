@@ -1,119 +1,205 @@
-# Roadmap
+# 路线图
 
-## v0.1 Documentation Foundation
+## Phase 0 Documentation Foundation
 
-Goal: establish the product, architecture, roadmap, licensing, and decision records.
+目标：建立产品定位、架构方向、路线图、许可证、贡献约束和关键决策记录。
 
-Scope:
+范围：
 
-- README, license, ignore rules, and agent rules.
-- Product specification.
-- Architecture outline.
-- Roadmap.
-- Initial ADRs.
+- 中文主 README 与英文入口 README。
+- `AGENTS.md` 工作规则。
+- 产品规格、架构文档和路线图。
+- 初始 ADR。
+- Apache-2.0 License。
 
-Acceptance criteria:
+验收标准：
 
-- The repository can be reviewed publicly without exposing secrets, private paths, generated media, or user data.
-- The project clearly states that no runnable application exists yet.
-- MVP principles and non-goals are documented.
+- 仓库可以公开发布，且不暴露密钥、私有路径、生成媒体或用户数据。
+- 文档明确说明当前没有可运行应用。
+- MVP 原则、自动化边界和非目标清晰可审查。
 
-Not doing:
+明确不做事项：
 
-- No backend, frontend, Docker, CI, provider, database, or rendering implementation.
-- No dependency installation.
-- No generated media.
+- 不发布 GitHub Release。
+- 不实现 backend、frontend、数据库、Docker、CI、Provider 或渲染功能。
+- 不安装依赖。
+- 不生成媒体。
 
-## v0.2 Local MVP Skeleton
+## v0.1 Local Runnable Skeleton
 
-Goal: introduce the minimal local application structure after the documentation foundation is accepted.
+目标：建立最小可运行的本地应用骨架，为后续功能提供基础。
 
-Scope:
+范围：
 
-- FastAPI project skeleton.
-- React + Vite + Tailwind project skeleton.
-- Local SQLite metadata design.
-- Basic project and material import screens.
-- Development setup documentation.
+- `FastAPI` 项目骨架。
+- `React` + `Vite` + `Tailwind` 前端骨架。
+- `SQLite` 本地元数据设计。
+- 基础内容项目与素材导入能力。
+- 本地开发说明。
 
-Acceptance criteria:
+验收标准：
 
-- The app can start locally.
-- A user can create a content project and register imported materials.
-- No external AI or publishing provider is required for basic navigation.
+- 应用可以在本地启动。
+- 用户可以创建内容项目。
+- 用户可以登记或导入显式选择的素材。
+- 基础页面不依赖外部 AI 或发布平台。
 
-Not doing:
+明确不做事项：
 
-- No automatic publishing.
-- No production deployment.
-- No pure AI text-to-video default path.
+- 不实现自动发布。
+- 不实现定时生成。
+- 不接入生产部署。
+- 不实现纯 AI 文生视频默认链路。
 
-## v0.3 Script and Storyboard Workflow
+## v0.2 AI Planning Workflow
 
-Goal: support the core creative planning loop.
+目标：支持从用户素材到选题、脚本和分镜的核心策划流程。
 
-Scope:
+范围：
 
-- Provider interface definitions.
-- LLM-backed topic, script, and storyboard generation through configurable providers.
-- Manual editing and review states.
-- Basic asset plan generation.
+- Provider 接口定义。
+- `LLMProvider` 驱动的选题生成。
+- 脚本生成与编辑。
+- 分镜生成与编辑。
+- 素材方案生成。
+- 人工审核状态。
 
-Acceptance criteria:
+验收标准：
 
-- A user can move from imported materials to topic selection, script draft, and storyboard.
-- Provider interfaces keep vendor-specific details out of core domain code.
-- User review remains required before later rendering or publishing steps.
+- 用户可以从显式导入素材生成候选选题。
+- 用户可以编辑并确认脚本和分镜。
+- Provider 接口将供应商细节隔离在核心领域之外。
+- 所有生成结果进入人工审核流程。
 
-Not doing:
+明确不做事项：
 
-- No silent ingestion from private accounts.
-- No direct platform publishing.
-- No default expensive text-to-video provider.
+- 不静默读取私人账号或 ChatGPT 历史。
+- 不直接发布到平台。
+- 不默认使用昂贵纯 AI 文生视频 Provider。
 
-## v0.4 FFmpeg Rendering MVP
+## v0.3 Renderable Video MVP
 
-Goal: produce review-ready 9:16 MP4 outputs from approved plans.
+目标：从已审核脚本、素材方案和字幕生成可预览的 9:16 MP4。
 
-Scope:
+范围：
 
-- TTS provider integration.
-- Subtitle generation and editing.
-- FFmpeg-based composition of images or screenshots, audio, subtitles, and timing metadata.
-- Render job tracking and review state.
+- `TTSProvider` 集成方向。
+- 字幕生成与编辑。
+- `FFmpeg` 合成图片或截图、音频、字幕和时间信息。
+- 渲染任务状态跟踪。
+- MP4 预览与审核状态。
 
-Acceptance criteria:
+验收标准：
 
-- A user can render a 9:16 MP4 from approved script, visual assets, TTS audio, and subtitles.
-- Render outputs are stored outside Git-tracked paths.
-- Rendering failures are visible and debuggable.
+- 用户可以从已审核脚本和素材生成 9:16 MP4。
+- 渲染结果进入 `Review Queue`。
+- 渲染输出保存在 Git 忽略路径中。
+- 渲染失败可见且可排查。
 
-Not doing:
+明确不做事项：
 
-- No automatic upload or publication.
-- No production-scale render farm.
-- No mandatory pure AI video provider.
+- 不自动上传或发布。
+- 不建设生产级渲染集群。
+- 不强制接入纯 AI 视频 Provider。
 
-## v1.0 Human-Reviewed Publishing
+## v0.4 Scheduled Draft Generation
 
-Goal: prepare and publish reviewed videos through platform provider integrations with explicit user confirmation.
+目标：支持用户配置内容计划和生成频率，并自动生成待审核草稿。
 
-Scope:
+范围：
 
-- Douyin publishing preparation provider.
-- Platform metadata checks.
-- Human review and confirmation gate.
-- Audit trail for publish intent and publish result.
-- Documentation for adding future platform providers.
+- `ContentPlan` 配置：账号定位、内容类型、目标频率和内容偏好。
+- `GenerationSchedule` 与 `Scheduler / Trigger Engine`。
+- 基于近期显式导入素材生成候选草稿。
+- 可选热点信号输入。
+- `Review Queue` 管理待审核草稿。
+- `Notification Service` 接口方向，用于提醒存在待审核草稿。
 
-Acceptance criteria:
+验收标准：
 
-- A user can review the final video and metadata before any publish action.
-- Publishing requires explicit confirmation.
-- Douyin is supported as the first platform, and the provider model supports future platforms.
+- 用户可以配置每周生成频率。
+- 系统可以按计划创建 `GenerationRun`。
+- 自动生成内容只能进入 `Review Queue`。
+- 定时任务不能发布、排期发布或上传公开内容。
+- 草稿记录生成时间、输入来源和热点来源。
 
-Not doing:
+明确不做事项：
 
-- No silent background publishing.
-- No credential commits.
-- No platform lock-in.
+- 不实现静默自动发布。
+- 不绕过用户审核。
+- 不使用用户未明确导入或未明确启用的数据来源。
+- 不复制第三方受版权保护内容。
+
+## v0.5 Human-Confirmed Douyin Publishing
+
+目标：在人工确认前提下支持抖音发布准备与发布动作。
+
+范围：
+
+- 抖音 OAuth 或等价授权流程。
+- `PublisherProvider` 的抖音实现。
+- 发布前元数据准备。
+- 人工确认发布界面。
+- 发布状态查询。
+
+验收标准：
+
+- 用户可以审核视频、标题、描述、标签和封面建议。
+- 用户明确确认后才会触发发布。
+- 发布状态可以查询并记录。
+- 凭据不会进入仓库。
+
+明确不做事项：
+
+- 不静默发布。
+- 不绕过平台授权。
+- 不把抖音假设写死到核心模型。
+
+## v0.6 Metrics Feedback Loop
+
+目标：采集基础发布指标，帮助用户复盘并优化下一轮内容。
+
+范围：
+
+- `PublicationMetrics` 数据模型。
+- 基础播放、互动和发布时间指标采集。
+- 内容复盘视图。
+- 指标辅助下一轮选题的接口方向。
+
+验收标准：
+
+- 已发布内容可以关联基础表现指标。
+- 用户可以查看内容表现摘要。
+- 指标可作为后续选题优化的辅助输入。
+- 指标采集不暴露不必要的个人隐私。
+
+明确不做事项：
+
+- 不承诺复杂增长预测。
+- 不自动根据指标发布内容。
+- 不采集超出用户授权范围的数据。
+
+## v1.0 Extensible Creator Workflow
+
+目标：形成稳定、可扩展、可贡献的创作者工作流。
+
+范围：
+
+- 稳定 Provider 架构。
+- 多平台发布扩展文档。
+- 完整本地部署与贡献文档。
+- 稳定的内容计划、生成、渲染、审核、发布和复盘流程。
+- 更完善的错误处理与审计记录。
+
+验收标准：
+
+- 新 Provider 可以按文档接入。
+- 抖音之外的平台可以通过扩展方式支持。
+- 核心工作流稳定可用。
+- 文档足够支持开源贡献者理解和参与。
+
+明确不做事项：
+
+- 不牺牲人工确认发布原则。
+- 不引入平台锁定。
+- 不把用户私有素材或生成媒体纳入 Git。

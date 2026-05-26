@@ -1,33 +1,45 @@
 # creator-flow
 
-creator-flow is an open-source AI pipeline concept for turning user-provided ideas, notes, images, screenshots, links, and other materials into review-ready short videos.
+[简体中文](README.md) | [English](README.en.md)
 
-## Status
+creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将显式导入的想法、聊天摘要、文本、图片、截图和链接转化为待审核的短视频草稿。
 
-Planning / Documentation Foundation.
+## 当前状态
 
-This repository currently contains product and architecture documentation only. It does not yet provide a runnable application, backend service, frontend UI, video renderer, publishing integration, or provider implementation.
+`Planning / Documentation Foundation`
 
-## Planned Capabilities
+当前仓库仅包含产品与架构文档，尚未提供可运行应用、后端服务、前端界面、视频渲染器、发布集成或 Provider 实现。
 
-- Import user-selected chat summaries, text, images, screenshots, and links.
-- Generate topic ideas, short-video scripts, storyboards, subtitles, and asset plans with AI providers.
-- Render 9:16 MP4 videos through an FFmpeg-based pipeline.
-- Support Douyin as the first publishing target while keeping the architecture open for other platforms.
-- Keep LLM, image, TTS, rendering, trend, and publishing integrations behind provider interfaces.
+## 计划能力
 
-These capabilities are planned and not yet implemented.
+- 用户显式导入聊天摘要、文本、图片、截图和链接。
+- AI 生成选题、脚本、分镜、字幕和素材方案。
+- 通过 `FFmpeg` 流水线生成适合短视频平台发布的 9:16 MP4。
+- 支持配置内容计划、账号定位、内容类型和生成频率。
+- 按计划基于显式导入素材与可选热点信号自动生成待审核草稿。
+- 将自动生成的视频项目放入 `Review Queue`，由用户审核后继续处理。
+- 发布后指标回流，用于后续内容复盘和选题优化。
+- 以抖音作为首个发布平台，同时通过 Provider 抽象保留多平台扩展能力。
 
-## Product Principles
+以上能力均为计划方向，尚未实现。
 
-- Publishing must remain human-in-the-loop. The MVP must not silently or automatically publish to Douyin or any other platform.
-- User materials must be explicitly imported. The MVP must not automatically read private ChatGPT history or other private sources.
-- Trend signals may support topic selection, but the account narrative should remain grounded in the user's real experience and original materials.
-- The first content direction focuses on real programmer problems, AI-assisted solutions, and open-source project development logs.
+## 自动化边界
 
-## Privacy
+creator-flow 未来可以按照用户配置的频率自动生成草稿，但自动化只能产出待审核内容。任何向抖音或其他平台发布、排期发布、上传用于公开发布的动作，都必须经过用户明确审核与确认。
 
-creator-flow is intended to process only materials the user explicitly provides. Secrets, credentials, generated media, local databases, uploads, and private user data must not be committed to the repository.
+## 产品原则
+
+- 用户素材必须显式导入，MVP 不自动读取用户私有 ChatGPT 历史。
+- 系统不默认扫描本地文件、浏览器会话或私人账号。
+- 热点内容只能作为辅助选题信号，账号主线应来自用户真实经验和原创素材。
+- 首批内容方向是程序员真实问题、AI 辅助解决方案和开源项目开发日志。
+- 外部 AI、热点、TTS、视频渲染和平台发布能力必须通过 Provider 接口抽象。
+- 第一版视频生成主路径采用脚本 + 图片或截图 + TTS + 字幕 + `FFmpeg` 合成。
+- 昂贵的纯 AI 文生视频能力仅作为后续可选 Provider，不作为 MVP 默认链路。
+
+## 隐私原则
+
+creator-flow 只应处理用户显式提供或明确启用的数据来源。不得向仓库提交密钥、token、上传素材、本地数据库、生成视频、生成音频、生成图片、字幕文件或其他私有内容。
 
 ## License
 

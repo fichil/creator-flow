@@ -1,24 +1,25 @@
-# ADR 0002: Human-in-the-Loop Publishing
+# ADR 0002: 发布必须人工确认
 
-## Status
+## 状态
 
 Accepted
 
-## Context
+## 背景
 
-Publishing short videos can expose private information, incorrect claims, copyrighted material, or content that does not match the user's intent. AI-generated scripts, captions, metadata, and platform-specific suggestions require human judgment before publication.
+短视频发布可能暴露隐私信息、错误表述、版权风险或不符合用户意图的内容。AI 生成的脚本、字幕、标题、描述、标签和封面建议都需要用户判断后才能面向平台公开。
 
-Silent automatic publishing would create avoidable safety, privacy, and reputation risks, especially for an open-source project that may be adapted to many provider and platform combinations.
+项目还需要支持定时生成草稿。如果调度任务可以直接发布内容，系统会在用户未确认的情况下对外公开表达，这与隐私、账号安全和内容控制原则冲突。
 
-## Decision
+## 决策
 
-The MVP must not silently or automatically publish to Douyin or any other platform.
+MVP 不实现静默自动发布。任何向抖音或其他平台发布、排期发布、上传用于公开发布的动作，都必须经过用户审核与明确确认。
 
-Any publish, schedule, upload-for-publication, or equivalent platform action must pass through an explicit human review and confirmation step.
+定时任务可以生成待审核草稿，但必须进入 `Review Queue`。`PublisherProvider` 只能在用户确认后执行平台发布动作。
 
-## Consequences
+## 结果
 
-- The workflow must include visible review states before publishing.
-- Publishing providers must support preparation separately from confirmed publish execution.
-- The product can still automate drafts, metadata preparation, checks, rendering, and packaging.
-- Users retain final control over platform-facing actions.
+- 工作流必须包含清晰的审核状态和确认动作。
+- 发布准备与实际发布必须分离。
+- `Scheduler / Trigger Engine` 不能绕过 `Review Queue`。
+- 系统可以自动化选题、脚本、分镜、字幕、素材方案和渲染准备。
+- 用户保留对平台公开内容的最终控制权。
