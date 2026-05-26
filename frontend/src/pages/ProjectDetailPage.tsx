@@ -6,6 +6,7 @@ import {
   addTextMaterial,
   archiveProject,
   createRenderJob,
+  createSubtitleDraft,
   generateScriptDrafts,
   generateStoryboards,
   generateTopicCandidates,
@@ -13,6 +14,7 @@ import {
   getRenderJobs,
   getScriptDrafts,
   getStoryboards,
+  getSubtitleDrafts,
   getTopicCandidates,
   Material,
   ProjectDetail,
@@ -20,8 +22,10 @@ import {
   ScriptDraft,
   selectScriptDraft,
   selectStoryboard,
+  selectSubtitleDraft,
   selectTopicCandidate,
   Storyboard,
+  SubtitleDraft,
   TopicCandidate,
   updateProject,
 } from "../api/client";
@@ -115,6 +119,11 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
                 isArchived={isArchived}
                 projectId={project.id}
                 onSelectionStateChange={setHasSelectedStoryboard}
+              />
+              <SubtitleDraftsPanel
+                hasSelectedStoryboard={hasSelectedStoryboard}
+                isArchived={isArchived}
+                projectId={project.id}
               />
               <RenderJobsPanel
                 hasSelectedStoryboard={hasSelectedStoryboard}
@@ -754,6 +763,248 @@ function formatStoryboardError(err: unknown, fallback: string) {
     return message;
   }
   return fallback;
+}
+
+function SubtitleDraftsPanel({
+  hasSelectedStoryboard,
+  isArchived,
+  projectId,
+}: {
+  hasSelectedStoryboard: boolean | null;
+  isArchived: boolean;
+  projectId: number;
+}) {
+  const [subtitleDrafts, setSubtitleDrafts] = useState<SubtitleDraft[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [selectingId, setSelectingId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function reloadSubtitleDrafts() {
+    setLoading(true);
+    try {
+      const items = await getSubtitleDrafts(projectId);
+      setSubtitleDrafts(items);
+      setError(null);
+    } catch (err) {
+      setError(formatSubtitleDraftError(err, "Failed to load subtitle drafts."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void reloadSubtitleDrafts();
+  }, [projectId]);
+
+  async function handleCreate() {
+    if (isArchived || hasSelectedStoryboard !== true) {
+      return;
+    }
+    setCreating(true);
+    setError(null);
+    try {
+      await createSubtitleDraft(projectId);
+      await reloadSubtitleDrafts();
+    } catch (err) {
+      setError(formatSubtitleDraftError(err, "Failed to create fake subtitle draft."));
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleSelect(subtitleDraftId: number) {
+    if (isArchived) {
+      return;
+    }
+    setSelectingId(subtitleDraftId);
+    setError(null);
+    try {
+      await selectSubtitleDraft(projectId, subtitleDraftId);
+      await reloadSubtitleDrafts();
+    } catch (err) {
+      setError(formatSubtitleDraftError(err, "Failed to select subtitle draft."));
+    } finally {
+      setSelectingId(null);
+    }
+  }
+
+  const createDisabled = isArchived || hasSelectedStoryboard !== true || creating;
+
+  return (
+    <section className="mt-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-stone-950">Subtitle Drafts</h2>
+          <p className="mt-1 text-sm text-stone-600">
+            FakeSubtitle drafts and deterministic subtitle cue metadata for the selected storyboard.
+          </p>
+        </div>
+        <button
+          className="rounded bg-violet-700 px-4 py-2 text-sm font-medium text-white hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={createDisabled}
+          type="button"
+          onClick={handleCreate}
+        >
+          {creating ? "Creating..." : "Create fake subtitle draft"}
+        </button>
+      </div>
+
+      {isArchived && (
+        <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
+          Archived projects are read-only.
+        </p>
+      )}
+      {hasSelectedStoryboard === false && !isArchived && (
+        <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          Select a storyboard before creating fake subtitle drafts.
+        </p>
+      )}
+      {hasSelectedStoryboard === null && !isArchived && (
+        <p className="mt-3 rounded border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
+          Checking storyboard selection before enabling fake subtitles.
+        </p>
+      )}
+      {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {loading && <p className="mt-4 text-sm text-stone-600">Loading subtitle drafts...</p>}
+      {!loading && subtitleDrafts.length === 0 && (
+        <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
+          No subtitle drafts yet.
+        </p>
+      )}
+      {!loading && subtitleDrafts.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {subtitleDrafts.map((subtitleDraft) => (
+            <SubtitleDraftCard
+              disabled={isArchived || selectingId !== null}
+              key={subtitleDraft.id}
+              selecting={selectingId === subtitleDraft.id}
+              subtitleDraft={subtitleDraft}
+              onSelect={handleSelect}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SubtitleDraftCard({
+  disabled,
+  onSelect,
+  selecting,
+  subtitleDraft,
+}: {
+  disabled: boolean;
+  onSelect: (subtitleDraftId: number) => void;
+  selecting: boolean;
+  subtitleDraft: SubtitleDraft;
+}) {
+  const isSelected = subtitleDraft.status === "selected";
+  const cues = [...subtitleDraft.cues].sort(
+    (left, right) => left.cue_order - right.cue_order || left.id - right.id,
+  );
+
+  return (
+    <article
+      aria-label={`Subtitle draft ${subtitleDraft.id}`}
+      className={`rounded border bg-white p-4 ${
+        isSelected ? "border-violet-300 bg-violet-50 ring-1 ring-violet-200" : "border-stone-200"
+      }`}
+      data-status={subtitleDraft.status}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-stone-950">Subtitle draft #{subtitleDraft.id}</h3>
+          <p className="mt-1 text-xs text-stone-500">Created {new Date(subtitleDraft.created_at).toLocaleString()}</p>
+        </div>
+        {isSelected ? (
+          <span className="rounded border border-violet-300 bg-white px-3 py-1 text-xs font-semibold text-violet-800">
+            Selected
+          </span>
+        ) : subtitleDraft.status === "draft" ? (
+          <button
+            className="rounded border border-violet-700 px-3 py-1 text-xs font-semibold text-violet-800 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={disabled}
+            type="button"
+            onClick={() => onSelect(subtitleDraft.id)}
+          >
+            {selecting ? "Selecting..." : "Select"}
+          </button>
+        ) : null}
+      </div>
+
+      <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Generator</dt>
+          <dd className="mt-1 text-stone-800">
+            {subtitleDraft.generator_name} {subtitleDraft.generator_version}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Status</dt>
+          <dd className="mt-1 text-stone-800">{subtitleDraft.status}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Storyboard</dt>
+          <dd className="mt-1 text-stone-800">#{subtitleDraft.storyboard_draft_id}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Updated</dt>
+          <dd className="mt-1 text-stone-800">{new Date(subtitleDraft.updated_at).toLocaleString()}</dd>
+        </div>
+      </dl>
+      {subtitleDraft.selected_at && (
+        <p className="mt-3 text-xs text-stone-500">Selected {new Date(subtitleDraft.selected_at).toLocaleString()}</p>
+      )}
+
+      <div className="mt-4 rounded border border-stone-200 bg-stone-50 p-3">
+        <h4 className="text-xs font-semibold uppercase text-stone-500">Subtitle cues</h4>
+        {cues.length === 0 ? (
+          <p className="mt-3 rounded border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
+            No subtitle cues yet.
+          </p>
+        ) : (
+          <ol className="mt-3 divide-y divide-stone-200 border-y border-stone-200">
+            {cues.map((cue) => (
+              <li
+                aria-label={`Subtitle cue ${cue.cue_order}`}
+                className="py-3"
+                data-cue-order={cue.cue_order}
+                data-testid="subtitle-cue"
+                key={cue.id}
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h5 className="text-sm font-semibold text-stone-950">Cue {cue.cue_order}</h5>
+                  <span className="text-xs text-stone-500">
+                    {cue.start_time_seconds}s - {cue.end_time_seconds}s
+                  </span>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap text-sm text-stone-800">{cue.text}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function formatSubtitleDraftError(err: unknown, fallback: string) {
+  const message = err instanceof Error ? err.message : fallback;
+  if (message === "project has no selected storyboard") {
+    return "Select a storyboard before creating fake subtitle drafts.";
+  }
+  if (message === "selected storyboard has no scenes") {
+    return "The selected storyboard has no scenes for fake subtitles.";
+  }
+  if (message.startsWith("archived project")) {
+    return "Archived projects are read-only.";
+  }
+  if (message.includes("(404)") || message.includes("not found")) {
+    return message;
+  }
+  return message || fallback;
 }
 
 function RenderJobsPanel({
