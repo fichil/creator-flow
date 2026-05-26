@@ -105,7 +105,7 @@
 
 目标：从已审核脚本、素材方案和字幕生成可预览的 9:16 MP4。
 
-状态：v0.3 Batch 6 已实现 Render Preview Frontend UI for fake preview manifest；当前只生成和展示 render job、fake preview manifest metadata、subtitle draft metadata 和 subtitle cues，不生成真实 MP4、音频或字幕文件，也不播放真实视频。
+状态：v0.3 Batch 7 已完成 fake workflow stabilization 与 Release Candidate review；当前只生成和展示 render job、fake preview manifest metadata、subtitle draft metadata 和 subtitle cues，不生成真实 MP4、音频或字幕文件，不新增真实 video player，不接 `FFmpeg`、TTS、发布能力或真实 AI Provider。
 
 已完成 Batch 1：实现 Rendering domain foundation with FakeRenderer and render artifact metadata。该批次基于 selected Storyboard 创建 fake render job，保存 deterministic fake video artifact metadata，并保留 queued / running / succeeded / failed 状态，为后续真实 `FFmpeg` renderer 或异步任务预留接口。
 
@@ -118,6 +118,8 @@
 已完成 Batch 5：实现 Render Preview Artifact Placeholder backend-only。该批次让 `FakeRenderer` 在 Git 忽略的 `data/local/render_previews/` 路径策略下写入 deterministic fake preview manifest JSON，并在 render artifact metadata 中记录 manifest 路径、checksum、fake video duration / dimensions 以及可选 selected subtitle draft id；仍不生成真实 MP4、音频或字幕文件，不接 TTS、`FFmpeg` 或发布能力，也不实现前端 Preview UI。
 
 已完成 Batch 6：实现 Render Preview Frontend UI for fake preview manifest。该批次在项目详情页的 Render Jobs 区块展示 backend 已返回的 fake preview manifest metadata，包括 manifest path、MIME type、file size、checksum、fake video duration / dimensions 和可选 selected subtitle draft id；前端不读取运行时 manifest 文件，不新增真实 video player，不播放真实视频，仍不生成真实 MP4、音频或字幕文件。
+
+已完成 Batch 7：实现 Fake Workflow Stabilization & Release Candidate Review。该批次只补强 render preview metadata list/read backend tests、empty subtitle cues frontend fallback tests、开发说明和 v0.3 RC checklist，完成 fake workflow RC 收口；仍不生成真实 MP4、音频或字幕文件，不新增真实 video player，不接 `FFmpeg`、TTS、发布能力或真实 AI Provider。
 
 范围：
 
