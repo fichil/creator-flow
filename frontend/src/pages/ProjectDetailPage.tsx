@@ -5,11 +5,15 @@ import {
   addLinkMaterial,
   addTextMaterial,
   archiveProject,
+  generateScriptDrafts,
   generateTopicCandidates,
   getProject,
+  getScriptDrafts,
   getTopicCandidates,
   Material,
   ProjectDetail,
+  ScriptDraft,
+  selectScriptDraft,
   selectTopicCandidate,
   TopicCandidate,
   updateProject,
@@ -97,6 +101,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
                 </div>
               )}
               <TopicCandidatesPanel isArchived={isArchived} projectId={project.id} />
+              <ScriptDraftsPanel isArchived={isArchived} projectId={project.id} />
             </div>
 
             <div className="space-y-4">
@@ -289,6 +294,199 @@ function formatTopicCandidateError(err: unknown, fallback: string) {
   const message = err instanceof Error ? err.message : fallback;
   if (message === "project has no materials") {
     return "Add at least one material before generating topic candidates.";
+  }
+  if (message.startsWith("archived project")) {
+    return "Archived projects are read-only.";
+  }
+  if (message.includes("(404)") || message.includes("not found")) {
+    return message;
+  }
+  return fallback;
+}
+
+function ScriptDraftsPanel({ isArchived, projectId }: { isArchived: boolean; projectId: number }) {
+  const [scriptDrafts, setScriptDrafts] = useState<ScriptDraft[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [selectingId, setSelectingId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function reloadScriptDrafts() {
+    setLoading(true);
+    try {
+      const items = await getScriptDrafts(projectId);
+      setScriptDrafts(items);
+      setError(null);
+    } catch (err) {
+      setError(formatScriptDraftError(err, "Failed to load script drafts."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void reloadScriptDrafts();
+  }, [projectId]);
+
+  async function handleGenerate() {
+    if (isArchived) {
+      return;
+    }
+    setGenerating(true);
+    setError(null);
+    try {
+      await generateScriptDrafts(projectId);
+      await reloadScriptDrafts();
+    } catch (err) {
+      setError(formatScriptDraftError(err, "Failed to generate script drafts."));
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleSelect(scriptDraftId: number) {
+    if (isArchived) {
+      return;
+    }
+    setSelectingId(scriptDraftId);
+    setError(null);
+    try {
+      await selectScriptDraft(projectId, scriptDraftId);
+      await reloadScriptDrafts();
+    } catch (err) {
+      setError(formatScriptDraftError(err, "Failed to select script draft."));
+    } finally {
+      setSelectingId(null);
+    }
+  }
+
+  return (
+    <section className="mt-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-stone-950">Script Drafts</h2>
+          <p className="mt-1 text-sm text-stone-600">Fake provider drafts based on the selected topic and explicit materials.</p>
+        </div>
+        <button
+          className="rounded bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isArchived || generating}
+          type="button"
+          onClick={handleGenerate}
+        >
+          {generating ? "Generating..." : "Generate Script Drafts"}
+        </button>
+      </div>
+
+      {isArchived && (
+        <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
+          Archived projects are read-only.
+        </p>
+      )}
+      {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {loading && <p className="mt-4 text-sm text-stone-600">Loading script drafts...</p>}
+      {!loading && scriptDrafts.length === 0 && (
+        <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
+          No script drafts yet.
+        </p>
+      )}
+      {!loading && scriptDrafts.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {scriptDrafts.map((scriptDraft) => (
+            <ScriptDraftCard
+              disabled={isArchived || selectingId !== null}
+              key={scriptDraft.id}
+              scriptDraft={scriptDraft}
+              selecting={selectingId === scriptDraft.id}
+              onSelect={handleSelect}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ScriptDraftCard({
+  disabled,
+  onSelect,
+  scriptDraft,
+  selecting,
+}: {
+  disabled: boolean;
+  onSelect: (scriptDraftId: number) => void;
+  scriptDraft: ScriptDraft;
+  selecting: boolean;
+}) {
+  const isSelected = scriptDraft.status === "selected";
+  return (
+    <article
+      aria-label={`Script draft: ${scriptDraft.title}`}
+      className={`rounded border bg-white p-4 ${
+        isSelected ? "border-indigo-300 bg-indigo-50 ring-1 ring-indigo-200" : "border-stone-200"
+      }`}
+      data-status={scriptDraft.status}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-stone-950">{scriptDraft.title}</h3>
+          <p className="mt-1 text-xs text-stone-500">Created {new Date(scriptDraft.created_at).toLocaleString()}</p>
+        </div>
+        {isSelected ? (
+          <span className="rounded border border-indigo-300 bg-white px-3 py-1 text-xs font-semibold text-indigo-800">
+            Selected
+          </span>
+        ) : scriptDraft.status === "draft" ? (
+          <button
+            className="rounded border border-indigo-700 px-3 py-1 text-xs font-semibold text-indigo-800 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={disabled}
+            type="button"
+            onClick={() => onSelect(scriptDraft.id)}
+          >
+            {selecting ? "Selecting..." : "Select"}
+          </button>
+        ) : null}
+      </div>
+      <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Opening hook</dt>
+          <dd className="mt-1 text-stone-800">{scriptDraft.opening_hook}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Call to action</dt>
+          <dd className="mt-1 text-stone-800">{scriptDraft.call_to_action}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Estimated duration</dt>
+          <dd className="mt-1 text-stone-800">{scriptDraft.estimated_duration_seconds} seconds</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Status</dt>
+          <dd className="mt-1 text-stone-800">{scriptDraft.status}</dd>
+        </div>
+      </dl>
+      <div className="mt-3 text-sm">
+        <p className="text-xs font-semibold uppercase text-stone-500">Body</p>
+        <p className="mt-1 whitespace-pre-wrap text-stone-800">{scriptDraft.body}</p>
+      </div>
+      <div className="mt-3 text-sm">
+        <p className="text-xs font-semibold uppercase text-stone-500">Rationale</p>
+        <p className="mt-1 text-stone-800">{scriptDraft.rationale}</p>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
+        <span>Source materials: {scriptDraft.source_material_ids.join(", ") || "none"}</span>
+        {scriptDraft.selected_at && <span>Selected {new Date(scriptDraft.selected_at).toLocaleString()}</span>}
+      </div>
+    </article>
+  );
+}
+
+function formatScriptDraftError(err: unknown, fallback: string) {
+  const message = err instanceof Error ? err.message : fallback;
+  if (message === "project has no materials") {
+    return "Add at least one material before generating script drafts.";
+  }
+  if (message === "project has no selected topic candidate") {
+    return "Select a topic candidate before generating script drafts.";
   }
   if (message.startsWith("archived project")) {
     return "Archived projects are read-only.";
