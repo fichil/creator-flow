@@ -220,6 +220,37 @@ CREATE TABLE IF NOT EXISTS render_artifacts (
     CHECK (height > 0)
 );
 
+CREATE TABLE IF NOT EXISTS subtitle_drafts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    script_draft_id INTEGER NOT NULL,
+    storyboard_draft_id INTEGER NOT NULL,
+    generator_name TEXT NOT NULL,
+    generator_version TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
+    selected_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (script_draft_id) REFERENCES script_drafts(id) ON DELETE CASCADE,
+    FOREIGN KEY (storyboard_draft_id) REFERENCES storyboard_drafts(id) ON DELETE CASCADE,
+    CHECK (status IN ('draft', 'selected', 'dismissed'))
+);
+
+CREATE TABLE IF NOT EXISTS subtitle_cues (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subtitle_draft_id INTEGER NOT NULL,
+    cue_order INTEGER NOT NULL,
+    start_time_seconds INTEGER NOT NULL,
+    end_time_seconds INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (subtitle_draft_id) REFERENCES subtitle_drafts(id) ON DELETE CASCADE,
+    CHECK (cue_order >= 1),
+    CHECK (start_time_seconds >= 0),
+    CHECK (end_time_seconds > start_time_seconds)
+);
+
 CREATE INDEX IF NOT EXISTS idx_content_projects_created_at
 ON content_projects (created_at DESC, id DESC);
 
@@ -252,4 +283,10 @@ ON render_jobs (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_render_artifacts_render_job_id
 ON render_artifacts (render_job_id);
+
+CREATE INDEX IF NOT EXISTS idx_subtitle_drafts_project_id_created_at
+ON subtitle_drafts (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_subtitle_cues_draft_order
+ON subtitle_cues (subtitle_draft_id, cue_order ASC, id ASC);
 """
