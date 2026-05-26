@@ -12,6 +12,7 @@ def _repo_root() -> Path:
 class Settings:
     database_path: Path
     uploads_dir: Path
+    render_previews_dir: Path
     cors_origins: tuple[str, ...]
 
 
@@ -20,6 +21,9 @@ def get_settings() -> Settings:
     root = _repo_root()
     database_path = Path(os.getenv("CREATOR_FLOW_DATABASE_PATH", root / "data" / "local" / "creator_flow.sqlite3"))
     uploads_dir = Path(os.getenv("CREATOR_FLOW_UPLOADS_DIR", root / "uploads"))
+    render_previews_dir = Path(
+        os.getenv("CREATOR_FLOW_RENDER_PREVIEWS_DIR", root / "data" / "local" / "render_previews")
+    )
     cors_origins = tuple(
         origin.strip()
         for origin in os.getenv(
@@ -28,4 +32,4 @@ def get_settings() -> Settings:
         ).split(",")
         if origin.strip()
     )
-    return Settings(database_path=database_path, uploads_dir=uploads_dir, cors_origins=cors_origins)
+    return Settings(database_path=database_path, uploads_dir=uploads_dir, render_previews_dir=render_previews_dir, cors_origins=cors_origins)

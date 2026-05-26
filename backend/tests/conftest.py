@@ -15,6 +15,7 @@ from app.main import app
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("CREATOR_FLOW_DATABASE_PATH", str(tmp_path / "creator_flow.sqlite3"))
     monkeypatch.setenv("CREATOR_FLOW_UPLOADS_DIR", str(tmp_path / "uploads"))
+    monkeypatch.setenv("CREATOR_FLOW_RENDER_PREVIEWS_DIR", str(tmp_path / "render_previews"))
     get_settings.cache_clear()
     with TestClient(app) as test_client:
         yield test_client
