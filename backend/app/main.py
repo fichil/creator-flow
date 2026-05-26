@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health, materials, projects, script_drafts, topic_candidates
+from app.api.routes import health, materials, projects, script_drafts, storyboards, topic_candidates
 from app.core.config import get_settings
 from app.db.database import init_db
 
@@ -30,3 +30,4 @@ app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(materials.router, prefix="/api/projects", tags=["materials"])
 app.include_router(topic_candidates.router, prefix="/api/projects", tags=["topic-candidates"])
 app.include_router(script_drafts.router, prefix="/api/projects", tags=["script-drafts"])
+app.include_router(storyboards.router, prefix="/api/projects", tags=["storyboards"])
