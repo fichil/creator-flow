@@ -147,6 +147,39 @@ export type GenerateStoryboardsResponse = {
   storyboards: Storyboard[];
 };
 
+export type RenderArtifact = {
+  id: number;
+  project_id: number;
+  render_job_id: number;
+  artifact_type: string;
+  file_name: string;
+  mime_type: string;
+  file_size_bytes: number;
+  duration_seconds: number;
+  width: number;
+  height: number;
+  storage_path: string;
+  created_at: string;
+};
+
+export type RenderJob = {
+  id: number;
+  project_id: number;
+  storyboard_draft_id: number;
+  renderer_name: string;
+  renderer_version: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  requested_format: string;
+  requested_aspect_ratio: string;
+  requested_resolution: string;
+  error_message: string | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  updated_at: string;
+  artifact: RenderArtifact | null;
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -238,6 +271,17 @@ export function generateStoryboards(projectId: number): Promise<GenerateStoryboa
 export function selectStoryboard(projectId: number, storyboardId: number): Promise<Storyboard> {
   return request<Storyboard>(`/api/projects/${projectId}/storyboards/${storyboardId}/select`, {
     method: "POST",
+  });
+}
+
+export function getRenderJobs(projectId: number): Promise<RenderJob[]> {
+  return request<RenderJob[]>(`/api/projects/${projectId}/renders`);
+}
+
+export function createRenderJob(projectId: number): Promise<RenderJob> {
+  return request<RenderJob>(`/api/projects/${projectId}/renders`, {
+    method: "POST",
+    body: JSON.stringify({ requested_format: "mp4", requested_aspect_ratio: "9:16", requested_resolution: "1080x1920" }),
   });
 }
 

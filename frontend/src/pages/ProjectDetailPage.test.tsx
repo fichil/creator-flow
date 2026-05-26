@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectDetailPage } from "./ProjectDetailPage";
-import type { ProjectDetail, ScriptDraft, Storyboard, TopicCandidate } from "../api/client";
+import type { ProjectDetail, RenderJob, ScriptDraft, Storyboard, TopicCandidate } from "../api/client";
 
 const baseProject: ProjectDetail = {
   id: 1,
@@ -132,14 +132,47 @@ const storyboardTwo: Storyboard = {
   })),
 };
 
+const renderJobOne: RenderJob = {
+  id: 1201,
+  project_id: 1,
+  storyboard_draft_id: 802,
+  renderer_name: "fake_renderer",
+  renderer_version: "0.1",
+  status: "succeeded",
+  requested_format: "mp4",
+  requested_aspect_ratio: "9:16",
+  requested_resolution: "1080x1920",
+  error_message: null,
+  created_at: "2026-05-26T08:15:00Z",
+  started_at: "2026-05-26T08:15:01Z",
+  completed_at: "2026-05-26T08:15:02Z",
+  updated_at: "2026-05-26T08:15:02Z",
+  artifact: {
+    id: 1301,
+    project_id: 1,
+    render_job_id: 1201,
+    artifact_type: "fake_video",
+    file_name: "project-1-render-1201.mp4",
+    mime_type: "video/mp4",
+    file_size_bytes: 30720,
+    duration_seconds: 30,
+    width: 1080,
+    height: 1920,
+    storage_path: "data/local/fake-renders/project-1/render-1201.mp4",
+    created_at: "2026-05-26T08:15:02Z",
+  },
+};
+
 type ServerOptions = {
   project?: ProjectDetail;
   candidates?: TopicCandidate[];
   scriptDrafts?: ScriptDraft[];
   storyboards?: Storyboard[];
+  renderJobs?: RenderJob[];
   generateError?: string;
   generateScriptDraftsError?: string;
   generateStoryboardsError?: string;
+  createRenderError?: string;
   selectError?: string;
   selectScriptDraftError?: string;
   selectStoryboardError?: string;
@@ -159,6 +192,7 @@ function installFetchMock(options: ServerOptions = {}) {
   let candidates = [...(options.candidates ?? [])];
   let scriptDrafts = [...(options.scriptDrafts ?? [])];
   let storyboards = [...(options.storyboards ?? [])];
+  let renderJobs = [...(options.renderJobs ?? [])];
   const calls: string[] = [];
   const bodies: Record<string, string | undefined> = {};
 
@@ -180,6 +214,9 @@ function installFetchMock(options: ServerOptions = {}) {
     }
     if (method === "GET" && url.pathname === "/api/projects/1/storyboards") {
       return jsonResponse(storyboards);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/renders") {
+      return jsonResponse(renderJobs);
     }
     if (method === "POST" && url.pathname === "/api/projects/1/topic-candidates/generate") {
       if (options.generateError) {
@@ -284,6 +321,13 @@ function installFetchMock(options: ServerOptions = {}) {
       }));
       return jsonResponse(storyboards.find((storyboard) => storyboard.id === 801));
     }
+    if (method === "POST" && url.pathname === "/api/projects/1/renders") {
+      if (options.createRenderError) {
+        return jsonResponse({ detail: options.createRenderError }, 409);
+      }
+      renderJobs = [renderJobOne];
+      return jsonResponse(renderJobOne);
+    }
     return jsonResponse({ detail: "not found" }, 404);
   });
 
@@ -298,6 +342,7 @@ async function renderProject(options?: ServerOptions) {
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/topic-candidates"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/script-drafts"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/storyboards"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/renders"));
   return server;
 }
 
@@ -612,5 +657,81 @@ describe("ProjectDetailPage storyboards", () => {
     fireEvent.click(within(storyboardCard).getByRole("button", { name: "Select" }));
 
     expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
+  });
+});
+
+describe("ProjectDetailPage render jobs", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("requests and shows the render jobs panel when the project detail page loads", async () => {
+    const server = await renderProject();
+
+    expect(server.calls).toContain("GET /api/projects/1/renders");
+    expect(screen.getByText("Render Jobs")).toBeTruthy();
+    expect(screen.getByText("No render jobs yet.")).toBeTruthy();
+  });
+
+  it("shows fake render artifact metadata", async () => {
+    await renderProject({ renderJobs: [renderJobOne], storyboards: [storyboardTwo] });
+
+    const renderJobCard = screen.getByLabelText("Render job 1201");
+    expect(within(renderJobCard).getByText("Render job #1201")).toBeTruthy();
+    expect(within(renderJobCard).getByText("fake_renderer 0.1")).toBeTruthy();
+    expect(within(renderJobCard).getByText("succeeded")).toBeTruthy();
+    expect(within(renderJobCard).getByText("mp4 / 9:16 / 1080x1920")).toBeTruthy();
+    expect(within(renderJobCard).getByText("fake_video")).toBeTruthy();
+    expect(within(renderJobCard).getByText("video/mp4")).toBeTruthy();
+    expect(within(renderJobCard).getByText("30 seconds")).toBeTruthy();
+    expect(within(renderJobCard).getByText("1080 x 1920")).toBeTruthy();
+    expect(within(renderJobCard).getByText("data/local/fake-renders/project-1/render-1201.mp4")).toBeTruthy();
+  });
+
+  it("creates a fake render job and refreshes render jobs after creation succeeds", async () => {
+    const server = await renderProject({ storyboards: [storyboardTwo] });
+
+    await waitFor(() => expect((screen.getByRole("button", { name: "Create fake render job" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "Create fake render job" }));
+
+    await screen.findByText("Render job #1201");
+    expect(server.calls).toContain("POST /api/projects/1/renders");
+    expect(server.bodies["POST /api/projects/1/renders"]).toBe(
+      '{"requested_format":"mp4","requested_aspect_ratio":"9:16","requested_resolution":"1080x1920"}',
+    );
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/renders")).toHaveLength(2);
+  });
+
+  it("disables fake render creation for archived projects while keeping existing jobs visible", async () => {
+    await renderProject({
+      project: { ...baseProject, status: "archived" },
+      renderJobs: [renderJobOne],
+      storyboards: [storyboardTwo],
+    });
+
+    expect(screen.getByText("Render job #1201")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Create fake render job" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText("Archived projects are read-only.")[0]).toBeTruthy();
+  });
+
+  it("disables fake render creation when there is no selected storyboard", async () => {
+    await renderProject({ storyboards: [storyboardOne] });
+
+    await screen.findByText("Select a storyboard before creating fake render jobs.");
+    expect((screen.getByRole("button", { name: "Create fake render job" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("shows a visible error when fake render creation fails", async () => {
+    await renderProject({ createRenderError: "render service unavailable", storyboards: [storyboardTwo] });
+
+    await waitFor(() => expect((screen.getByRole("button", { name: "Create fake render job" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "Create fake render job" }));
+
+    expect(await screen.findByText("render service unavailable")).toBeTruthy();
   });
 });

@@ -5,15 +5,18 @@ import {
   addLinkMaterial,
   addTextMaterial,
   archiveProject,
+  createRenderJob,
   generateScriptDrafts,
   generateStoryboards,
   generateTopicCandidates,
   getProject,
+  getRenderJobs,
   getScriptDrafts,
   getStoryboards,
   getTopicCandidates,
   Material,
   ProjectDetail,
+  RenderJob,
   ScriptDraft,
   selectScriptDraft,
   selectStoryboard,
@@ -46,6 +49,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasSelectedStoryboard, setHasSelectedStoryboard] = useState<boolean | null>(null);
   const isArchived = project?.status === "archived";
 
   async function reload() {
@@ -62,6 +66,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
   }
 
   useEffect(() => {
+    setHasSelectedStoryboard(null);
     void reload();
   }, [projectId]);
 
@@ -106,7 +111,16 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
               )}
               <TopicCandidatesPanel isArchived={isArchived} projectId={project.id} />
               <ScriptDraftsPanel isArchived={isArchived} projectId={project.id} />
-              <StoryboardsPanel isArchived={isArchived} projectId={project.id} />
+              <StoryboardsPanel
+                isArchived={isArchived}
+                projectId={project.id}
+                onSelectionStateChange={setHasSelectedStoryboard}
+              />
+              <RenderJobsPanel
+                hasSelectedStoryboard={hasSelectedStoryboard}
+                isArchived={isArchived}
+                projectId={project.id}
+              />
             </div>
 
             <div className="space-y-4">
@@ -502,7 +516,15 @@ function formatScriptDraftError(err: unknown, fallback: string) {
   return fallback;
 }
 
-function StoryboardsPanel({ isArchived, projectId }: { isArchived: boolean; projectId: number }) {
+function StoryboardsPanel({
+  isArchived,
+  onSelectionStateChange,
+  projectId,
+}: {
+  isArchived: boolean;
+  onSelectionStateChange: (hasSelectedStoryboard: boolean) => void;
+  projectId: number;
+}) {
   const [storyboards, setStoryboards] = useState<Storyboard[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -514,6 +536,7 @@ function StoryboardsPanel({ isArchived, projectId }: { isArchived: boolean; proj
     try {
       const items = await getStoryboards(projectId);
       setStoryboards(items);
+      onSelectionStateChange(items.some((storyboard) => storyboard.status === "selected"));
       setError(null);
     } catch (err) {
       setError(formatStoryboardError(err, "Failed to load storyboards."));
@@ -731,6 +754,203 @@ function formatStoryboardError(err: unknown, fallback: string) {
     return message;
   }
   return fallback;
+}
+
+function RenderJobsPanel({
+  hasSelectedStoryboard,
+  isArchived,
+  projectId,
+}: {
+  hasSelectedStoryboard: boolean | null;
+  isArchived: boolean;
+  projectId: number;
+}) {
+  const [renderJobs, setRenderJobs] = useState<RenderJob[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function reloadRenderJobs() {
+    setLoading(true);
+    try {
+      const items = await getRenderJobs(projectId);
+      setRenderJobs(items);
+      setError(null);
+    } catch (err) {
+      setError(formatRenderJobError(err, "Failed to load render jobs."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void reloadRenderJobs();
+  }, [projectId]);
+
+  async function handleCreate() {
+    if (isArchived || hasSelectedStoryboard !== true) {
+      return;
+    }
+    setCreating(true);
+    setError(null);
+    try {
+      await createRenderJob(projectId);
+      await reloadRenderJobs();
+    } catch (err) {
+      setError(formatRenderJobError(err, "Failed to create fake render job."));
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  const createDisabled = isArchived || hasSelectedStoryboard !== true || creating;
+
+  return (
+    <section className="mt-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-stone-950">Render Jobs</h2>
+          <p className="mt-1 text-sm text-stone-600">
+            FakeRenderer jobs and deterministic fake video artifact metadata for the selected storyboard.
+          </p>
+        </div>
+        <button
+          className="rounded bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={createDisabled}
+          type="button"
+          onClick={handleCreate}
+        >
+          {creating ? "Creating..." : "Create fake render job"}
+        </button>
+      </div>
+
+      {isArchived && (
+        <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
+          Archived projects are read-only.
+        </p>
+      )}
+      {hasSelectedStoryboard === false && !isArchived && (
+        <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          Select a storyboard before creating fake render jobs.
+        </p>
+      )}
+      {hasSelectedStoryboard === null && !isArchived && (
+        <p className="mt-3 rounded border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
+          Checking storyboard selection before enabling fake rendering.
+        </p>
+      )}
+      {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {loading && <p className="mt-4 text-sm text-stone-600">Loading render jobs...</p>}
+      {!loading && renderJobs.length === 0 && (
+        <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
+          No render jobs yet.
+        </p>
+      )}
+      {!loading && renderJobs.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {renderJobs.map((renderJob) => (
+            <RenderJobCard key={renderJob.id} renderJob={renderJob} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RenderJobCard({ renderJob }: { renderJob: RenderJob }) {
+  return (
+    <article aria-label={`Render job ${renderJob.id}`} className="rounded border border-stone-200 bg-white p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-stone-950">Render job #{renderJob.id}</h3>
+          <p className="mt-1 text-xs text-stone-500">Created {new Date(renderJob.created_at).toLocaleString()}</p>
+        </div>
+        <span className="rounded border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+          {renderJob.status}
+        </span>
+      </div>
+
+      <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Renderer</dt>
+          <dd className="mt-1 text-stone-800">
+            {renderJob.renderer_name} {renderJob.renderer_version}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Storyboard</dt>
+          <dd className="mt-1 text-stone-800">#{renderJob.storyboard_draft_id}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Requested output</dt>
+          <dd className="mt-1 text-stone-800">
+            {renderJob.requested_format} / {renderJob.requested_aspect_ratio} / {renderJob.requested_resolution}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Updated</dt>
+          <dd className="mt-1 text-stone-800">{new Date(renderJob.updated_at).toLocaleString()}</dd>
+        </div>
+      </dl>
+
+      {renderJob.error_message && <p className="mt-3 text-sm text-red-700">{renderJob.error_message}</p>}
+      {renderJob.artifact ? (
+        <div className="mt-4 rounded border border-stone-200 bg-stone-50 p-3">
+          <h4 className="text-xs font-semibold uppercase text-stone-500">Artifact metadata</h4>
+          <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
+            <div>
+              <dt className="text-xs font-semibold uppercase text-stone-500">Type</dt>
+              <dd className="mt-1 text-stone-800">{renderJob.artifact.artifact_type}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase text-stone-500">MIME type</dt>
+              <dd className="mt-1 text-stone-800">{renderJob.artifact.mime_type}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase text-stone-500">Duration</dt>
+              <dd className="mt-1 text-stone-800">{renderJob.artifact.duration_seconds} seconds</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase text-stone-500">Dimensions</dt>
+              <dd className="mt-1 text-stone-800">
+                {renderJob.artifact.width} x {renderJob.artifact.height}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase text-stone-500">File size</dt>
+              <dd className="mt-1 text-stone-800">{renderJob.artifact.file_size_bytes} bytes</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase text-stone-500">File name</dt>
+              <dd className="mt-1 break-all text-stone-800">{renderJob.artifact.file_name}</dd>
+            </div>
+          </dl>
+          <p className="mt-3 break-all text-xs text-stone-600">{renderJob.artifact.storage_path}</p>
+        </div>
+      ) : (
+        <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
+          No artifact metadata yet.
+        </p>
+      )}
+    </article>
+  );
+}
+
+function formatRenderJobError(err: unknown, fallback: string) {
+  const message = err instanceof Error ? err.message : fallback;
+  if (message === "project has no selected storyboard") {
+    return "Select a storyboard before creating fake render jobs.";
+  }
+  if (message === "selected storyboard has no scenes") {
+    return "The selected storyboard has no scenes to render.";
+  }
+  if (message.startsWith("archived project")) {
+    return "Archived projects are read-only.";
+  }
+  if (message.includes("(404)") || message.includes("not found")) {
+    return message;
+  }
+  return message || fallback;
 }
 
 function MaterialItem({ material }: { material: Material }) {
