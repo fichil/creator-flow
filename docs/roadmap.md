@@ -65,7 +65,7 @@
 
 目标：支持从用户素材到选题、脚本和分镜的核心策划流程。
 
-状态：v0.2.5 已完成 Batch 1 到 Batch 6，当前进入稳定性验收与产品复核。
+状态：v0.2.6 已完成 Batch 1 到 Batch 6 以及稳定性验收与产品复核。
 
 已完成 Batch 1：先实现 backend-only 的 Provider interface、`FakeLLMProvider`、Topic Candidate 数据模型、生成 API、选择 API 和测试。该批只使用本地 deterministic fake provider，不接真实 AI，不保存密钥，不实现前端 UI。
 
@@ -104,6 +104,10 @@
 ## v0.3 Renderable Video MVP
 
 目标：从已审核脚本、素材方案和字幕生成可预览的 9:16 MP4。
+
+状态：v0.3 Batch 1 已开始 Rendering Workflow，并已实现 backend-only fake rendering domain foundation；当前只生成 render job 和 fake render artifact metadata，不生成真实 MP4 文件。
+
+已完成 Batch 1：实现 Rendering domain foundation with FakeRenderer and render artifact metadata。该批次基于 selected Storyboard 创建 fake render job，保存 deterministic fake video artifact metadata，并保留 queued / running / succeeded / failed 状态，为后续真实 `FFmpeg` renderer 或异步任务预留接口。
 
 范围：
 

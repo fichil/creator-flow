@@ -174,6 +174,52 @@ CREATE TABLE IF NOT EXISTS storyboard_draft_sources (
     FOREIGN KEY (material_id) REFERENCES user_materials(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS render_jobs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    storyboard_draft_id INTEGER NOT NULL,
+    renderer_name TEXT NOT NULL,
+    renderer_version TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'queued',
+    requested_format TEXT NOT NULL DEFAULT 'mp4',
+    requested_aspect_ratio TEXT NOT NULL DEFAULT '9:16',
+    requested_resolution TEXT NOT NULL DEFAULT '1080x1920',
+    error_message TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    started_at TEXT,
+    completed_at TEXT,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (storyboard_draft_id) REFERENCES storyboard_drafts(id) ON DELETE CASCADE,
+    CHECK (status IN ('queued', 'running', 'succeeded', 'failed')),
+    CHECK (requested_format IN ('mp4')),
+    CHECK (requested_aspect_ratio IN ('9:16')),
+    CHECK (requested_resolution IN ('1080x1920'))
+);
+
+CREATE TABLE IF NOT EXISTS render_artifacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    render_job_id INTEGER NOT NULL,
+    artifact_type TEXT NOT NULL DEFAULT 'fake_video',
+    file_name TEXT NOT NULL,
+    mime_type TEXT NOT NULL,
+    file_size_bytes INTEGER NOT NULL,
+    duration_seconds INTEGER NOT NULL,
+    width INTEGER NOT NULL,
+    height INTEGER NOT NULL,
+    storage_path TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (render_job_id) REFERENCES render_jobs(id) ON DELETE CASCADE,
+    CHECK (artifact_type IN ('fake_video')),
+    CHECK (mime_type IN ('video/mp4')),
+    CHECK (file_size_bytes >= 0),
+    CHECK (duration_seconds > 0),
+    CHECK (width > 0),
+    CHECK (height > 0)
+);
+
 CREATE INDEX IF NOT EXISTS idx_content_projects_created_at
 ON content_projects (created_at DESC, id DESC);
 
@@ -200,4 +246,10 @@ ON storyboard_drafts (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_storyboard_scenes_draft_order
 ON storyboard_scenes (storyboard_draft_id, scene_order ASC, id ASC);
+
+CREATE INDEX IF NOT EXISTS idx_render_jobs_project_id_created_at
+ON render_jobs (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_render_artifacts_render_job_id
+ON render_artifacts (render_job_id);
 """

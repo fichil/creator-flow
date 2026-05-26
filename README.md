@@ -6,13 +6,13 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 
 ## 当前状态
 
-`v0.2.5 AI Planning Workflow - Stabilization Review`
+`v0.3 Rendering Workflow - Batch 1 Fake Renderer Domain Foundation`
 
-当前仓库已完成 v0.1 本地可运行骨架，以及 v0.2 Batch 1 到 Batch 6 的 AI Planning Workflow。当前主链路使用本地 deterministic `FakeLLMProvider`，支持从显式导入素材生成并选择 Topic Candidate、Script Draft 和 Storyboard，并在项目详情页查看分镜 scenes。
+当前仓库已完成 v0.1 本地可运行骨架、v0.2 AI Planning Workflow，以及 v0.3 Batch 1 的 backend-only fake rendering domain foundation。当前主链路使用本地 deterministic `FakeLLMProvider`，支持从显式导入素材生成并选择 Topic Candidate、Script Draft 和 Storyboard，并在项目详情页查看分镜 scenes；后端也可以基于 selected Storyboard 创建 fake render job 和 fake video artifact metadata。
 
 本地开发说明见 [`docs/development.md`](docs/development.md)。
 
-当前仍不接真实 OpenAI / Claude / Gemini / 其他 LLM，不保存 API key、secret 或 token，不联网调用真实 AI。视频渲染、TTS、字幕、定时生成、平台发布、生产部署和账号体系仍未实现。
+当前仍不接真实 OpenAI / Claude / Gemini / 其他 LLM，不保存 API key、secret 或 token，不联网调用真实 AI。v0.3 已开始 fake rendering domain foundation，但真实 MP4 渲染、FFmpeg、TTS、字幕、定时生成、平台发布、生产部署和账号体系仍未实现。
 当前版本不适合作为生产部署使用。
 
 ## 本地启动快捷入口
@@ -48,7 +48,7 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 - 发布后指标回流，用于后续内容复盘和选题优化。
 - 以抖音作为首个发布平台，同时通过 Provider 抽象保留多平台扩展能力。
 
-其中 Topic Candidate、Script Draft 和 Storyboard 的生成与选择已在 v0.2 中以本地 fake provider 形式实现；真实 AI、字幕、素材方案、渲染、发布、调度和指标回流仍属于后续计划方向。
+其中 Topic Candidate、Script Draft 和 Storyboard 的生成与选择已在 v0.2 中以本地 fake provider 形式实现；v0.3 已开始支持 fake render job 和 artifact metadata。真实 AI、字幕、素材方案、真实 MP4 渲染、发布、调度和指标回流仍属于后续计划方向。
 
 ## 当前本地能力
 
@@ -59,6 +59,7 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 - 基于显式导入素材生成并选择 Topic Candidate。
 - 基于 selected Topic Candidate 生成并选择 Script Draft。
 - 基于 selected Topic Candidate、selected Script Draft 和显式导入素材生成 Storyboard，并查看有序 scenes。
+- 基于 selected Storyboard 创建 fake render job，并保存 deterministic fake video artifact metadata；当前不会生成真实 MP4 文件。
 - 归档项目仍可查看已有素材和规划草稿，但不能继续生成或选择。
 - 将项目与素材元数据保存到本地 `SQLite`。
 - 将用户上传文件保存到本地 `uploads/`，且不提交到 Git。
