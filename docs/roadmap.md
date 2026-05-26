@@ -75,6 +75,8 @@
 
 当前 Batch 5 方向：实现 Storyboard backend workflow based on selected TopicCandidate, selected ScriptDraft, and explicit UserMaterial，继续使用本地 deterministic fake provider，不接真实 AI，不实现前端 UI，不做渲染、TTS、字幕或 FFmpeg。
 
+当前 Batch 6 方向：实现 Storyboard frontend UI for fake provider workflow，让用户可以在项目详情页查看分镜草稿和 scenes、基于已选 Topic Candidate 与已选 Script Draft 生成 fake storyboards 并选择一个 storyboard；archived 项目保持只读，且仍不做渲染、TTS、字幕或 FFmpeg。
+
 范围：
 
 - Provider 接口定义。

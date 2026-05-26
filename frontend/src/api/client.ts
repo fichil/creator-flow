@@ -97,6 +97,56 @@ export type GenerateScriptDraftsResponse = {
   script_drafts: ScriptDraft[];
 };
 
+export type StoryboardScene = {
+  id: number;
+  storyboard_draft_id: number;
+  scene_order: number;
+  scene_title: string;
+  narration: string;
+  visual_description: string;
+  on_screen_text: string;
+  estimated_duration_seconds: number;
+  source_material_id: number | null;
+  created_at: string;
+};
+
+export type Storyboard = {
+  id: number;
+  project_id: number;
+  generation_run_id: number;
+  topic_candidate_id: number;
+  script_draft_id: number;
+  title: string;
+  summary: string;
+  visual_style: string;
+  status: "draft" | "selected" | "dismissed";
+  selected_at: string | null;
+  created_at: string;
+  updated_at: string;
+  source_material_ids: number[];
+  scenes: StoryboardScene[];
+};
+
+export type StoryboardGenerationRun = {
+  id: number;
+  project_id: number;
+  selected_topic_candidate_id: number;
+  selected_script_draft_id: number;
+  provider_name: string;
+  provider_version: string;
+  status: "running" | "succeeded" | "failed";
+  requested_storyboard_count: number;
+  input_material_count: number;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+};
+
+export type GenerateStoryboardsResponse = {
+  run: StoryboardGenerationRun;
+  storyboards: Storyboard[];
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -170,6 +220,23 @@ export function generateScriptDrafts(projectId: number): Promise<GenerateScriptD
 
 export function selectScriptDraft(projectId: number, scriptDraftId: number): Promise<ScriptDraft> {
   return request<ScriptDraft>(`/api/projects/${projectId}/script-drafts/${scriptDraftId}/select`, {
+    method: "POST",
+  });
+}
+
+export function getStoryboards(projectId: number): Promise<Storyboard[]> {
+  return request<Storyboard[]>(`/api/projects/${projectId}/storyboards`);
+}
+
+export function generateStoryboards(projectId: number): Promise<GenerateStoryboardsResponse> {
+  return request<GenerateStoryboardsResponse>(`/api/projects/${projectId}/storyboards/generate`, {
+    method: "POST",
+    body: JSON.stringify({ storyboard_count: 1 }),
+  });
+}
+
+export function selectStoryboard(projectId: number, storyboardId: number): Promise<Storyboard> {
+  return request<Storyboard>(`/api/projects/${projectId}/storyboards/${storyboardId}/select`, {
     method: "POST",
   });
 }

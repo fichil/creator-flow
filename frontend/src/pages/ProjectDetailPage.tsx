@@ -6,15 +6,19 @@ import {
   addTextMaterial,
   archiveProject,
   generateScriptDrafts,
+  generateStoryboards,
   generateTopicCandidates,
   getProject,
   getScriptDrafts,
+  getStoryboards,
   getTopicCandidates,
   Material,
   ProjectDetail,
   ScriptDraft,
   selectScriptDraft,
+  selectStoryboard,
   selectTopicCandidate,
+  Storyboard,
   TopicCandidate,
   updateProject,
 } from "../api/client";
@@ -102,6 +106,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
               )}
               <TopicCandidatesPanel isArchived={isArchived} projectId={project.id} />
               <ScriptDraftsPanel isArchived={isArchived} projectId={project.id} />
+              <StoryboardsPanel isArchived={isArchived} projectId={project.id} />
             </div>
 
             <div className="space-y-4">
@@ -487,6 +492,237 @@ function formatScriptDraftError(err: unknown, fallback: string) {
   }
   if (message === "project has no selected topic candidate") {
     return "Select a topic candidate before generating script drafts.";
+  }
+  if (message.startsWith("archived project")) {
+    return "Archived projects are read-only.";
+  }
+  if (message.includes("(404)") || message.includes("not found")) {
+    return message;
+  }
+  return fallback;
+}
+
+function StoryboardsPanel({ isArchived, projectId }: { isArchived: boolean; projectId: number }) {
+  const [storyboards, setStoryboards] = useState<Storyboard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [selectingId, setSelectingId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function reloadStoryboards() {
+    setLoading(true);
+    try {
+      const items = await getStoryboards(projectId);
+      setStoryboards(items);
+      setError(null);
+    } catch (err) {
+      setError(formatStoryboardError(err, "Failed to load storyboards."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void reloadStoryboards();
+  }, [projectId]);
+
+  async function handleGenerate() {
+    if (isArchived) {
+      return;
+    }
+    setGenerating(true);
+    setError(null);
+    try {
+      await generateStoryboards(projectId);
+      await reloadStoryboards();
+    } catch (err) {
+      setError(formatStoryboardError(err, "Failed to generate storyboards."));
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleSelect(storyboardId: number) {
+    if (isArchived) {
+      return;
+    }
+    setSelectingId(storyboardId);
+    setError(null);
+    try {
+      await selectStoryboard(projectId, storyboardId);
+      await reloadStoryboards();
+    } catch (err) {
+      setError(formatStoryboardError(err, "Failed to select storyboard."));
+    } finally {
+      setSelectingId(null);
+    }
+  }
+
+  return (
+    <section className="mt-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-stone-950">Storyboards</h2>
+          <p className="mt-1 text-sm text-stone-600">
+            Fake provider storyboard drafts based on the selected topic, selected script, and explicit materials.
+          </p>
+        </div>
+        <button
+          className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isArchived || generating}
+          type="button"
+          onClick={handleGenerate}
+        >
+          {generating ? "Generating..." : "Generate Storyboards"}
+        </button>
+      </div>
+
+      {isArchived && (
+        <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
+          Archived projects are read-only.
+        </p>
+      )}
+      {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {loading && <p className="mt-4 text-sm text-stone-600">Loading storyboards...</p>}
+      {!loading && storyboards.length === 0 && (
+        <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
+          No storyboards yet.
+        </p>
+      )}
+      {!loading && storyboards.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {storyboards.map((storyboard) => (
+            <StoryboardCard
+              disabled={isArchived || selectingId !== null}
+              key={storyboard.id}
+              storyboard={storyboard}
+              selecting={selectingId === storyboard.id}
+              onSelect={handleSelect}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function StoryboardCard({
+  disabled,
+  onSelect,
+  selecting,
+  storyboard,
+}: {
+  disabled: boolean;
+  onSelect: (storyboardId: number) => void;
+  selecting: boolean;
+  storyboard: Storyboard;
+}) {
+  const isSelected = storyboard.status === "selected";
+  const scenes = [...storyboard.scenes].sort((left, right) => left.scene_order - right.scene_order || left.id - right.id);
+
+  return (
+    <article
+      aria-label={`Storyboard: ${storyboard.title}`}
+      className={`rounded border bg-white p-4 ${
+        isSelected ? "border-sky-300 bg-sky-50 ring-1 ring-sky-200" : "border-stone-200"
+      }`}
+      data-status={storyboard.status}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-stone-950">{storyboard.title}</h3>
+          <p className="mt-1 text-xs text-stone-500">Created {new Date(storyboard.created_at).toLocaleString()}</p>
+        </div>
+        {isSelected ? (
+          <span className="rounded border border-sky-300 bg-white px-3 py-1 text-xs font-semibold text-sky-800">
+            Selected
+          </span>
+        ) : storyboard.status === "draft" ? (
+          <button
+            className="rounded border border-sky-700 px-3 py-1 text-xs font-semibold text-sky-800 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={disabled}
+            type="button"
+            onClick={() => onSelect(storyboard.id)}
+          >
+            {selecting ? "Selecting..." : "Select"}
+          </button>
+        ) : null}
+      </div>
+      <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Summary</dt>
+          <dd className="mt-1 text-stone-800">{storyboard.summary}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Visual style</dt>
+          <dd className="mt-1 text-stone-800">{storyboard.visual_style}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Status</dt>
+          <dd className="mt-1 text-stone-800">{storyboard.status}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Source materials</dt>
+          <dd className="mt-1 text-stone-800">{storyboard.source_material_ids.join(", ") || "none"}</dd>
+        </div>
+      </dl>
+      {storyboard.selected_at && (
+        <p className="mt-3 text-xs text-stone-500">Selected {new Date(storyboard.selected_at).toLocaleString()}</p>
+      )}
+
+      <div className="mt-4">
+        <h4 className="text-xs font-semibold uppercase text-stone-500">Scenes</h4>
+        <ol className="mt-3 divide-y divide-stone-200 border-y border-stone-200">
+          {scenes.map((scene) => (
+            <li
+              aria-label={`Scene ${scene.scene_order}: ${scene.scene_title}`}
+              className="py-3"
+              data-scene-order={scene.scene_order}
+              data-testid="storyboard-scene"
+              key={scene.id}
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h5 className="text-sm font-semibold text-stone-950">
+                  Scene {scene.scene_order}: {scene.scene_title}
+                </h5>
+                <span className="text-xs text-stone-500">{scene.estimated_duration_seconds} seconds</span>
+              </div>
+              <dl className="mt-2 grid gap-2 text-sm md:grid-cols-2">
+                <div>
+                  <dt className="text-xs font-semibold uppercase text-stone-500">Narration</dt>
+                  <dd className="mt-1 text-stone-800">{scene.narration}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase text-stone-500">Visual description</dt>
+                  <dd className="mt-1 text-stone-800">{scene.visual_description}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase text-stone-500">On-screen text</dt>
+                  <dd className="mt-1 text-stone-800">{scene.on_screen_text}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase text-stone-500">Source material</dt>
+                  <dd className="mt-1 text-stone-800">{scene.source_material_id ?? "none"}</dd>
+                </div>
+              </dl>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </article>
+  );
+}
+
+function formatStoryboardError(err: unknown, fallback: string) {
+  const message = err instanceof Error ? err.message : fallback;
+  if (message === "project has no materials") {
+    return "Add at least one material before generating storyboards.";
+  }
+  if (message === "project has no selected topic candidate") {
+    return "Select a topic candidate before generating storyboards.";
+  }
+  if (message === "project has no selected script draft") {
+    return "Select a script draft before generating storyboards.";
   }
   if (message.startsWith("archived project")) {
     return "Archived projects are read-only.";

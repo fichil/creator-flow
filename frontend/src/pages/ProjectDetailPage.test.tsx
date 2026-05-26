@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectDetailPage } from "./ProjectDetailPage";
-import type { ProjectDetail, ScriptDraft, TopicCandidate } from "../api/client";
+import type { ProjectDetail, ScriptDraft, Storyboard, TopicCandidate } from "../api/client";
 
 const baseProject: ProjectDetail = {
   id: 1,
@@ -77,14 +77,72 @@ const scriptDraftTwo: ScriptDraft = {
   selected_at: "2026-05-26T08:07:00Z",
 };
 
+const storyboardOne: Storyboard = {
+  id: 801,
+  project_id: 1,
+  generation_run_id: 901,
+  topic_candidate_id: 102,
+  script_draft_id: 502,
+  title: "Storyboard walkthrough",
+  summary: "A source-backed storyboard for the selected script.",
+  visual_style: "Clean screen-recording style",
+  status: "draft",
+  selected_at: null,
+  created_at: "2026-05-26T08:10:00Z",
+  updated_at: "2026-05-26T08:10:00Z",
+  source_material_ids: [11],
+  scenes: [
+    {
+      id: 1002,
+      storyboard_draft_id: 801,
+      scene_order: 2,
+      scene_title: "Show the decision",
+      narration: "Use the selected angle to explain the decision.",
+      visual_description: "Highlight the planning choice in the project view.",
+      on_screen_text: "The decision",
+      estimated_duration_seconds: 18,
+      source_material_id: 11,
+      created_at: "2026-05-26T08:10:00Z",
+    },
+    {
+      id: 1001,
+      storyboard_draft_id: 801,
+      scene_order: 1,
+      scene_title: "Set up the problem",
+      narration: "Start with the workflow problem.",
+      visual_description: "Show the imported material that anchors the story.",
+      on_screen_text: "The problem",
+      estimated_duration_seconds: 12,
+      source_material_id: 11,
+      created_at: "2026-05-26T08:10:00Z",
+    },
+  ],
+};
+
+const storyboardTwo: Storyboard = {
+  ...storyboardOne,
+  id: 802,
+  title: "Selected storyboard",
+  status: "selected",
+  selected_at: "2026-05-26T08:11:00Z",
+  scenes: storyboardOne.scenes.map((scene) => ({
+    ...scene,
+    id: scene.id + 10,
+    storyboard_draft_id: 802,
+  })),
+};
+
 type ServerOptions = {
   project?: ProjectDetail;
   candidates?: TopicCandidate[];
   scriptDrafts?: ScriptDraft[];
+  storyboards?: Storyboard[];
   generateError?: string;
   generateScriptDraftsError?: string;
+  generateStoryboardsError?: string;
   selectError?: string;
   selectScriptDraftError?: string;
+  selectStoryboardError?: string;
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -100,6 +158,7 @@ function installFetchMock(options: ServerOptions = {}) {
   const project = options.project ?? baseProject;
   let candidates = [...(options.candidates ?? [])];
   let scriptDrafts = [...(options.scriptDrafts ?? [])];
+  let storyboards = [...(options.storyboards ?? [])];
   const calls: string[] = [];
   const bodies: Record<string, string | undefined> = {};
 
@@ -118,6 +177,9 @@ function installFetchMock(options: ServerOptions = {}) {
     }
     if (method === "GET" && url.pathname === "/api/projects/1/script-drafts") {
       return jsonResponse(scriptDrafts);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/storyboards") {
+      return jsonResponse(storyboards);
     }
     if (method === "POST" && url.pathname === "/api/projects/1/topic-candidates/generate") {
       if (options.generateError) {
@@ -166,6 +228,29 @@ function installFetchMock(options: ServerOptions = {}) {
         script_drafts: scriptDrafts,
       });
     }
+    if (method === "POST" && url.pathname === "/api/projects/1/storyboards/generate") {
+      if (options.generateStoryboardsError) {
+        return jsonResponse({ detail: options.generateStoryboardsError }, 409);
+      }
+      storyboards = [storyboardOne];
+      return jsonResponse({
+        run: {
+          id: 1001,
+          project_id: 1,
+          selected_topic_candidate_id: 102,
+          selected_script_draft_id: 502,
+          provider_name: "fake_llm",
+          provider_version: "0.1",
+          status: "succeeded",
+          requested_storyboard_count: 1,
+          input_material_count: 1,
+          error_message: null,
+          created_at: "2026-05-26T08:12:00Z",
+          completed_at: "2026-05-26T08:12:00Z",
+        },
+        storyboards,
+      });
+    }
     if (method === "POST" && url.pathname === "/api/projects/1/topic-candidates/101/select") {
       if (options.selectError) {
         return jsonResponse({ detail: options.selectError }, 409);
@@ -188,6 +273,17 @@ function installFetchMock(options: ServerOptions = {}) {
       }));
       return jsonResponse(scriptDrafts.find((scriptDraft) => scriptDraft.id === 501));
     }
+    if (method === "POST" && url.pathname === "/api/projects/1/storyboards/801/select") {
+      if (options.selectStoryboardError) {
+        return jsonResponse({ detail: options.selectStoryboardError }, 409);
+      }
+      storyboards = storyboards.map((storyboard) => ({
+        ...storyboard,
+        status: (storyboard.id === 801 ? "selected" : "draft") as Storyboard["status"],
+        selected_at: storyboard.id === 801 ? "2026-05-26T08:13:00Z" : null,
+      }));
+      return jsonResponse(storyboards.find((storyboard) => storyboard.id === 801));
+    }
     return jsonResponse({ detail: "not found" }, 404);
   });
 
@@ -201,6 +297,7 @@ async function renderProject(options?: ServerOptions) {
   await screen.findByText("Topic UI project");
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/topic-candidates"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/script-drafts"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/storyboards"));
   return server;
 }
 
@@ -387,6 +484,132 @@ describe("ProjectDetailPage script drafts", () => {
 
     const scriptDraftCard = screen.getByLabelText("Script draft: Problem-first script");
     fireEvent.click(within(scriptDraftCard).getByRole("button", { name: "Select" }));
+
+    expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
+  });
+});
+
+describe("ProjectDetailPage storyboards", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("requests storyboards when the project detail page loads", async () => {
+    const server = await renderProject();
+
+    expect(server.calls).toContain("GET /api/projects/1/storyboards");
+    expect(screen.getByText("No storyboards yet.")).toBeTruthy();
+  });
+
+  it("shows storyboard title, summary, and visual style", async () => {
+    await renderProject({ storyboards: [storyboardOne] });
+
+    expect(screen.getByText("Storyboard walkthrough")).toBeTruthy();
+    expect(screen.getByText("A source-backed storyboard for the selected script.")).toBeTruthy();
+    expect(screen.getByText("Clean screen-recording style")).toBeTruthy();
+    expect(screen.getByText("Source materials")).toBeTruthy();
+  });
+
+  it("shows storyboard scenes with their structured fields", async () => {
+    await renderProject({ storyboards: [storyboardOne] });
+
+    const firstScene = screen.getByLabelText("Scene 1: Set up the problem");
+    expect(within(firstScene).getByText("Scene 1: Set up the problem")).toBeTruthy();
+    expect(within(firstScene).getByText("Start with the workflow problem.")).toBeTruthy();
+    expect(within(firstScene).getByText("Show the imported material that anchors the story.")).toBeTruthy();
+    expect(within(firstScene).getByText("The problem")).toBeTruthy();
+    expect(within(firstScene).getByText("12 seconds")).toBeTruthy();
+    expect(within(firstScene).getByText("11")).toBeTruthy();
+  });
+
+  it("shows storyboard scenes sorted by scene order", async () => {
+    await renderProject({ storyboards: [storyboardOne] });
+
+    const storyboardCard = screen.getByLabelText("Storyboard: Storyboard walkthrough");
+    const sceneItems = within(storyboardCard).getAllByTestId("storyboard-scene");
+    expect(sceneItems.map((scene) => scene.getAttribute("data-scene-order"))).toEqual(["1", "2"]);
+  });
+
+  it("calls generate API and refreshes storyboards after generation succeeds", async () => {
+    const server = await renderProject();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Storyboards" }));
+
+    await screen.findByText("Storyboard walkthrough");
+    expect(server.calls).toContain("POST /api/projects/1/storyboards/generate");
+    expect(server.bodies["POST /api/projects/1/storyboards/generate"]).toBe('{"storyboard_count":1}');
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/storyboards")).toHaveLength(2);
+  });
+
+  it("calls select API and refreshes storyboards after selection succeeds", async () => {
+    const server = await renderProject({ storyboards: [storyboardOne, storyboardTwo] });
+
+    const storyboardCard = screen.getByLabelText("Storyboard: Storyboard walkthrough");
+    fireEvent.click(within(storyboardCard).getByRole("button", { name: "Select" }));
+
+    await waitFor(() => expect(screen.getByLabelText("Storyboard: Storyboard walkthrough").getAttribute("data-status")).toBe("selected"));
+    expect(server.calls).toContain("POST /api/projects/1/storyboards/801/select");
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/storyboards")).toHaveLength(2);
+  });
+
+  it("shows a clear selected visual state for storyboards", async () => {
+    await renderProject({ storyboards: [storyboardTwo] });
+
+    const selectedCard = screen.getByLabelText("Storyboard: Selected storyboard");
+    expect(selectedCard.getAttribute("data-status")).toBe("selected");
+    expect(within(selectedCard).getByText("Selected")).toBeTruthy();
+  });
+
+  it("disables generate and select controls for archived projects", async () => {
+    await renderProject({
+      project: { ...baseProject, status: "archived" },
+      storyboards: [storyboardOne],
+    });
+
+    const generateButton = screen.getByRole("button", { name: "Generate Storyboards" }) as HTMLButtonElement;
+    const storyboardCard = screen.getByLabelText("Storyboard: Storyboard walkthrough");
+    expect(generateButton.disabled).toBe(true);
+    expect((within(storyboardCard).getByRole("button", { name: "Select" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText("Archived projects are read-only.")[0]).toBeTruthy();
+  });
+
+  it("shows a no-materials message when storyboard generation returns 409", async () => {
+    await renderProject({ generateStoryboardsError: "project has no materials" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Storyboards" }));
+
+    expect(await screen.findByText("Add at least one material before generating storyboards.")).toBeTruthy();
+  });
+
+  it("shows a selected-topic message when storyboard generation returns 409", async () => {
+    await renderProject({ generateStoryboardsError: "project has no selected topic candidate" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Storyboards" }));
+
+    expect(await screen.findByText("Select a topic candidate before generating storyboards.")).toBeTruthy();
+  });
+
+  it("shows a selected-script message when storyboard generation returns 409", async () => {
+    await renderProject({ generateStoryboardsError: "project has no selected script draft" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Storyboards" }));
+
+    expect(await screen.findByText("Select a script draft before generating storyboards.")).toBeTruthy();
+  });
+
+  it("shows a read-only message when storyboard selection returns archived 409", async () => {
+    await renderProject({
+      storyboards: [storyboardOne],
+      selectStoryboardError: "archived project cannot select storyboards",
+    });
+
+    const storyboardCard = screen.getByLabelText("Storyboard: Storyboard walkthrough");
+    fireEvent.click(within(storyboardCard).getByRole("button", { name: "Select" }));
 
     expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
   });
