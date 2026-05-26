@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.1 Local Runnable Skeleton，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目与素材导入能力。
+本文档面向 v0.2.5 AI Planning Workflow，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、Topic Candidate、Script Draft 和 Storyboard 的本地 fake provider 工作流。
 
 ## 环境要求
 
@@ -201,7 +201,7 @@ Invoke-RestMethod "http://127.0.0.1:8000/api/projects/$($project.id)/script-draf
 
 ## Backend Storyboard API 验证
 
-v0.2 Batch 5 新增了 backend-only 的分镜草稿 API。该后端 API 只使用本地 deterministic `FakeLLMProvider`，不联网、不读取密钥、不调用真实 LLM，也不生成图片、音频、字幕或视频。本批没有 Storyboard 前端 UI。
+v0.2 Batch 5 新增了 backend-only 的分镜草稿 API。该后端 API 只使用本地 deterministic `FakeLLMProvider`，不联网、不读取密钥、不调用真实 LLM，也不生成图片、音频、字幕或视频；Storyboard 前端 UI 已在后续 Batch 补充。
 
 可以在 backend 启动后用 PowerShell 手动验证：
 
@@ -397,11 +397,13 @@ Remove-Item .\uploads\* -Recurse -Force -ErrorAction SilentlyContinue
 
 ## 当前未实现能力
 
-- 未实现 `LLMProvider`、`ImageProvider`、`TTSProvider`、`TrendSourceProvider`、`PublisherProvider`。
-- 未实现 AI 选题、脚本生成、分镜生成或素材方案生成。
-- 未实现 `FFmpeg` 渲染。
+- 未实现真实 OpenAI、Claude、Gemini 或其他 LLM Provider 接入。
+- 未实现 API key、secret 或 token 保存，也没有 Provider 配置页面。
+- 未实现 `ImageProvider`、`TTSProvider`、`TrendSourceProvider`、`PublisherProvider` 或真实 `VideoRenderer`。
+- 未实现素材方案生成、OCR、图片内容分析或自动抓取链接内容。
+- 未实现 `FFmpeg` 渲染、TTS、字幕生成或视频/音频/图片生成。
 - 未实现 `Review Queue` 完整业务流程。
-- 未实现定时生成。
+- 未实现定时生成、`GenerationSchedule` 或 Scheduler。
 - 未实现抖音或其他平台发布。
 - 未实现 OAuth、用户账号体系、生产部署、`Docker Compose` 或 `GitHub Actions`。
 - 未实现自动扫描本地文件、浏览器、私有聊天或私人账号的能力。

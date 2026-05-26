@@ -6,14 +6,13 @@ creator-flow is an open-source AI short-video content pipeline for turning user-
 
 ## Status
 
-`v0.1 Local Runnable Skeleton - Release Candidate`
+`v0.2.5 AI Planning Workflow - Stabilization Review`
 
-This repository has completed the release candidate scope for the v0.1 local runnable skeleton. It includes a minimal `FastAPI` backend, `React` + `Vite` + `Tailwind CSS` frontend, local `SQLite` metadata storage, and basic pages and APIs for content projects and explicitly imported materials.
+This repository has completed the v0.1 local runnable skeleton and v0.2 Batch 1 through Batch 6 of the AI Planning Workflow. The current planning path uses a local deterministic `FakeLLMProvider` to generate and select Topic Candidates, Script Drafts, and Storyboards from explicitly imported materials, including storyboard scenes on the project detail page.
 
 Local development instructions are available in [`docs/development.md`](docs/development.md).
-Draft v0.1.0 release notes are available in [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md).
 
-AI Providers, video rendering, scheduled generation, platform publishing, production deployment, and user accounts are still not implemented.
+Real OpenAI, Claude, Gemini, or other LLM integrations are still not implemented. The app does not store API keys, secrets, or tokens and does not call real AI services. Video rendering, TTS, subtitles, scheduled generation, platform publishing, production deployment, and user accounts are still not implemented.
 This version is not production ready.
 
 ## Local Quick Start
@@ -41,7 +40,7 @@ Common verification commands:
 ## Planned Capabilities
 
 - Explicitly import user-selected chat summaries, text, images, screenshots, and links.
-- Generate topic ideas, scripts, storyboards, subtitles, and asset plans with AI.
+- Generate topic ideas, scripts, storyboards, subtitles, and asset plans behind Provider boundaries.
 - Produce 9:16 MP4 videos through an `FFmpeg` pipeline.
 - Configure content plans, account positioning, content types, and generation frequency.
 - Automatically generate review-ready drafts on schedule from explicitly imported materials and optional trend signals.
@@ -49,14 +48,18 @@ Common verification commands:
 - Feed post-publication metrics back into future content review and topic optimization.
 - Use Douyin as the first publishing platform while preserving a multi-platform architecture through Provider abstractions.
 
-These capabilities are planned and not yet implemented.
+Topic Candidate, Script Draft, and Storyboard generation and selection are implemented in v0.2 with a local fake provider. Real AI, subtitles, asset plans, rendering, publishing, scheduling, and metrics feedback remain future planned capabilities.
 
-## Current Local Skeleton
+## Current Local Capabilities
 
 - Start the backend and frontend locally.
 - Create a `ContentProject`.
 - Explicitly add text, summary, project record, link, image, and screenshot materials to a project.
 - View the project list, project details, and material list.
+- Generate and select Topic Candidates from explicitly imported materials.
+- Generate and select Script Drafts from a selected Topic Candidate.
+- Generate Storyboards from a selected Topic Candidate, selected Script Draft, and explicit materials, then inspect ordered scenes.
+- View existing materials and planning drafts on archived projects while preventing further generation or selection.
 - Store project and material metadata in local `SQLite`.
 - Store uploaded files under local `uploads/`, excluded from Git.
 

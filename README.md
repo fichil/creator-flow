@@ -6,14 +6,13 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 
 ## 当前状态
 
-`v0.1 Local Runnable Skeleton - Release Candidate`
+`v0.2.5 AI Planning Workflow - Stabilization Review`
 
-当前仓库已完成 v0.1 本地可运行骨架的发布候选能力。已具备最小 `FastAPI` backend、`React` + `Vite` + `Tailwind CSS` frontend、`SQLite` 本地元数据存储，以及内容项目和显式导入素材的基础页面与 API。
+当前仓库已完成 v0.1 本地可运行骨架，以及 v0.2 Batch 1 到 Batch 6 的 AI Planning Workflow。当前主链路使用本地 deterministic `FakeLLMProvider`，支持从显式导入素材生成并选择 Topic Candidate、Script Draft 和 Storyboard，并在项目详情页查看分镜 scenes。
 
 本地开发说明见 [`docs/development.md`](docs/development.md)。
-v0.1.0 release notes 草稿见 [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md)。
 
-当前仍未实现 AI Provider、视频渲染、定时生成、平台发布、生产部署或账号体系。
+当前仍不接真实 OpenAI / Claude / Gemini / 其他 LLM，不保存 API key、secret 或 token，不联网调用真实 AI。视频渲染、TTS、字幕、定时生成、平台发布、生产部署和账号体系仍未实现。
 当前版本不适合作为生产部署使用。
 
 ## 本地启动快捷入口
@@ -41,7 +40,7 @@ v0.1.0 release notes 草稿见 [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.
 ## 计划能力
 
 - 用户显式导入聊天摘要、文本、图片、截图和链接。
-- AI 生成选题、脚本、分镜、字幕和素材方案。
+- 通过 Provider 边界生成选题、脚本、分镜、字幕和素材方案。
 - 通过 `FFmpeg` 流水线生成适合短视频平台发布的 9:16 MP4。
 - 支持配置内容计划、账号定位、内容类型和生成频率。
 - 按计划基于显式导入素材与可选热点信号自动生成待审核草稿。
@@ -49,14 +48,18 @@ v0.1.0 release notes 草稿见 [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.
 - 发布后指标回流，用于后续内容复盘和选题优化。
 - 以抖音作为首个发布平台，同时通过 Provider 抽象保留多平台扩展能力。
 
-以上能力均为计划方向，尚未实现。
+其中 Topic Candidate、Script Draft 和 Storyboard 的生成与选择已在 v0.2 中以本地 fake provider 形式实现；真实 AI、字幕、素材方案、渲染、发布、调度和指标回流仍属于后续计划方向。
 
-## 当前本地骨架能力
+## 当前本地能力
 
 - 本地启动 backend 和 frontend。
 - 创建 `ContentProject`。
 - 向指定项目显式添加文本、摘要、项目记录、链接、图片和截图素材。
 - 查看项目列表、项目详情和素材列表。
+- 基于显式导入素材生成并选择 Topic Candidate。
+- 基于 selected Topic Candidate 生成并选择 Script Draft。
+- 基于 selected Topic Candidate、selected Script Draft 和显式导入素材生成 Storyboard，并查看有序 scenes。
+- 归档项目仍可查看已有素材和规划草稿，但不能继续生成或选择。
 - 将项目与素材元数据保存到本地 `SQLite`。
 - 将用户上传文件保存到本地 `uploads/`，且不提交到 Git。
 
