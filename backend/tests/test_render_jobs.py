@@ -234,6 +234,10 @@ def test_list_render_jobs_returns_persisted_data(client: TestClient):
     assert body[0]["id"] == created["id"]
     assert body[0]["artifact"]["id"] == created["artifact"]["id"]
     assert body[0]["artifact"]["artifact_type"] == "fake_preview_manifest"
+    assert body[0]["artifact"]["mime_type"] == "application/json"
+    assert body[0]["artifact"]["storage_path"] == created["artifact"]["storage_path"]
+    assert body[0]["artifact"]["checksum_sha256"] == created["artifact"]["checksum_sha256"]
+    assert body[0]["artifact"]["subtitle_draft_id"] is None
 
 
 def test_get_single_render_job_success(client: TestClient):
@@ -246,6 +250,10 @@ def test_get_single_render_job_success(client: TestClient):
     assert response.json()["id"] == created["id"]
     assert response.json()["artifact"]["render_job_id"] == created["id"]
     assert response.json()["artifact"]["artifact_type"] == "fake_preview_manifest"
+    assert response.json()["artifact"]["mime_type"] == "application/json"
+    assert response.json()["artifact"]["storage_path"] == created["artifact"]["storage_path"]
+    assert response.json()["artifact"]["checksum_sha256"] == created["artifact"]["checksum_sha256"]
+    assert response.json()["artifact"]["subtitle_draft_id"] is None
 
 
 def test_create_fake_render_does_not_modify_project_status(client: TestClient):

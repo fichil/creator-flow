@@ -225,6 +225,12 @@ const subtitleDraftTwo: SubtitleDraft = {
   })),
 };
 
+const subtitleDraftWithoutCues: SubtitleDraft = {
+  ...subtitleDraftOne,
+  id: 1303,
+  cues: [],
+};
+
 type ServerOptions = {
   project?: ProjectDetail;
   candidates?: TopicCandidate[];
@@ -786,6 +792,13 @@ describe("ProjectDetailPage subtitle drafts", () => {
     const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
     const cueItems = within(subtitleDraftCard).getAllByTestId("subtitle-cue");
     expect(cueItems.map((cue) => cue.getAttribute("data-cue-order"))).toEqual(["1", "2"]);
+  });
+
+  it("shows a fallback when a subtitle draft has no cues", async () => {
+    await renderProject({ storyboards: [storyboardTwo], subtitleDrafts: [subtitleDraftWithoutCues] });
+
+    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1303");
+    expect(within(subtitleDraftCard).getByText("No subtitle cues yet.")).toBeTruthy();
   });
 
   it("creates a fake subtitle draft and refreshes subtitle drafts after creation succeeds", async () => {
