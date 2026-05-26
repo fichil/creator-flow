@@ -105,7 +105,7 @@
 
 目标：从已审核脚本、素材方案和字幕生成可预览的 9:16 MP4。
 
-状态：v0.3 Batch 5 已实现 Render Preview Artifact Placeholder backend-only；当前只生成和展示 render job、fake preview manifest metadata、subtitle draft metadata 和 subtitle cues，不生成真实 MP4、音频或字幕文件。
+状态：v0.3 Batch 6 已实现 Render Preview Frontend UI for fake preview manifest；当前只生成和展示 render job、fake preview manifest metadata、subtitle draft metadata 和 subtitle cues，不生成真实 MP4、音频或字幕文件，也不播放真实视频。
 
 已完成 Batch 1：实现 Rendering domain foundation with FakeRenderer and render artifact metadata。该批次基于 selected Storyboard 创建 fake render job，保存 deterministic fake video artifact metadata，并保留 queued / running / succeeded / failed 状态，为后续真实 `FFmpeg` renderer 或异步任务预留接口。
 
@@ -116,6 +116,8 @@
 已完成 Batch 4：实现 Subtitle Frontend UI for FakeSubtitle workflow。该批次在项目详情页展示 subtitle drafts 和 subtitle cues，允许在存在 selected Storyboard 时创建并选择 fake subtitle draft，并保持 archived 项目只读；仍不生成真实字幕文件、音频或 MP4，不接 TTS、`FFmpeg` 或发布能力。
 
 已完成 Batch 5：实现 Render Preview Artifact Placeholder backend-only。该批次让 `FakeRenderer` 在 Git 忽略的 `data/local/render_previews/` 路径策略下写入 deterministic fake preview manifest JSON，并在 render artifact metadata 中记录 manifest 路径、checksum、fake video duration / dimensions 以及可选 selected subtitle draft id；仍不生成真实 MP4、音频或字幕文件，不接 TTS、`FFmpeg` 或发布能力，也不实现前端 Preview UI。
+
+已完成 Batch 6：实现 Render Preview Frontend UI for fake preview manifest。该批次在项目详情页的 Render Jobs 区块展示 backend 已返回的 fake preview manifest metadata，包括 manifest path、MIME type、file size、checksum、fake video duration / dimensions 和可选 selected subtitle draft id；前端不读取运行时 manifest 文件，不新增真实 video player，不播放真实视频，仍不生成真实 MP4、音频或字幕文件。
 
 范围：
 

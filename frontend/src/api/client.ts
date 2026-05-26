@@ -151,6 +151,7 @@ export type RenderArtifact = {
   id: number;
   project_id: number;
   render_job_id: number;
+  subtitle_draft_id: number | null;
   artifact_type: string;
   file_name: string;
   mime_type: string;
@@ -159,6 +160,7 @@ export type RenderArtifact = {
   width: number;
   height: number;
   storage_path: string;
+  checksum_sha256: string | null;
   created_at: string;
 };
 

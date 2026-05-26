@@ -151,16 +151,33 @@ const renderJobOne: RenderJob = {
     id: 1301,
     project_id: 1,
     render_job_id: 1201,
-    artifact_type: "fake_video",
-    file_name: "project-1-render-1201.mp4",
-    mime_type: "video/mp4",
-    file_size_bytes: 30720,
+    subtitle_draft_id: 1301,
+    artifact_type: "fake_preview_manifest",
+    file_name: "project-1-render-1201-preview-manifest.json",
+    mime_type: "application/json",
+    file_size_bytes: 386,
     duration_seconds: 30,
     width: 1080,
     height: 1920,
-    storage_path: "data/local/fake-renders/project-1/render-1201.mp4",
+    storage_path: "data/local/render_previews/project-1/project-1-render-1201-preview-manifest.json",
+    checksum_sha256: "a".repeat(64),
     created_at: "2026-05-26T08:15:02Z",
   },
+};
+
+const renderJobWithoutArtifact: RenderJob = {
+  ...renderJobOne,
+  id: 1202,
+  artifact: null,
+};
+
+const queuedRenderJob: RenderJob = {
+  ...renderJobOne,
+  id: 1203,
+  status: "queued",
+  started_at: null,
+  completed_at: null,
+  artifact: null,
 };
 
 const subtitleDraftOne: SubtitleDraft = {
@@ -864,7 +881,7 @@ describe("ProjectDetailPage render jobs", () => {
     expect(screen.getByText("No render jobs yet.")).toBeTruthy();
   });
 
-  it("shows fake render artifact metadata", async () => {
+  it("shows fake preview manifest metadata", async () => {
     await renderProject({ renderJobs: [renderJobOne], storyboards: [storyboardTwo] });
 
     const renderJobCard = screen.getByLabelText("Render job 1201");
@@ -872,11 +889,32 @@ describe("ProjectDetailPage render jobs", () => {
     expect(within(renderJobCard).getByText("fake_renderer 0.1")).toBeTruthy();
     expect(within(renderJobCard).getByText("succeeded")).toBeTruthy();
     expect(within(renderJobCard).getByText("mp4 / 9:16 / 1080x1920")).toBeTruthy();
-    expect(within(renderJobCard).getByText("fake_video")).toBeTruthy();
-    expect(within(renderJobCard).getByText("video/mp4")).toBeTruthy();
+    expect(within(renderJobCard).getByText("Preview manifest metadata")).toBeTruthy();
+    expect(within(renderJobCard).getByText("fake_preview_manifest")).toBeTruthy();
+    expect(within(renderJobCard).getByText("application/json")).toBeTruthy();
+    expect(within(renderJobCard).getByText("386 bytes")).toBeTruthy();
+    expect(within(renderJobCard).getByText("a".repeat(64))).toBeTruthy();
     expect(within(renderJobCard).getByText("30 seconds")).toBeTruthy();
     expect(within(renderJobCard).getByText("1080 x 1920")).toBeTruthy();
-    expect(within(renderJobCard).getByText("data/local/fake-renders/project-1/render-1201.mp4")).toBeTruthy();
+    expect(within(renderJobCard).getByText("#1301")).toBeTruthy();
+    expect(within(renderJobCard).getByText("project-1-render-1201-preview-manifest.json")).toBeTruthy();
+    expect(within(renderJobCard).getByText("data/local/render_previews/project-1/project-1-render-1201-preview-manifest.json")).toBeTruthy();
+    expect(within(renderJobCard).getByText("Not available")).toBeTruthy();
+  });
+
+  it("shows a fallback when a succeeded render job has no preview metadata", async () => {
+    await renderProject({ renderJobs: [renderJobWithoutArtifact], storyboards: [storyboardTwo] });
+
+    const renderJobCard = screen.getByLabelText("Render job 1202");
+    expect(within(renderJobCard).getByText("No preview artifact metadata available.")).toBeTruthy();
+  });
+
+  it("does not render a video player for non-succeeded render jobs", async () => {
+    await renderProject({ renderJobs: [queuedRenderJob], storyboards: [storyboardTwo] });
+
+    const renderJobCard = screen.getByLabelText("Render job 1203");
+    expect(within(renderJobCard).getByText("Preview pending / unavailable.")).toBeTruthy();
+    expect(document.querySelector("video")).toBeNull();
   });
 
   it("creates a fake render job and refreshes render jobs after creation succeeds", async () => {
@@ -901,6 +939,7 @@ describe("ProjectDetailPage render jobs", () => {
     });
 
     expect(screen.getByText("Render job #1201")).toBeTruthy();
+    expect(screen.getByText("data/local/render_previews/project-1/project-1-render-1201-preview-manifest.json")).toBeTruthy();
     expect((screen.getByRole("button", { name: "Create fake render job" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getAllByText("Archived projects are read-only.")[0]).toBeTruthy();
   });
