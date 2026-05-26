@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.3 Batch 1 Rendering Workflow，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、Topic Candidate、Script Draft、Storyboard 和 backend-only fake render metadata 工作流。
+本文档面向 v0.3 Rendering Workflow，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。
 
 ## 环境要求
 
@@ -115,7 +115,7 @@ uv run --extra test pytest
 - 超过 10 MB 的文件上传拒绝与残留文件清理。
 - 非法文件素材类型和不允许的 MIME 类型拒绝。
 - archived 项目禁止继续添加文本、链接或文件素材。
-- Topic Candidate、Script Draft、Storyboard 和 FakeRenderer backend API 的本地 deterministic workflow。
+- Topic Candidate、Script Draft、Storyboard、FakeRenderer、FakeSubtitle、fake preview manifest metadata 和对应 frontend UI 的本地 deterministic workflow。
 
 ## API Smoke Checklist
 
@@ -441,13 +441,26 @@ Remove-Item .\uploads\* -Recurse -Force -ErrorAction SilentlyContinue
 
 不要删除 `data/local/.gitkeep` 或 `uploads/.gitkeep`。
 
+## v0.3 Fake Workflow Release Candidate 验证
+
+v0.3 当前只覆盖 fake rendering/subtitle/preview metadata workflow。合并或发布候选验收时应确认：
+
+- Render Jobs 可以基于 selected Storyboard 创建 fake render job，并展示 fake preview manifest metadata。
+- Subtitle Drafts 可以基于 selected Storyboard 创建和选择 fake subtitle draft，并展示 subtitle cues。
+- Preview 只展示 backend 返回的 manifest metadata，不读取 `data/local/render_previews/` 文件，不新增真实 `<video>` 播放器。
+- archived 项目仍可查看 render jobs、subtitle drafts 和 preview metadata，但不允许 create/select。
+- 当前不会生成真实 MP4、音频或 `.srt` / `.vtt` 字幕文件。
+- runtime preview manifest 位于 `data/local/render_previews/`，该路径由 `.gitignore` 中的 `data/local/` 覆盖，不得进入 Git。
+
+更完整的收口清单见 [`docs/releases/v0.3-rc-checklist.md`](releases/v0.3-rc-checklist.md)。
+
 ## 当前未实现能力
 
 - 未实现真实 OpenAI、Claude、Gemini 或其他 LLM Provider 接入。
 - 未实现 API key、secret 或 token 保存，也没有 Provider 配置页面。
-- 未实现 `ImageProvider`、`TTSProvider`、`TrendSourceProvider`、`PublisherProvider` 或真实 `VideoRenderer`；当前只有 backend-only `FakeRenderer` metadata workflow。
+- 未实现 `ImageProvider`、`TTSProvider`、`TrendSourceProvider`、`PublisherProvider` 或真实 `VideoRenderer`；当前只有 deterministic `FakeRenderer`、`FakeSubtitle` 和 fake preview manifest metadata workflow。
 - 未实现素材方案生成、OCR、图片内容分析或自动抓取链接内容。
-- 未实现 `FFmpeg` 渲染、TTS、字幕生成或真实视频/音频/图片生成。
+- 未实现 `FFmpeg` 渲染、TTS、真实字幕文件生成或真实视频/音频/图片生成；当前字幕和 preview 都只是 metadata workflow。
 - 未实现 `Review Queue` 完整业务流程。
 - 未实现定时生成、`GenerationSchedule` 或 Scheduler。
 - 未实现抖音或其他平台发布。
