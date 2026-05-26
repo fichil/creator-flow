@@ -7,6 +7,7 @@ export type Project = {
   status: string;
   created_at: string;
   updated_at: string;
+  material_count: number;
 };
 
 export type Material = {
@@ -48,8 +49,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function listProjects(): Promise<Project[]> {
-  return request<Project[]>("/api/projects");
+export function listProjects(options: { includeArchived?: boolean } = {}): Promise<Project[]> {
+  const params = new URLSearchParams();
+  if (options.includeArchived) {
+    params.set("include_archived", "true");
+  }
+  const query = params.toString();
+  return request<Project[]>(`/api/projects${query ? `?${query}` : ""}`);
 }
 
 export function createProject(payload: { title: string; description?: string }): Promise<Project> {
@@ -61,6 +67,22 @@ export function createProject(payload: { title: string; description?: string }):
 
 export function getProject(projectId: number): Promise<ProjectDetail> {
   return request<ProjectDetail>(`/api/projects/${projectId}`);
+}
+
+export function updateProject(
+  projectId: number,
+  payload: { title?: string; description?: string | null },
+): Promise<Project> {
+  return request<Project>(`/api/projects/${projectId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function archiveProject(projectId: number): Promise<Project> {
+  return request<Project>(`/api/projects/${projectId}/archive`, {
+    method: "POST",
+  });
 }
 
 export function addTextMaterial(

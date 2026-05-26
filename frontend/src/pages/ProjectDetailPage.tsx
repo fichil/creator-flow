@@ -4,9 +4,11 @@ import {
   addFileMaterial,
   addLinkMaterial,
   addTextMaterial,
+  archiveProject,
   getProject,
   Material,
   ProjectDetail,
+  updateProject,
 } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
 import { StatusBadge } from "../components/StatusBadge";
@@ -32,6 +34,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isArchived = project?.status === "archived";
 
   async function reload() {
     setLoading(true);
@@ -73,6 +76,11 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
           <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div>
               <h2 className="text-lg font-semibold text-stone-950">素材列表</h2>
+              {isArchived && (
+                <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
+                  归档项目不能继续添加素材。
+                </p>
+              )}
               {project.materials.length === 0 ? (
                 <div className="mt-4">
                   <EmptyState title="还没有素材" description="添加文本、链接、图片或截图后，项目状态会变为素材已就绪。" />
@@ -87,9 +95,11 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
             </div>
 
             <div className="space-y-4">
-              <TextMaterialForm projectId={project.id} onAdded={reload} />
-              <LinkMaterialForm projectId={project.id} onAdded={reload} />
-              <FileMaterialForm projectId={project.id} onAdded={reload} />
+              <ProjectEditForm project={project} onUpdated={reload} />
+              <ArchiveProjectPanel project={project} onArchived={reload} />
+              <TextMaterialForm disabled={isArchived} projectId={project.id} onAdded={reload} />
+              <LinkMaterialForm disabled={isArchived} projectId={project.id} onAdded={reload} />
+              <FileMaterialForm disabled={isArchived} projectId={project.id} onAdded={reload} />
             </div>
           </div>
         </>
@@ -120,7 +130,92 @@ function MaterialItem({ material }: { material: Material }) {
   );
 }
 
-function TextMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: () => void }) {
+function ProjectEditForm({ project, onUpdated }: { project: ProjectDetail; onUpdated: () => void }) {
+  const [title, setTitle] = useState(project.title);
+  const [description, setDescription] = useState(project.description ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setTitle(project.title);
+    setDescription(project.description ?? "");
+  }, [project.id, project.title, project.description]);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await updateProject(project.id, { title, description });
+      onUpdated();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存失败");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form className="rounded border border-stone-200 bg-white p-4" onSubmit={submit}>
+      <h2 className="text-sm font-semibold text-stone-950">编辑项目</h2>
+      <input
+        className="mt-3 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        required
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+      />
+      <textarea
+        className="mt-3 min-h-24 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        value={description}
+        onChange={(event) => setDescription(event.target.value)}
+      />
+      {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+      <button className="mt-3 w-full rounded bg-stone-950 px-3 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={submitting}>
+        {submitting ? "保存中..." : "保存项目"}
+      </button>
+    </form>
+  );
+}
+
+function ArchiveProjectPanel({ project, onArchived }: { project: ProjectDetail; onArchived: () => void }) {
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const isArchived = project.status === "archived";
+
+  async function handleArchive() {
+    if (isArchived || !window.confirm("确认归档这个项目？")) {
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await archiveProject(project.id);
+      onArchived();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "归档失败");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="rounded border border-stone-200 bg-white p-4">
+      <h2 className="text-sm font-semibold text-stone-950">项目归档</h2>
+      <p className="mt-2 text-sm text-stone-600">归档后默认不在项目列表显示，已有素材仍可查看。</p>
+      {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+      <button
+        className="mt-3 w-full rounded border border-stone-300 px-3 py-2 text-sm font-medium text-stone-800 disabled:opacity-50"
+        disabled={isArchived || submitting}
+        type="button"
+        onClick={handleArchive}
+      >
+        {isArchived ? "已归档" : submitting ? "归档中..." : "归档项目"}
+      </button>
+    </div>
+  );
+}
+
+function TextMaterialForm({ disabled, projectId, onAdded }: { disabled: boolean; projectId: number; onAdded: () => void }) {
   const [materialType, setMaterialType] = useState<TextMaterialType>("text");
   const [title, setTitle] = useState("");
   const [textContent, setTextContent] = useState("");
@@ -129,6 +224,9 @@ function TextMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: 
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (disabled) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -148,6 +246,7 @@ function TextMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: 
       <h2 className="text-sm font-semibold text-stone-950">添加文本类素材</h2>
       <select
         className="mt-3 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        disabled={disabled}
         value={materialType}
         onChange={(event) => setMaterialType(event.target.value as TextMaterialType)}
       >
@@ -157,26 +256,28 @@ function TextMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: 
       </select>
       <input
         className="mt-3 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        disabled={disabled}
         placeholder="标题"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
       />
       <textarea
         className="mt-3 min-h-28 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        disabled={disabled}
         placeholder="输入用户显式提供的素材内容"
         required
         value={textContent}
         onChange={(event) => setTextContent(event.target.value)}
       />
       {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
-      <button className="mt-3 w-full rounded bg-stone-950 px-3 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={submitting}>
+      <button className="mt-3 w-full rounded bg-stone-950 px-3 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={disabled || submitting}>
         {submitting ? "添加中..." : "添加文本素材"}
       </button>
     </form>
   );
 }
 
-function LinkMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: () => void }) {
+function LinkMaterialForm({ disabled, projectId, onAdded }: { disabled: boolean; projectId: number; onAdded: () => void }) {
   const [title, setTitle] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -184,6 +285,9 @@ function LinkMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: 
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (disabled) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -203,12 +307,14 @@ function LinkMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: 
       <h2 className="text-sm font-semibold text-stone-950">添加链接素材</h2>
       <input
         className="mt-3 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        disabled={disabled}
         placeholder="标题"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
       />
       <input
         className="mt-3 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        disabled={disabled}
         placeholder="https://example.com"
         required
         type="url"
@@ -216,14 +322,14 @@ function LinkMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: 
         onChange={(event) => setSourceUrl(event.target.value)}
       />
       {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
-      <button className="mt-3 w-full rounded bg-stone-950 px-3 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={submitting}>
+      <button className="mt-3 w-full rounded bg-stone-950 px-3 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={disabled || submitting}>
         {submitting ? "添加中..." : "添加链接"}
       </button>
     </form>
   );
 }
 
-function FileMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: () => void }) {
+function FileMaterialForm({ disabled, projectId, onAdded }: { disabled: boolean; projectId: number; onAdded: () => void }) {
   const [materialType, setMaterialType] = useState<FileMaterialType>("image");
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -232,6 +338,9 @@ function FileMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: 
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (disabled) {
+      return;
+    }
     if (!file) {
       setError("请选择文件");
       return;
@@ -255,6 +364,7 @@ function FileMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: 
       <h2 className="text-sm font-semibold text-stone-950">添加图片或截图</h2>
       <select
         className="mt-3 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        disabled={disabled}
         value={materialType}
         onChange={(event) => setMaterialType(event.target.value as FileMaterialType)}
       >
@@ -263,6 +373,7 @@ function FileMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: 
       </select>
       <input
         className="mt-3 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        disabled={disabled}
         placeholder="标题"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
@@ -270,12 +381,13 @@ function FileMaterialForm({ projectId, onAdded }: { projectId: number; onAdded: 
       <input
         accept="image/png,image/jpeg,image/webp,image/gif"
         className="mt-3 w-full rounded border border-stone-300 px-3 py-2 text-sm"
+        disabled={disabled}
         required
         type="file"
         onChange={(event) => setFile(event.target.files?.[0] ?? null)}
       />
       {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
-      <button className="mt-3 w-full rounded bg-stone-950 px-3 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={submitting}>
+      <button className="mt-3 w-full rounded bg-stone-950 px-3 py-2 text-sm font-medium text-white disabled:opacity-50" disabled={disabled || submitting}>
         {submitting ? "上传中..." : "添加文件素材"}
       </button>
     </form>

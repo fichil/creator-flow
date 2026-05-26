@@ -14,10 +14,12 @@ ALLOWED_IMAGE_MIME_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
-def _ensure_project_exists(db, project_id: int) -> None:
-    row = db.execute("SELECT id FROM content_projects WHERE id = ?", (project_id,)).fetchone()
+def _ensure_project_accepts_materials(db, project_id: int) -> None:
+    row = db.execute("SELECT id, status FROM content_projects WHERE id = ?", (project_id,)).fetchone()
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="project not found")
+    if row["status"] == "archived":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="archived project cannot accept materials")
 
 
 def _mark_materials_ready(db, project_id: int) -> None:
@@ -38,7 +40,7 @@ def _safe_filename(filename: str) -> str:
 
 @router.post("/{project_id}/materials/text", response_model=MaterialResponse, status_code=status.HTTP_201_CREATED)
 def add_text_material(project_id: int, payload: TextMaterialCreate, db=Depends(get_db)):
-    _ensure_project_exists(db, project_id)
+    _ensure_project_accepts_materials(db, project_id)
     row = db.execute(
         """
         INSERT INTO user_materials (project_id, material_type, title, text_content)
@@ -60,7 +62,7 @@ def add_text_material(project_id: int, payload: TextMaterialCreate, db=Depends(g
 
 @router.post("/{project_id}/materials/link", response_model=MaterialResponse, status_code=status.HTTP_201_CREATED)
 def add_link_material(project_id: int, payload: LinkMaterialCreate, db=Depends(get_db)):
-    _ensure_project_exists(db, project_id)
+    _ensure_project_accepts_materials(db, project_id)
     row = db.execute(
         """
         INSERT INTO user_materials (project_id, material_type, title, source_url)
@@ -84,7 +86,7 @@ async def add_file_material(
     db=Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
-    _ensure_project_exists(db, project_id)
+    _ensure_project_accepts_materials(db, project_id)
     if material_type not in ALLOWED_FILE_MATERIAL_TYPES:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="invalid material_type")
     if file.content_type not in ALLOWED_IMAGE_MIME_TYPES:
@@ -105,6 +107,8 @@ async def add_file_material(
             if bytes_written > MAX_UPLOAD_BYTES:
                 output.close()
                 stored_path.unlink(missing_ok=True)
+                if not any(project_upload_dir.iterdir()):
+                    project_upload_dir.rmdir()
                 raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="file too large")
             output.write(chunk)
 
