@@ -6,11 +6,12 @@ creator-flow is an open-source AI short-video content pipeline for turning user-
 
 ## Status
 
-`v0.1 Local Runnable Skeleton - In Progress`
+`v0.1 Local Runnable Skeleton - Release Candidate`
 
-This repository is implementing the v0.1 local runnable skeleton. It includes a minimal `FastAPI` backend, `React` + `Vite` + `Tailwind CSS` frontend, local `SQLite` metadata storage, and basic pages and APIs for content projects and explicitly imported materials.
+This repository has completed the release candidate scope for the v0.1 local runnable skeleton. It includes a minimal `FastAPI` backend, `React` + `Vite` + `Tailwind CSS` frontend, local `SQLite` metadata storage, and basic pages and APIs for content projects and explicitly imported materials.
 
 Local development instructions are available in [`docs/development.md`](docs/development.md).
+Draft v0.1.0 release notes are available in [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md).
 
 AI Providers, video rendering, scheduled generation, platform publishing, production deployment, and user accounts are still not implemented.
 This version is not production ready.

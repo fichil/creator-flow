@@ -6,11 +6,12 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 
 ## 当前状态
 
-`v0.1 Local Runnable Skeleton - In Progress`
+`v0.1 Local Runnable Skeleton - Release Candidate`
 
-当前仓库正在实现 v0.1 本地可运行骨架。已具备最小 `FastAPI` backend、`React` + `Vite` + `Tailwind CSS` frontend、`SQLite` 本地元数据存储，以及内容项目和显式导入素材的基础页面与 API。
+当前仓库已完成 v0.1 本地可运行骨架的发布候选能力。已具备最小 `FastAPI` backend、`React` + `Vite` + `Tailwind CSS` frontend、`SQLite` 本地元数据存储，以及内容项目和显式导入素材的基础页面与 API。
 
 本地开发说明见 [`docs/development.md`](docs/development.md)。
+v0.1.0 release notes 草稿见 [`docs/releases/v0.1.0.md`](docs/releases/v0.1.0.md)。
 
 当前仍未实现 AI Provider、视频渲染、定时生成、平台发布、生产部署或账号体系。
 当前版本不适合作为生产部署使用。
