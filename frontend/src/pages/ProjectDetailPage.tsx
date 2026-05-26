@@ -5,9 +5,13 @@ import {
   addLinkMaterial,
   addTextMaterial,
   archiveProject,
+  generateTopicCandidates,
   getProject,
+  getTopicCandidates,
   Material,
   ProjectDetail,
+  selectTopicCandidate,
+  TopicCandidate,
   updateProject,
 } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
@@ -92,6 +96,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
                   ))}
                 </div>
               )}
+              <TopicCandidatesPanel isArchived={isArchived} projectId={project.id} />
             </div>
 
             <div className="space-y-4">
@@ -106,6 +111,192 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
       )}
     </section>
   );
+}
+
+function TopicCandidatesPanel({ isArchived, projectId }: { isArchived: boolean; projectId: number }) {
+  const [candidates, setCandidates] = useState<TopicCandidate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [selectingId, setSelectingId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function reloadCandidates() {
+    setLoading(true);
+    try {
+      const items = await getTopicCandidates(projectId);
+      setCandidates(items);
+      setError(null);
+    } catch (err) {
+      setError(formatTopicCandidateError(err, "加载候选选题失败"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void reloadCandidates();
+  }, [projectId]);
+
+  async function handleGenerate() {
+    if (isArchived) {
+      return;
+    }
+    setGenerating(true);
+    setError(null);
+    try {
+      await generateTopicCandidates(projectId);
+      await reloadCandidates();
+    } catch (err) {
+      setError(formatTopicCandidateError(err, "生成候选选题失败"));
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleSelect(candidateId: number) {
+    if (isArchived) {
+      return;
+    }
+    setSelectingId(candidateId);
+    setError(null);
+    try {
+      await selectTopicCandidate(projectId, candidateId);
+      await reloadCandidates();
+    } catch (err) {
+      setError(formatTopicCandidateError(err, "选择候选选题失败"));
+    } finally {
+      setSelectingId(null);
+    }
+  }
+
+  return (
+    <section className="mt-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-stone-950">Topic Candidates</h2>
+          <p className="mt-1 text-sm text-stone-600">基于已显式导入素材生成的 fake provider 候选选题。</p>
+        </div>
+        <button
+          className="rounded bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isArchived || generating}
+          type="button"
+          onClick={handleGenerate}
+        >
+          {generating ? "Generating..." : "Generate Topic Candidates"}
+        </button>
+      </div>
+
+      {isArchived && (
+        <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
+          Archived projects are read-only.
+        </p>
+      )}
+      {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {loading && <p className="mt-4 text-sm text-stone-600">正在加载候选选题...</p>}
+      {!loading && candidates.length === 0 && (
+        <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
+          No topic candidates yet.
+        </p>
+      )}
+      {!loading && candidates.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {candidates.map((candidate) => (
+            <TopicCandidateCard
+              candidate={candidate}
+              disabled={isArchived || selectingId !== null}
+              key={candidate.id}
+              selecting={selectingId === candidate.id}
+              onSelect={handleSelect}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function TopicCandidateCard({
+  candidate,
+  disabled,
+  onSelect,
+  selecting,
+}: {
+  candidate: TopicCandidate;
+  disabled: boolean;
+  onSelect: (candidateId: number) => void;
+  selecting: boolean;
+}) {
+  const isSelected = candidate.status === "selected";
+  return (
+    <article
+      aria-label={`Topic candidate: ${candidate.title}`}
+      className={`rounded border bg-white p-4 ${
+        isSelected ? "border-teal-300 bg-teal-50 ring-1 ring-teal-200" : "border-stone-200"
+      }`}
+      data-status={candidate.status}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-stone-950">{candidate.title}</h3>
+          <p className="mt-1 text-xs text-stone-500">Created {new Date(candidate.created_at).toLocaleString()}</p>
+        </div>
+        {isSelected ? (
+          <span className="rounded border border-teal-300 bg-white px-3 py-1 text-xs font-semibold text-teal-800">
+            Selected
+          </span>
+        ) : (
+          <button
+            className="rounded border border-teal-700 px-3 py-1 text-xs font-semibold text-teal-800 hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={disabled}
+            type="button"
+            onClick={() => onSelect(candidate.id)}
+          >
+            {selecting ? "Selecting..." : "Select"}
+          </button>
+        )}
+      </div>
+      <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Angle</dt>
+          <dd className="mt-1 text-stone-800">{candidate.angle}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Audience</dt>
+          <dd className="mt-1 text-stone-800">{candidate.audience}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Hook</dt>
+          <dd className="mt-1 text-stone-800">{candidate.hook}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Status</dt>
+          <dd className="mt-1 text-stone-800">{candidate.status}</dd>
+        </div>
+      </dl>
+      <div className="mt-3 text-sm">
+        <p className="text-xs font-semibold uppercase text-stone-500">Rationale</p>
+        <p className="mt-1 text-stone-800">{candidate.rationale}</p>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
+        <span>Source materials: {candidate.source_material_ids.join(", ") || "none"}</span>
+        {candidate.selected_at && <span>Selected {new Date(candidate.selected_at).toLocaleString()}</span>}
+      </div>
+    </article>
+  );
+}
+
+function formatTopicCandidateError(err: unknown, fallback: string) {
+  const message = err instanceof Error ? err.message : fallback;
+  if (message === "project has no materials") {
+    return "Add at least one material before generating topic candidates.";
+  }
+  if (message.startsWith("archived project")) {
+    return "Archived projects are read-only.";
+  }
+  if (message.includes("(404)") || message.includes("not found")) {
+    return message;
+  }
+  return fallback;
 }
 
 function MaterialItem({ material }: { material: Material }) {
