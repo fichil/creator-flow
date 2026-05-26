@@ -60,6 +60,43 @@ export type GenerateTopicCandidatesResponse = {
   candidates: TopicCandidate[];
 };
 
+export type ScriptDraft = {
+  id: number;
+  project_id: number;
+  generation_run_id: number;
+  topic_candidate_id: number;
+  title: string;
+  opening_hook: string;
+  body: string;
+  call_to_action: string;
+  estimated_duration_seconds: number;
+  rationale: string;
+  status: "draft" | "selected" | "dismissed";
+  selected_at: string | null;
+  created_at: string;
+  updated_at: string;
+  source_material_ids: number[];
+};
+
+export type ScriptGenerationRun = {
+  id: number;
+  project_id: number;
+  selected_topic_candidate_id: number;
+  provider_name: string;
+  provider_version: string;
+  status: "running" | "succeeded" | "failed";
+  requested_script_count: number;
+  input_material_count: number;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+};
+
+export type GenerateScriptDraftsResponse = {
+  run: ScriptGenerationRun;
+  script_drafts: ScriptDraft[];
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -116,6 +153,23 @@ export function generateTopicCandidates(projectId: number): Promise<GenerateTopi
 
 export function selectTopicCandidate(projectId: number, candidateId: number): Promise<TopicCandidate> {
   return request<TopicCandidate>(`/api/projects/${projectId}/topic-candidates/${candidateId}/select`, {
+    method: "POST",
+  });
+}
+
+export function getScriptDrafts(projectId: number): Promise<ScriptDraft[]> {
+  return request<ScriptDraft[]>(`/api/projects/${projectId}/script-drafts`);
+}
+
+export function generateScriptDrafts(projectId: number): Promise<GenerateScriptDraftsResponse> {
+  return request<GenerateScriptDraftsResponse>(`/api/projects/${projectId}/script-drafts/generate`, {
+    method: "POST",
+    body: JSON.stringify({ script_count: 2 }),
+  });
+}
+
+export function selectScriptDraft(projectId: number, scriptDraftId: number): Promise<ScriptDraft> {
+  return request<ScriptDraft>(`/api/projects/${projectId}/script-drafts/${scriptDraftId}/select`, {
     method: "POST",
   });
 }

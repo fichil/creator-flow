@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectDetailPage } from "./ProjectDetailPage";
-import type { ProjectDetail, TopicCandidate } from "../api/client";
+import type { ProjectDetail, ScriptDraft, TopicCandidate } from "../api/client";
 
 const baseProject: ProjectDetail = {
   id: 1,
@@ -51,11 +51,40 @@ const candidateTwo: TopicCandidate = {
   selected_at: "2026-05-26T08:03:00Z",
 };
 
+const scriptDraftOne: ScriptDraft = {
+  id: 501,
+  project_id: 1,
+  generation_run_id: 601,
+  topic_candidate_id: 102,
+  title: "Problem-first script",
+  opening_hook: "This workflow looked small until it blocked the whole project.",
+  body: "First, show the bug. Then explain the fix. Close with the repeatable workflow.",
+  call_to_action: "Save this flow for your next debugging session.",
+  estimated_duration_seconds: 58,
+  rationale: "Built from the selected topic and imported note.",
+  status: "draft",
+  selected_at: null,
+  created_at: "2026-05-26T08:06:00Z",
+  updated_at: "2026-05-26T08:06:00Z",
+  source_material_ids: [11],
+};
+
+const scriptDraftTwo: ScriptDraft = {
+  ...scriptDraftOne,
+  id: 502,
+  title: "Build log script",
+  status: "selected",
+  selected_at: "2026-05-26T08:07:00Z",
+};
+
 type ServerOptions = {
   project?: ProjectDetail;
   candidates?: TopicCandidate[];
+  scriptDrafts?: ScriptDraft[];
   generateError?: string;
+  generateScriptDraftsError?: string;
   selectError?: string;
+  selectScriptDraftError?: string;
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -70,6 +99,7 @@ function jsonResponse(body: unknown, status = 200) {
 function installFetchMock(options: ServerOptions = {}) {
   const project = options.project ?? baseProject;
   let candidates = [...(options.candidates ?? [])];
+  let scriptDrafts = [...(options.scriptDrafts ?? [])];
   const calls: string[] = [];
   const bodies: Record<string, string | undefined> = {};
 
@@ -85,6 +115,9 @@ function installFetchMock(options: ServerOptions = {}) {
     }
     if (method === "GET" && url.pathname === "/api/projects/1/topic-candidates") {
       return jsonResponse(candidates);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/script-drafts") {
+      return jsonResponse(scriptDrafts);
     }
     if (method === "POST" && url.pathname === "/api/projects/1/topic-candidates/generate") {
       if (options.generateError) {
@@ -111,6 +144,28 @@ function installFetchMock(options: ServerOptions = {}) {
         candidates,
       });
     }
+    if (method === "POST" && url.pathname === "/api/projects/1/script-drafts/generate") {
+      if (options.generateScriptDraftsError) {
+        return jsonResponse({ detail: options.generateScriptDraftsError }, 409);
+      }
+      scriptDrafts = [scriptDraftOne, { ...scriptDraftOne, id: 503, title: "Checklist script" }];
+      return jsonResponse({
+        run: {
+          id: 701,
+          project_id: 1,
+          selected_topic_candidate_id: 102,
+          provider_name: "fake_llm",
+          provider_version: "0.1",
+          status: "succeeded",
+          requested_script_count: 2,
+          input_material_count: 1,
+          error_message: null,
+          created_at: "2026-05-26T08:08:00Z",
+          completed_at: "2026-05-26T08:08:00Z",
+        },
+        script_drafts: scriptDrafts,
+      });
+    }
     if (method === "POST" && url.pathname === "/api/projects/1/topic-candidates/101/select") {
       if (options.selectError) {
         return jsonResponse({ detail: options.selectError }, 409);
@@ -121,6 +176,17 @@ function installFetchMock(options: ServerOptions = {}) {
         selected_at: candidate.id === 101 ? "2026-05-26T08:05:00Z" : null,
       }));
       return jsonResponse(candidates.find((candidate) => candidate.id === 101));
+    }
+    if (method === "POST" && url.pathname === "/api/projects/1/script-drafts/501/select") {
+      if (options.selectScriptDraftError) {
+        return jsonResponse({ detail: options.selectScriptDraftError }, 409);
+      }
+      scriptDrafts = scriptDrafts.map((scriptDraft) => ({
+        ...scriptDraft,
+        status: (scriptDraft.id === 501 ? "selected" : "draft") as ScriptDraft["status"],
+        selected_at: scriptDraft.id === 501 ? "2026-05-26T08:09:00Z" : null,
+      }));
+      return jsonResponse(scriptDrafts.find((scriptDraft) => scriptDraft.id === 501));
     }
     return jsonResponse({ detail: "not found" }, 404);
   });
@@ -134,6 +200,7 @@ async function renderProject(options?: ServerOptions) {
   render(<ProjectDetailPage projectId={1} onBack={vi.fn()} />);
   await screen.findByText("Topic UI project");
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/topic-candidates"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/script-drafts"));
   return server;
 }
 
@@ -219,6 +286,107 @@ describe("ProjectDetailPage topic candidates", () => {
     await renderProject({ candidates: [candidateOne], selectError: "archived project cannot select candidates" });
 
     fireEvent.click(screen.getByRole("button", { name: "Select" }));
+
+    expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
+  });
+});
+
+describe("ProjectDetailPage script drafts", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("requests script drafts when the project detail page loads", async () => {
+    const server = await renderProject();
+
+    expect(server.calls).toContain("GET /api/projects/1/script-drafts");
+    expect(screen.getByText("No script drafts yet.")).toBeTruthy();
+  });
+
+  it("shows script draft title, opening hook, body, call to action, duration, and rationale", async () => {
+    await renderProject({ scriptDrafts: [scriptDraftOne] });
+
+    expect(screen.getByText("Problem-first script")).toBeTruthy();
+    expect(screen.getByText("This workflow looked small until it blocked the whole project.")).toBeTruthy();
+    expect(screen.getByText("First, show the bug. Then explain the fix. Close with the repeatable workflow.")).toBeTruthy();
+    expect(screen.getByText("Save this flow for your next debugging session.")).toBeTruthy();
+    expect(screen.getByText("58 seconds")).toBeTruthy();
+    expect(screen.getByText("Built from the selected topic and imported note.")).toBeTruthy();
+    expect(screen.getByText("Source materials: 11")).toBeTruthy();
+  });
+
+  it("calls generate API and refreshes script drafts after generation succeeds", async () => {
+    const server = await renderProject();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Script Drafts" }));
+
+    await screen.findByText("Checklist script");
+    expect(server.calls).toContain("POST /api/projects/1/script-drafts/generate");
+    expect(server.bodies["POST /api/projects/1/script-drafts/generate"]).toBe('{"script_count":2}');
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/script-drafts")).toHaveLength(2);
+  });
+
+  it("calls select API and refreshes script drafts after selection succeeds", async () => {
+    const server = await renderProject({ scriptDrafts: [scriptDraftOne, scriptDraftTwo] });
+
+    const scriptDraftCard = screen.getByLabelText("Script draft: Problem-first script");
+    fireEvent.click(within(scriptDraftCard).getByRole("button", { name: "Select" }));
+
+    await waitFor(() => expect(screen.getByLabelText("Script draft: Problem-first script").getAttribute("data-status")).toBe("selected"));
+    expect(server.calls).toContain("POST /api/projects/1/script-drafts/501/select");
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/script-drafts")).toHaveLength(2);
+  });
+
+  it("shows a clear selected visual state for script drafts", async () => {
+    await renderProject({ scriptDrafts: [scriptDraftTwo] });
+
+    const selectedCard = screen.getByLabelText("Script draft: Build log script");
+    expect(selectedCard.getAttribute("data-status")).toBe("selected");
+    expect(within(selectedCard).getByText("Selected")).toBeTruthy();
+  });
+
+  it("disables generate and select controls for archived projects", async () => {
+    await renderProject({
+      project: { ...baseProject, status: "archived" },
+      scriptDrafts: [scriptDraftOne],
+    });
+
+    const generateButton = screen.getByRole("button", { name: "Generate Script Drafts" }) as HTMLButtonElement;
+    const scriptDraftCard = screen.getByLabelText("Script draft: Problem-first script");
+    expect(generateButton.disabled).toBe(true);
+    expect((within(scriptDraftCard).getByRole("button", { name: "Select" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText("Archived projects are read-only.")[0]).toBeTruthy();
+  });
+
+  it("shows a no-materials message when script generation returns 409", async () => {
+    await renderProject({ generateScriptDraftsError: "project has no materials" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Script Drafts" }));
+
+    expect(await screen.findByText("Add at least one material before generating script drafts.")).toBeTruthy();
+  });
+
+  it("shows a selected-topic message when script generation returns 409", async () => {
+    await renderProject({ generateScriptDraftsError: "project has no selected topic candidate" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Script Drafts" }));
+
+    expect(await screen.findByText("Select a topic candidate before generating script drafts.")).toBeTruthy();
+  });
+
+  it("shows a read-only message when script draft selection returns archived 409", async () => {
+    await renderProject({
+      scriptDrafts: [scriptDraftOne],
+      selectScriptDraftError: "archived project cannot select script drafts",
+    });
+
+    const scriptDraftCard = screen.getByLabelText("Script draft: Problem-first script");
+    fireEvent.click(within(scriptDraftCard).getByRole("button", { name: "Select" }));
 
     expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
   });

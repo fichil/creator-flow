@@ -71,6 +71,8 @@
 
 当前 Batch 3 方向：实现 Script Draft backend workflow based on selected TopicCandidate and explicit UserMaterial，继续使用本地 deterministic fake provider，不接真实 AI，不实现前端 UI。
 
+当前 Batch 4 方向：实现 Script Draft frontend UI for fake provider workflow，让用户可以在项目详情页查看脚本草稿、基于已选 Topic Candidate 生成 fake 脚本草稿并选择一个脚本草稿；archived 项目保持只读。
+
 范围：
 
 - Provider 接口定义。
