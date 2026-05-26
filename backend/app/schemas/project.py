@@ -1,10 +1,17 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.material import MaterialResponse
 
 
 class ProjectCreate(BaseModel):
     title: str = Field(..., min_length=1)
+    description: str | None = None
+
+
+class ProjectUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = None
     description: str | None = None
 
 
@@ -15,6 +22,7 @@ class ProjectResponse(BaseModel):
     status: str
     created_at: str
     updated_at: str
+    material_count: int = 0
 
 
 class ProjectDetailResponse(ProjectResponse):

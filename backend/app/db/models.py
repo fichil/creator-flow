@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS content_projects (
     status TEXT NOT NULL DEFAULT 'draft',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CHECK (status IN ('draft', 'materials_ready'))
+    CHECK (status IN ('draft', 'materials_ready', 'archived'))
 );
 
 CREATE TABLE IF NOT EXISTS user_materials (

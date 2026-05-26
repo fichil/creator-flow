@@ -11,15 +11,20 @@ type ProjectListPageProps = {
 
 export function ProjectListPage({ onCreate, onOpen }: ProjectListPageProps) {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [includeArchived, setIncludeArchived] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    listProjects()
-      .then(setProjects)
+    setLoading(true);
+    listProjects({ includeArchived })
+      .then((items) => {
+        setProjects(items);
+        setError(null);
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [includeArchived]);
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-8">
@@ -36,6 +41,15 @@ export function ProjectListPage({ onCreate, onOpen }: ProjectListPageProps) {
           新建项目
         </button>
       </div>
+      <label className="mt-5 inline-flex items-center gap-2 text-sm text-stone-700">
+        <input
+          checked={includeArchived}
+          className="h-4 w-4 accent-teal-700"
+          type="checkbox"
+          onChange={(event) => setIncludeArchived(event.target.checked)}
+        />
+        显示归档项目
+      </label>
 
       {loading && <p className="mt-8 text-sm text-stone-600">正在加载项目...</p>}
       {error && <p className="mt-8 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -51,7 +65,8 @@ export function ProjectListPage({ onCreate, onOpen }: ProjectListPageProps) {
             <thead className="bg-stone-100 text-stone-700">
               <tr>
                 <th className="w-2/5 px-4 py-3 font-medium">标题</th>
-                <th className="w-1/5 px-4 py-3 font-medium">状态</th>
+                <th className="w-1/6 px-4 py-3 font-medium">状态</th>
+                <th className="w-24 px-4 py-3 font-medium">素材</th>
                 <th className="w-1/4 px-4 py-3 font-medium">创建时间</th>
                 <th className="px-4 py-3 font-medium">操作</th>
               </tr>
@@ -63,6 +78,7 @@ export function ProjectListPage({ onCreate, onOpen }: ProjectListPageProps) {
                   <td className="px-4 py-3">
                     <StatusBadge status={project.status} />
                   </td>
+                  <td className="px-4 py-3 text-stone-700">{project.material_count}</td>
                   <td className="px-4 py-3 text-stone-600">{new Date(project.created_at).toLocaleString()}</td>
                   <td className="px-4 py-3">
                     <button className="text-sm font-medium text-teal-700 hover:text-teal-900" onClick={() => onOpen(project.id)}>
