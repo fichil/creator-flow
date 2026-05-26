@@ -6,9 +6,13 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 
 ## 当前状态
 
-`Planning / Documentation Foundation`
+`v0.1 Local Runnable Skeleton - In Progress`
 
-当前仓库仅包含产品与架构文档，尚未提供可运行应用、后端服务、前端界面、视频渲染器、发布集成或 Provider 实现。
+当前仓库已进入第一批本地可运行骨架实现。已具备最小 `FastAPI` backend、`React` + `Vite` + `Tailwind CSS` frontend、`SQLite` 本地元数据存储，以及内容项目和显式导入素材的基础页面与 API。
+
+本地开发说明见 [`docs/development.md`](docs/development.md)。
+
+当前仍未实现 AI Provider、视频渲染、定时生成、平台发布、生产部署或账号体系。
 
 ## 计划能力
 
@@ -22,6 +26,15 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 - 以抖音作为首个发布平台，同时通过 Provider 抽象保留多平台扩展能力。
 
 以上能力均为计划方向，尚未实现。
+
+## 当前本地骨架能力
+
+- 本地启动 backend 和 frontend。
+- 创建 `ContentProject`。
+- 向指定项目显式添加文本、摘要、项目记录、链接、图片和截图素材。
+- 查看项目列表、项目详情和素材列表。
+- 将项目与素材元数据保存到本地 `SQLite`。
+- 将用户上传文件保存到本地 `uploads/`，且不提交到 Git。
 
 ## 自动化边界
 
