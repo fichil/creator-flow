@@ -39,6 +39,9 @@
 - 基础内容项目与素材导入能力。
 - 项目更新与归档。
 - 素材上传可靠性测试。
+- Windows PowerShell 本地开发脚本。
+- API smoke verification。
+- 本地质量基线文档。
 - 本地开发说明。
 
 验收标准：
@@ -48,6 +51,7 @@
 - 用户可以更新和归档内容项目。
 - 用户可以登记或导入显式选择的素材。
 - 文件素材导入有基础成功、大小限制、类型校验和归档边界测试。
+- 本地脚本可以启动 backend/frontend，并执行 backend tests、frontend build 和 API smoke checks。
 - 基础页面不依赖外部 AI 或发布平台。
 
 明确不做事项：
