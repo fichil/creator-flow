@@ -15,6 +15,7 @@ class RenderArtifactResponse(BaseModel):
     id: int
     project_id: int
     render_job_id: int
+    subtitle_draft_id: int | None = None
     artifact_type: str
     file_name: str
     mime_type: str
@@ -23,6 +24,7 @@ class RenderArtifactResponse(BaseModel):
     width: int
     height: int
     storage_path: str
+    checksum_sha256: str | None = None
     created_at: str
 
 

@@ -1,4 +1,6 @@
+import json
 import sqlite3
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -52,6 +54,11 @@ def create_render(client: TestClient, project_id: int, payload: dict | None = No
     return client.post(f"/api/projects/{project_id}/renders", json=payload or {})
 
 
+def create_selected_subtitle_draft(client: TestClient, project_id: int) -> dict:
+    subtitle_draft = client.post(f"/api/projects/{project_id}/subtitle-drafts", json={}).json()
+    return client.post(f"/api/projects/{project_id}/subtitle-drafts/{subtitle_draft['id']}/select").json()
+
+
 def prepare_project_for_render(client: TestClient):
     project_id = create_project(client)
     add_text_material(client, project_id)
@@ -79,13 +86,18 @@ def test_create_fake_render_success_for_project_with_selected_storyboard(client:
     assert body["completed_at"] is not None
     artifact = body["artifact"]
     expected_duration = sum(scene["estimated_duration_seconds"] for scene in storyboard["scenes"])
-    assert artifact["artifact_type"] == "fake_video"
-    assert artifact["mime_type"] == "video/mp4"
+    assert artifact["artifact_type"] == "fake_preview_manifest"
+    assert artifact["mime_type"] == "application/json"
+    assert artifact["subtitle_draft_id"] is None
     assert artifact["duration_seconds"] == expected_duration
-    assert artifact["file_size_bytes"] == expected_duration * 1024
+    assert artifact["file_size_bytes"] > 0
     assert artifact["width"] == 1080
     assert artifact["height"] == 1920
-    assert artifact["storage_path"] == f"data/local/fake-renders/project-{project_id}/render-{body['id']}.mp4"
+    assert artifact["storage_path"] == (
+        f"data/local/render_previews/project-{project_id}/"
+        f"project-{project_id}-render-{body['id']}-preview-manifest.json"
+    )
+    assert artifact["checksum_sha256"]
 
 
 def test_create_fake_render_persists_job_and_artifact(client: TestClient):
@@ -99,6 +111,79 @@ def test_create_fake_render_persists_job_and_artifact(client: TestClient):
         artifact_count = connection.execute("SELECT COUNT(*) FROM render_artifacts").fetchone()[0]
     assert job_count == 1
     assert artifact_count == 1
+
+
+def test_create_fake_render_writes_preview_manifest_to_ignored_runtime_path(client: TestClient):
+    project_id, storyboard = prepare_project_for_render(client)
+
+    body = create_render(client, project_id).json()
+
+    artifact = body["artifact"]
+    assert artifact["storage_path"].startswith("data/local/render_previews/")
+    manifest_path = get_settings().render_previews_dir / f"project-{project_id}" / artifact["file_name"]
+    assert manifest_path.exists()
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["artifact_type"] == "fake_preview_manifest"
+    assert manifest["project_id"] == project_id
+    assert manifest["render_job_id"] == body["id"]
+    assert manifest["selected_storyboard_id"] == storyboard["id"]
+    assert manifest["selected_subtitle_draft_id"] is None
+    assert manifest["duration_seconds"] == artifact["duration_seconds"]
+
+
+def test_create_fake_render_with_selected_subtitle_draft_records_subtitle_metadata(client: TestClient):
+    project_id, _ = prepare_project_for_render(client)
+    subtitle_draft = create_selected_subtitle_draft(client, project_id)
+
+    body = create_render(client, project_id).json()
+
+    artifact = body["artifact"]
+    manifest_path = get_settings().render_previews_dir / f"project-{project_id}" / artifact["file_name"]
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert artifact["subtitle_draft_id"] == subtitle_draft["id"]
+    assert manifest["selected_subtitle_draft_id"] == subtitle_draft["id"]
+
+
+def test_create_fake_render_without_selected_subtitle_draft_still_succeeds(client: TestClient):
+    project_id, _ = prepare_project_for_render(client)
+
+    response = create_render(client, project_id)
+
+    assert response.status_code == 200
+    artifact = response.json()["artifact"]
+    manifest_path = get_settings().render_previews_dir / f"project-{project_id}" / artifact["file_name"]
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert artifact["subtitle_draft_id"] is None
+    assert manifest["selected_subtitle_draft_id"] is None
+
+
+def test_create_fake_render_does_not_create_real_media_or_subtitle_files(client: TestClient):
+    project_id, _ = prepare_project_for_render(client)
+
+    response = create_render(client, project_id)
+
+    assert response.status_code == 200
+    preview_dir = get_settings().render_previews_dir
+    generated_paths = [path for path in preview_dir.rglob("*") if path.is_file()]
+    assert generated_paths
+    assert all(path.suffix == ".json" for path in generated_paths)
+    assert not list(preview_dir.rglob("*.mp4"))
+    assert not list(preview_dir.rglob("*.mp3"))
+    assert not list(preview_dir.rglob("*.wav"))
+    assert not list(preview_dir.rglob("*.srt"))
+    assert not list(preview_dir.rglob("*.vtt"))
+
+
+def test_preview_manifest_storage_path_is_covered_by_gitignore(client: TestClient):
+    project_id, _ = prepare_project_for_render(client)
+
+    artifact = create_render(client, project_id).json()["artifact"]
+
+    repo_root = Path(__file__).resolve().parents[2]
+    ignore_file = repo_root / ".gitignore"
+    ignore_lines = ignore_file.read_text(encoding="utf-8").splitlines()
+    assert "data/local/" in ignore_lines
+    assert artifact["storage_path"].startswith("data/local/render_previews/")
 
 
 def test_create_fake_render_without_selected_storyboard_returns_409(client: TestClient):
@@ -148,6 +233,7 @@ def test_list_render_jobs_returns_persisted_data(client: TestClient):
     assert len(body) == 1
     assert body[0]["id"] == created["id"]
     assert body[0]["artifact"]["id"] == created["artifact"]["id"]
+    assert body[0]["artifact"]["artifact_type"] == "fake_preview_manifest"
 
 
 def test_get_single_render_job_success(client: TestClient):
@@ -159,6 +245,18 @@ def test_get_single_render_job_success(client: TestClient):
     assert response.status_code == 200
     assert response.json()["id"] == created["id"]
     assert response.json()["artifact"]["render_job_id"] == created["id"]
+    assert response.json()["artifact"]["artifact_type"] == "fake_preview_manifest"
+
+
+def test_create_fake_render_does_not_modify_project_status(client: TestClient):
+    project_id, _ = prepare_project_for_render(client)
+
+    before = client.get(f"/api/projects/{project_id}").json()["status"]
+    response = create_render(client, project_id)
+    after = client.get(f"/api/projects/{project_id}").json()["status"]
+
+    assert response.status_code == 200
+    assert after == before
 
 
 def test_get_render_job_from_another_project_returns_404(client: TestClient):

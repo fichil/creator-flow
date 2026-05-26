@@ -281,7 +281,7 @@ Invoke-RestMethod -Method Post "http://127.0.0.1:8000/api/projects/$($project.id
 Invoke-RestMethod "http://127.0.0.1:8000/api/projects/$($project.id)/renders"
 ```
 
-创建接口会写入 `render_jobs` 和 `render_artifacts`，并将 render job 同步标记为 `succeeded`。`render_artifacts.storage_path` 是 deterministic fake path，例如 `data/local/fake-renders/project-{project_id}/render-{render_job_id}.mp4`，但不会创建真实文件。如果项目没有 selected storyboard、selected storyboard 没有 scenes，或项目已归档，会返回 `409`。已归档项目仍允许查询已有 render jobs。
+创建接口会写入 `render_jobs` 和 `render_artifacts`，并将 render job 同步标记为 `succeeded`。`render_artifacts.storage_path` 指向 Git 忽略的 deterministic fake preview manifest 路径，例如 `data/local/render_previews/project-{project_id}/project-{project_id}-render-{render_job_id}-preview-manifest.json`；后端只写入轻量 JSON manifest，不创建真实 MP4、音频或字幕文件。如果项目没有 selected storyboard、selected storyboard 没有 scenes，或项目已归档，会返回 `409`。已归档项目仍允许查询已有 render jobs。
 
 ## Topic Candidate UI 验证
 

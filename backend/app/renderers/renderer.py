@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 
@@ -26,10 +27,12 @@ class RenderScene:
 class RenderInput:
     project_id: int
     render_job_id: int
+    selected_subtitle_draft_id: int | None
     project_title: str
     project_description: str | None
     storyboard: RenderStoryboard
     scenes: list[RenderScene]
+    preview_output_dir: Path | None = None
     requested_format: str = "mp4"
     requested_aspect_ratio: str = "9:16"
     requested_resolution: str = "1080x1920"
@@ -37,6 +40,7 @@ class RenderInput:
 
 @dataclass(frozen=True)
 class RenderOutput:
+    artifact_type: str
     file_name: str
     mime_type: str
     file_size_bytes: int
@@ -44,6 +48,7 @@ class RenderOutput:
     width: int
     height: int
     storage_path: str
+    checksum_sha256: str
 
 
 class Renderer(Protocol):

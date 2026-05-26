@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.core.config import Settings, get_settings
 from app.db.database import get_db
 from app.renderers import RenderInput, RenderScene, RenderStoryboard, get_renderer
 from app.schemas.render_job import RenderCreateRequest, RenderJobResponse
@@ -14,7 +15,12 @@ def list_render_jobs(project_id: int, db=Depends(get_db)):
 
 
 @router.post("/{project_id}/renders", response_model=RenderJobResponse)
-def create_render_job(project_id: int, payload: RenderCreateRequest | None = None, db=Depends(get_db)):
+def create_render_job(
+    project_id: int,
+    payload: RenderCreateRequest | None = None,
+    db=Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
     payload = payload or RenderCreateRequest()
     project = _get_project(db, project_id)
     if project["status"] == "archived":
@@ -28,6 +34,7 @@ def create_render_job(project_id: int, payload: RenderCreateRequest | None = Non
     if not scenes:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="selected storyboard has no scenes")
 
+    selected_subtitle_draft = _get_selected_subtitle_draft(db, project_id, storyboard["id"])
     renderer = get_renderer("fake_renderer")
     render_job = db.execute(
         """
@@ -67,6 +74,7 @@ def create_render_job(project_id: int, payload: RenderCreateRequest | None = Non
             RenderInput(
                 project_id=project_id,
                 render_job_id=render_job["id"],
+                selected_subtitle_draft_id=selected_subtitle_draft["id"] if selected_subtitle_draft else None,
                 project_title=project["title"],
                 project_description=project["description"],
                 storyboard=RenderStoryboard(
@@ -88,6 +96,7 @@ def create_render_job(project_id: int, payload: RenderCreateRequest | None = Non
                     )
                     for scene in scenes
                 ],
+                preview_output_dir=settings.render_previews_dir,
                 requested_format=payload.requested_format,
                 requested_aspect_ratio=payload.requested_aspect_ratio,
                 requested_resolution=payload.requested_resolution,
@@ -96,14 +105,16 @@ def create_render_job(project_id: int, payload: RenderCreateRequest | None = Non
         db.execute(
             """
             INSERT INTO render_artifacts (
-                project_id, render_job_id, artifact_type, file_name, mime_type,
-                file_size_bytes, duration_seconds, width, height, storage_path
+                project_id, render_job_id, subtitle_draft_id, artifact_type, file_name, mime_type,
+                file_size_bytes, duration_seconds, width, height, storage_path, checksum_sha256
             )
-            VALUES (?, ?, 'fake_video', ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 project_id,
                 render_job["id"],
+                selected_subtitle_draft["id"] if selected_subtitle_draft else None,
+                output.artifact_type,
                 output.file_name,
                 output.mime_type,
                 output.file_size_bytes,
@@ -111,6 +122,7 @@ def create_render_job(project_id: int, payload: RenderCreateRequest | None = Non
                 output.width,
                 output.height,
                 output.storage_path,
+                output.checksum_sha256,
             ),
         )
         db.execute(
@@ -184,6 +196,19 @@ def _list_storyboard_scenes(db, storyboard_id: int):
     ).fetchall()
 
 
+def _get_selected_subtitle_draft(db, project_id: int, storyboard_draft_id: int):
+    return db.execute(
+        """
+        SELECT id, project_id, storyboard_draft_id
+        FROM subtitle_drafts
+        WHERE project_id = ? AND storyboard_draft_id = ? AND status = 'selected'
+        ORDER BY selected_at DESC, id DESC
+        LIMIT 1
+        """,
+        (project_id, storyboard_draft_id),
+    ).fetchone()
+
+
 def _list_render_jobs(db, project_id: int) -> list[dict]:
     rows = db.execute(
         """
@@ -224,7 +249,8 @@ def _attach_artifacts(db, render_jobs: list[dict]) -> list[dict]:
     artifact_rows = db.execute(
         f"""
         SELECT id, project_id, render_job_id, artifact_type, file_name, mime_type,
-               file_size_bytes, duration_seconds, width, height, storage_path, created_at
+               subtitle_draft_id, file_size_bytes, duration_seconds, width, height,
+               storage_path, checksum_sha256, created_at
         FROM render_artifacts
         WHERE render_job_id IN ({placeholders})
         ORDER BY id DESC
