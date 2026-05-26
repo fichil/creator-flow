@@ -8,11 +8,34 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 
 `v0.1 Local Runnable Skeleton - In Progress`
 
-当前仓库已进入第一批本地可运行骨架实现。已具备最小 `FastAPI` backend、`React` + `Vite` + `Tailwind CSS` frontend、`SQLite` 本地元数据存储，以及内容项目和显式导入素材的基础页面与 API。
+当前仓库正在实现 v0.1 本地可运行骨架。已具备最小 `FastAPI` backend、`React` + `Vite` + `Tailwind CSS` frontend、`SQLite` 本地元数据存储，以及内容项目和显式导入素材的基础页面与 API。
 
 本地开发说明见 [`docs/development.md`](docs/development.md)。
 
 当前仍未实现 AI Provider、视频渲染、定时生成、平台发布、生产部署或账号体系。
+当前版本不适合作为生产部署使用。
+
+## 本地启动快捷入口
+
+在 Windows PowerShell 中，可以从仓库根目录运行：
+
+```powershell
+.\scripts\dev-backend.ps1
+```
+
+另开一个 PowerShell：
+
+```powershell
+.\scripts\dev-frontend.ps1
+```
+
+常用验证命令：
+
+```powershell
+.\scripts\test-backend.ps1
+.\scripts\build-frontend.ps1
+.\scripts\smoke-api.ps1
+```
 
 ## 计划能力
 

@@ -11,6 +11,32 @@
 
 如果 PowerShell 执行策略拦截 `npm`，请使用 `npm.cmd`。
 
+## 脚本快捷入口
+
+以下脚本都从仓库根目录运行，面向 Windows PowerShell：
+
+```powershell
+.\scripts\dev-backend.ps1
+.\scripts\dev-frontend.ps1
+.\scripts\test-backend.ps1
+.\scripts\build-frontend.ps1
+.\scripts\smoke-api.ps1
+```
+
+- `dev-backend.ps1`：进入 `backend`，确保 `.venv` 可用，安装 backend 依赖并启动 `uvicorn`。
+- `dev-frontend.ps1`：进入 `frontend`，缺少 `node_modules` 时执行 `npm.cmd install`，然后启动 Vite dev server。
+- `test-backend.ps1`：运行 backend pytest。
+- `build-frontend.ps1`：运行 frontend production build。
+- `smoke-api.ps1`：假设 backend 已运行在 `http://127.0.0.1:8000`，执行最小 API smoke checks。
+
+如果 PowerShell 拒绝执行本地脚本，可以只对本仓库脚本解除阻止：
+
+```powershell
+Get-ChildItem .\scripts\*.ps1 | Unblock-File
+```
+
+也可以使用后文的手动命令作为 fallback。
+
 ## 启动 Backend
 
 ```powershell
@@ -90,6 +116,34 @@ uv run --extra test pytest
 - 非法文件素材类型和不允许的 MIME 类型拒绝。
 - archived 项目禁止继续添加文本、链接或文件素材。
 
+## API Smoke Checklist
+
+先启动 backend：
+
+```powershell
+.\scripts\dev-backend.ps1
+```
+
+另开一个 PowerShell，运行：
+
+```powershell
+.\scripts\smoke-api.ps1
+```
+
+smoke 脚本会验证：
+
+- `GET /api/health`。
+- 创建项目。
+- 更新项目标题和描述。
+- 添加文本素材。
+- 添加链接素材。
+- 查询项目详情和素材列表。
+- 归档项目。
+- 默认项目列表不返回 archived 项目。
+- `include_archived=true` 返回 archived 项目。
+
+smoke 脚本会写入本地 SQLite 运行时数据；这些数据位于 Git 忽略路径中，不得提交。
+
 ## 验证项目与素材导入
 
 1. 启动 backend。
@@ -107,6 +161,59 @@ uv run --extra test pytest
 13. 打开已归档项目，确认已有素材仍可查看，且素材导入表单不可用。
 14. 刷新页面，确认项目与素材仍然存在。
 15. 检查 `git status --short`，确认未跟踪 SQLite 文件、上传文件、`.venv/`、`node_modules/` 或生成媒体。
+
+## 常见问题
+
+### PowerShell 执行策略阻止脚本
+
+如果看到脚本被执行策略阻止，可运行：
+
+```powershell
+Get-ChildItem .\scripts\*.ps1 | Unblock-File
+```
+
+如果是 `npm.ps1` 被阻止，请使用 `npm.cmd`，本仓库脚本也默认使用 `npm.cmd`。
+
+### Backend 端口被占用
+
+默认 backend 端口是 `127.0.0.1:8000`。如果端口被占用，可以先关闭占用该端口的本地服务，或手动运行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
+```
+
+如果 backend 端口不是 `8000`，启动 frontend 前需要设置 `VITE_API_BASE_URL`。
+
+### Frontend 连接不到 Backend
+
+确认 backend 已启动，并检查 frontend 使用的 API 地址：
+
+```powershell
+$env:VITE_API_BASE_URL = "http://127.0.0.1:8000"
+.\scripts\dev-frontend.ps1
+```
+
+### SQLite 文件在哪里
+
+默认 SQLite 文件位于：
+
+```text
+data/local/creator_flow.sqlite3
+```
+
+该文件是本地运行时数据，不会提交到 Git。
+
+### 如何清理本地运行时数据
+
+确认 backend/frontend 已停止后，可以删除本地运行时数据：
+
+```powershell
+Remove-Item .\data\local\creator_flow.sqlite3 -ErrorAction SilentlyContinue
+Remove-Item .\uploads\* -Recurse -Force -ErrorAction SilentlyContinue
+```
+
+不要删除 `data/local/.gitkeep` 或 `uploads/.gitkeep`。
 
 ## 当前未实现能力
 
