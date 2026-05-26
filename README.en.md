@@ -6,9 +6,13 @@ creator-flow is an open-source AI short-video content pipeline for turning user-
 
 ## Status
 
-`Planning / Documentation Foundation`
+`v0.1 Local Runnable Skeleton - In Progress`
 
-This repository currently contains product and architecture documentation only. It does not yet provide a runnable application, backend service, frontend UI, video renderer, publishing integration, or Provider implementation.
+This repository is now implementing the first local runnable skeleton. It includes a minimal `FastAPI` backend, `React` + `Vite` + `Tailwind CSS` frontend, local `SQLite` metadata storage, and basic pages and APIs for content projects and explicitly imported materials.
+
+Local development instructions are available in [`docs/development.md`](docs/development.md).
+
+AI Providers, video rendering, scheduled generation, platform publishing, production deployment, and user accounts are still not implemented.
 
 ## Planned Capabilities
 
@@ -22,6 +26,15 @@ This repository currently contains product and architecture documentation only. 
 - Use Douyin as the first publishing platform while preserving a multi-platform architecture through Provider abstractions.
 
 These capabilities are planned and not yet implemented.
+
+## Current Local Skeleton
+
+- Start the backend and frontend locally.
+- Create a `ContentProject`.
+- Explicitly add text, summary, project record, link, image, and screenshot materials to a project.
+- View the project list, project details, and material list.
+- Store project and material metadata in local `SQLite`.
+- Store uploaded files under local `uploads/`, excluded from Git.
 
 ## Automation Boundary
 
