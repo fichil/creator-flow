@@ -9,6 +9,7 @@ from app.api.routes import (
     generation_schedules,
     health,
     materials,
+    metric_review_summaries,
     metrics,
     projects,
     publishing,
@@ -49,6 +50,11 @@ app.include_router(generation_runs.router, prefix="/api/projects", tags=["genera
 app.include_router(review_drafts.router, prefix="/api/projects", tags=["review-drafts"])
 app.include_router(publishing.router, prefix="/api/projects", tags=["publishing"])
 app.include_router(metrics.router, prefix="/api/projects", tags=["metrics"])
+app.include_router(
+    metric_review_summaries.router,
+    prefix="/api/projects",
+    tags=["metric-review-summaries"],
+)
 app.include_router(topic_candidates.router, prefix="/api/projects", tags=["topic-candidates"])
 app.include_router(script_drafts.router, prefix="/api/projects", tags=["script-drafts"])
 app.include_router(storyboards.router, prefix="/api/projects", tags=["storyboards"])

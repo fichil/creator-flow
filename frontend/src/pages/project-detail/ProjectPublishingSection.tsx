@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import {
   cancelPublishIntent,
+  createFakePublicationMetricReviewSummary,
   confirmPublishIntent,
   createFakePublicationMetric,
   createPublishIntent,
@@ -10,12 +11,15 @@ import {
   getPublishIntents,
   getReviewDrafts,
   listPublicationMetrics,
+  listPublicationMetricReviewSummaries,
+  PublicationMetricReviewSummary,
   PublicationMetricSnapshot,
   PublicationRecord,
   PublishIntent,
   ReviewDraft,
 } from "../../api/client";
 import { formatStatus } from "./formatting";
+import { PublicationMetricReviewSummariesList } from "./PublicationMetricReviewSummariesList";
 import { PublicationMetricsList } from "./PublicationMetricsList";
 
 type ProjectPublishingSectionProps = {
@@ -29,13 +33,15 @@ type PublishingAction =
   | { type: "confirm"; id: number }
   | { type: "cancel"; id: number }
   | { type: "fake-publish"; id: number }
-  | { type: "fake-metrics"; id: number };
+  | { type: "fake-metrics"; id: number }
+  | { type: "fake-review-summary"; id: number };
 
 export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: ProjectPublishingSectionProps) {
   const [reviewDrafts, setReviewDrafts] = useState<ReviewDraft[]>([]);
   const [publishIntents, setPublishIntents] = useState<PublishIntent[]>([]);
   const [recordsByIntentId, setRecordsByIntentId] = useState<Record<number, PublicationRecord[]>>({});
   const [metricsByRecordId, setMetricsByRecordId] = useState<Record<number, PublicationMetricSnapshot[]>>({});
+  const [summariesByRecordId, setSummariesByRecordId] = useState<Record<number, PublicationMetricReviewSummary[]>>({});
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState<PublishingAction | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,10 +57,16 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
       const metricEntries = await Promise.all(
         records.map(async (record) => [record.id, await listPublicationMetrics(projectId, record.id)] as const),
       );
+      const summaryEntries = await Promise.all(
+        records.map(
+          async (record) => [record.id, await listPublicationMetricReviewSummaries(projectId, record.id)] as const,
+        ),
+      );
       setReviewDrafts(drafts);
       setPublishIntents(intents);
       setRecordsByIntentId(Object.fromEntries(recordEntries));
       setMetricsByRecordId(Object.fromEntries(metricEntries));
+      setSummariesByRecordId(Object.fromEntries(summaryEntries));
       setError(null);
     } catch (err) {
       setError(formatPublishingError(err, "加载本地 fake publishing workflow 失败"));
@@ -141,6 +153,11 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
     setMetricsByRecordId((current) => ({ ...current, [publicationRecordId]: metrics }));
   }
 
+  async function reloadSummariesForRecord(publicationRecordId: number) {
+    const summaries = await listPublicationMetricReviewSummaries(projectId, publicationRecordId);
+    setSummariesByRecordId((current) => ({ ...current, [publicationRecordId]: summaries }));
+  }
+
   async function handleCreateFakeMetrics(publicationRecordId: number) {
     if (isArchived) {
       return;
@@ -152,6 +169,22 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
       await reloadMetricsForRecord(publicationRecordId);
     } catch (err) {
       setError(formatPublishingError(err, "创建 fake metrics snapshot 失败"));
+    } finally {
+      setAction(null);
+    }
+  }
+
+  async function handleCreateFakeMetricReviewSummary(publicationRecordId: number) {
+    if (isArchived) {
+      return;
+    }
+    setAction({ type: "fake-review-summary", id: publicationRecordId });
+    setError(null);
+    try {
+      await createFakePublicationMetricReviewSummary(projectId, publicationRecordId);
+      await reloadSummariesForRecord(publicationRecordId);
+    } catch (err) {
+      setError(formatPublishingError(err, "创建 fake/local metrics review summary 失败"));
     } finally {
       setAction(null);
     }
@@ -231,11 +264,13 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
                     key={intent.id}
                     publishIntent={intent}
                     metricsByRecordId={metricsByRecordId}
+                    summariesByRecordId={summariesByRecordId}
                     records={recordsByIntentId[intent.id] ?? []}
                     onCancel={handleCancel}
                     onConfirm={handleConfirm}
                     onFakePublish={handleFakePublish}
                     onGenerateFakeMetrics={handleCreateFakeMetrics}
+                    onGenerateFakeMetricReviewSummary={handleCreateFakeMetricReviewSummary}
                   />
                 ))}
               </div>
@@ -254,17 +289,21 @@ function PublishIntentCard({
   onConfirm,
   onFakePublish,
   onGenerateFakeMetrics,
+  onGenerateFakeMetricReviewSummary,
   metricsByRecordId,
+  summariesByRecordId,
   publishIntent,
   records,
 }: {
   action: PublishingAction | null;
   isArchived: boolean;
   metricsByRecordId: Record<number, PublicationMetricSnapshot[]>;
+  summariesByRecordId: Record<number, PublicationMetricReviewSummary[]>;
   onCancel: (publishIntentId: number) => void;
   onConfirm: (publishIntentId: number) => void;
   onFakePublish: (publishIntentId: number) => void;
   onGenerateFakeMetrics: (publicationRecordId: number) => void;
+  onGenerateFakeMetricReviewSummary: (publicationRecordId: number) => void;
   publishIntent: PublishIntent;
   records: PublicationRecord[];
 }) {
@@ -365,8 +404,10 @@ function PublishIntentCard({
                 isArchived={isArchived}
                 key={record.id}
                 metrics={metricsByRecordId[record.id] ?? []}
+                summaries={summariesByRecordId[record.id] ?? []}
                 record={record}
                 onGenerateFakeMetrics={onGenerateFakeMetrics}
+                onGenerateFakeMetricReviewSummary={onGenerateFakeMetricReviewSummary}
               />
             ))}
           </div>
@@ -380,16 +421,21 @@ function PublicationRecordItem({
   action,
   isArchived,
   metrics,
+  summaries,
   onGenerateFakeMetrics,
+  onGenerateFakeMetricReviewSummary,
   record,
 }: {
   action: PublishingAction | null;
   isArchived: boolean;
   metrics: PublicationMetricSnapshot[];
+  summaries: PublicationMetricReviewSummary[];
   onGenerateFakeMetrics: (publicationRecordId: number) => void;
+  onGenerateFakeMetricReviewSummary: (publicationRecordId: number) => void;
   record: PublicationRecord;
 }) {
   const generatingMetrics = action?.type === "fake-metrics" && action.id === record.id;
+  const generatingSummary = action?.type === "fake-review-summary" && action.id === record.id;
 
   return (
     <div
@@ -433,6 +479,13 @@ function PublicationRecordItem({
         isGenerating={generatingMetrics}
         metrics={metrics}
         onGenerateFakeMetrics={() => onGenerateFakeMetrics(record.id)}
+      />
+      <PublicationMetricReviewSummariesList
+        isArchived={isArchived}
+        isDisabled={action !== null}
+        isGenerating={generatingSummary}
+        summaries={summaries}
+        onGenerateFakeSummary={() => onGenerateFakeMetricReviewSummary(record.id)}
       />
     </div>
   );
