@@ -209,6 +209,10 @@
 
 目标：在人工确认前提下支持抖音发布准备与发布动作。
 
+状态：v0.5 Batch 1 已开始并完成 Human-Confirmed Publishing Provider Boundary documentation foundation。当前只定义发布 Provider 边界、人工确认原则、`PublishIntent` / `PublicationRecord` 或等价模型方向，以及凭据与平台细节隔离要求；本批不实现真实 OAuth、真实发布、真实上传、排期发布、自动发布、token 保存、后端 API、前端功能或数据库表，也不修改 v0.4 local fake/manual workflow 或 v0.3 render/subtitle/preview workflow。
+
+已完成 Batch 1：实现 Human-Confirmed Publishing Provider Boundary documentation foundation。该批次只更新产品规格、架构、路线图和 ADR，明确 v0.5 的目标是 Human-Confirmed Douyin Publishing；发布必须由用户明确确认后触发；`Review Draft` approved 不等于发布；系统不得静默发布、自动发布或绕过用户审核；`PublisherProvider` 必须隔离平台细节；抖音只是首个平台实现方向，不能写死到核心模型；凭据不得进入 Git；后续真实发布能力必须基于 `PublishIntent` / `PublicationRecord` 或等价模型并保留人工确认状态。
+
 范围：
 
 - 抖音 OAuth 或等价授权流程。
@@ -224,11 +228,21 @@
 - 发布状态可以查询并记录。
 - 凭据不会进入仓库。
 
+当前文档边界：
+
+- `Review Draft` approved 只表示草稿通过审核，不会触发发布、上传或排期发布。
+- `PublishIntent` 表示等待用户确认的发布意图；`PublicationRecord` 或等价模型记录确认后的执行结果。
+- `PublisherProvider` 只能在用户确认后执行平台动作，并必须把抖音等平台细节隔离在适配层。
+- OAuth、token 保存、真实发布、真实上传、发布状态查询和错误重试必须在后续独立批次中实现。
+- v0.4 local fake/manual workflow 保持不变。
+
 明确不做事项：
 
 - 不静默发布。
+- 不自动发布、排期发布或上传。
 - 不绕过平台授权。
 - 不把抖音假设写死到核心模型。
+- 不在本批实现真实 OAuth、真实发布、真实上传或真实 token 保存。
 
 ## v0.6 Metrics Feedback Loop
 
