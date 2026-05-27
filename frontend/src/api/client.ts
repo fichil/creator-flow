@@ -264,6 +264,23 @@ export type PublicationMetricSnapshot = {
   updated_at: string;
 };
 
+export type PublicationMetricReviewSummary = {
+  id: number;
+  project_id: number;
+  publication_record_id: number;
+  source: string;
+  is_fake_local: boolean;
+  summary_text: string;
+  highlights: string;
+  low_performance_signals: string;
+  next_observations: string;
+  snapshot_count: number;
+  metric_window_start: string | null;
+  metric_window_end: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ContentPlan = {
   id: number;
   project_id: number;
@@ -508,6 +525,37 @@ export function getPublicationMetric(
 ): Promise<PublicationMetricSnapshot> {
   return request<PublicationMetricSnapshot>(
     `/api/projects/${projectId}/publication-records/${publicationRecordId}/metrics/${metricSnapshotId}`,
+  );
+}
+
+export function listPublicationMetricReviewSummaries(
+  projectId: number,
+  publicationRecordId: number,
+): Promise<PublicationMetricReviewSummary[]> {
+  return request<PublicationMetricReviewSummary[]>(
+    `/api/projects/${projectId}/publication-records/${publicationRecordId}/metric-review-summaries`,
+  );
+}
+
+export function createFakePublicationMetricReviewSummary(
+  projectId: number,
+  publicationRecordId: number,
+): Promise<PublicationMetricReviewSummary> {
+  return request<PublicationMetricReviewSummary>(
+    `/api/projects/${projectId}/publication-records/${publicationRecordId}/metric-review-summaries/fake`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function getPublicationMetricReviewSummary(
+  projectId: number,
+  publicationRecordId: number,
+  summaryId: number,
+): Promise<PublicationMetricReviewSummary> {
+  return request<PublicationMetricReviewSummary>(
+    `/api/projects/${projectId}/publication-records/${publicationRecordId}/metric-review-summaries/${summaryId}`,
   );
 }
 

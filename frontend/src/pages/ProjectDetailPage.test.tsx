@@ -6,6 +6,7 @@ import type {
   ContentPlan,
   GenerationRun,
   GenerationSchedule,
+  PublicationMetricReviewSummary,
   PublicationMetricSnapshot,
   PublicationRecord,
   PublishIntent,
@@ -358,6 +359,38 @@ const metricSnapshotWithSparseValues: PublicationMetricSnapshot = {
   updated_at: "2026-05-26T08:32:00Z",
 };
 
+const metricReviewSummaryOne: PublicationMetricReviewSummary = {
+  id: 2001,
+  project_id: 1,
+  publication_record_id: 1801,
+  source: "fake_local",
+  is_fake_local: true,
+  summary_text:
+    "Fake/local review summary based on 1 metric snapshot. Use this only as a manual review reference.",
+  highlights: "Latest fake/local snapshot baseline: views=248, likes=24.",
+  low_performance_signals: "No low-performance signals were detected from the available fake/local metrics.",
+  next_observations: "Do not auto-modify topics, scripts, or content plans.",
+  snapshot_count: 1,
+  metric_window_start: "2026-05-26T08:31:00Z",
+  metric_window_end: "2026-05-26T08:31:00Z",
+  created_at: "2026-05-26T08:33:00Z",
+  updated_at: "2026-05-26T08:33:00Z",
+};
+
+const metricReviewSummaryWithSparseText: PublicationMetricReviewSummary = {
+  ...metricReviewSummaryOne,
+  id: 2002,
+  summary_text: "",
+  highlights: "",
+  low_performance_signals: "",
+  next_observations: "",
+  snapshot_count: 0,
+  metric_window_start: null,
+  metric_window_end: null,
+  created_at: "2026-05-26T08:34:00Z",
+  updated_at: "2026-05-26T08:34:00Z",
+};
+
 const contentPlanOne: ContentPlan = {
   id: 401,
   project_id: 1,
@@ -423,6 +456,7 @@ type ServerOptions = {
   publishIntents?: PublishIntent[];
   publicationRecords?: Record<number, PublicationRecord[]>;
   publicationMetrics?: Record<number, PublicationMetricSnapshot[]>;
+  publicationMetricReviewSummaries?: Record<number, PublicationMetricReviewSummary[]>;
   contentPlans?: ContentPlan[];
   generationSchedules?: GenerationSchedule[];
   generationRuns?: GenerationRun[];
@@ -433,6 +467,7 @@ type ServerOptions = {
   createSubtitleDraftError?: string;
   createPublishIntentError?: string;
   createMetricError?: string;
+  createMetricReviewSummaryError?: string;
   selectError?: string;
   selectScriptDraftError?: string;
   selectStoryboardError?: string;
@@ -462,6 +497,12 @@ function installFetchMock(options: ServerOptions = {}) {
   );
   let publicationMetricsByRecordId: Record<number, PublicationMetricSnapshot[]> = Object.fromEntries(
     Object.entries(options.publicationMetrics ?? {}).map(([recordId, metrics]) => [Number(recordId), [...metrics]]),
+  );
+  let publicationMetricReviewSummariesByRecordId: Record<number, PublicationMetricReviewSummary[]> = Object.fromEntries(
+    Object.entries(options.publicationMetricReviewSummaries ?? {}).map(([recordId, summaries]) => [
+      Number(recordId),
+      [...summaries],
+    ]),
   );
   let contentPlans = [...(options.contentPlans ?? [])];
   let generationSchedules = [...(options.generationSchedules ?? [])];
@@ -514,6 +555,13 @@ function installFetchMock(options: ServerOptions = {}) {
       const publicationRecordId = Number(listPublicationMetricsMatch[1]);
       return jsonResponse(publicationMetricsByRecordId[publicationRecordId] ?? []);
     }
+    const listMetricReviewSummariesMatch = url.pathname.match(
+      /^\/api\/projects\/1\/publication-records\/(\d+)\/metric-review-summaries$/,
+    );
+    if (method === "GET" && listMetricReviewSummariesMatch) {
+      const publicationRecordId = Number(listMetricReviewSummariesMatch[1]);
+      return jsonResponse(publicationMetricReviewSummariesByRecordId[publicationRecordId] ?? []);
+    }
     const createFakeMetricMatch = url.pathname.match(
       /^\/api\/projects\/1\/publication-records\/(\d+)\/metrics\/fake$/,
     );
@@ -535,6 +583,30 @@ function installFetchMock(options: ServerOptions = {}) {
         [publicationRecordId]: [createdMetric, ...(publicationMetricsByRecordId[publicationRecordId] ?? [])],
       };
       return jsonResponse(createdMetric, 201);
+    }
+    const createFakeMetricReviewSummaryMatch = url.pathname.match(
+      /^\/api\/projects\/1\/publication-records\/(\d+)\/metric-review-summaries\/fake$/,
+    );
+    if (method === "POST" && createFakeMetricReviewSummaryMatch) {
+      if (options.createMetricReviewSummaryError) {
+        return jsonResponse({ detail: options.createMetricReviewSummaryError }, 409);
+      }
+      const publicationRecordId = Number(createFakeMetricReviewSummaryMatch[1]);
+      const createdSummary: PublicationMetricReviewSummary = {
+        ...metricReviewSummaryOne,
+        id: 2099,
+        publication_record_id: publicationRecordId,
+        created_at: "2026-05-26T08:35:00Z",
+        updated_at: "2026-05-26T08:35:00Z",
+      };
+      publicationMetricReviewSummariesByRecordId = {
+        ...publicationMetricReviewSummariesByRecordId,
+        [publicationRecordId]: [
+          createdSummary,
+          ...(publicationMetricReviewSummariesByRecordId[publicationRecordId] ?? []),
+        ],
+      };
+      return jsonResponse(createdSummary, 201);
     }
     if (method === "GET" && url.pathname === "/api/projects/1/content-plans") {
       return jsonResponse(contentPlans);
@@ -1635,6 +1707,112 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(within(recordCard).getAllByText("Fake/local metrics").length).toBeGreaterThan(0);
   });
 
+  it("shows PublicationRecord metric review summaries with fake/local insight labels", async () => {
+    const server = await renderProject({
+      publicationMetricReviewSummaries: { 1801: [metricReviewSummaryOne] },
+      publicationRecords: { 1702: [publicationRecordSucceeded] },
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const recordCard = screen.getByLabelText("PublicationRecord 1801");
+    await waitFor(() =>
+      expect(server.calls).toContain("GET /api/projects/1/publication-records/1801/metric-review-summaries"),
+    );
+
+    expect(within(recordCard).getByLabelText("MetricReviewSummary 2001")).toBeTruthy();
+    expect(within(recordCard).getByText("Fake/local review summary")).toBeTruthy();
+    expect(within(recordCard).getByText(/Not real platform analysis/)).toBeTruthy();
+    expect(within(recordCard).getAllByText(/Not real platform performance/).length).toBeGreaterThan(0);
+    expect(within(recordCard).getByText(/Local development \/ demo \/ test data/)).toBeTruthy();
+    expect(within(recordCard).getAllByText(/Not automatic recommendation/).length).toBeGreaterThan(0);
+    expect(within(recordCard).getAllByText(/does not modify content automatically/).length).toBeGreaterThan(0);
+    expect(within(recordCard).getByText("fake_local")).toBeTruthy();
+    expect(within(recordCard).getByText("1")).toBeTruthy();
+    expect(within(recordCard).getByText(metricReviewSummaryOne.summary_text)).toBeTruthy();
+    expect(within(recordCard).getByText(metricReviewSummaryOne.highlights)).toBeTruthy();
+    expect(within(recordCard).getByText(metricReviewSummaryOne.low_performance_signals)).toBeTruthy();
+    expect(within(recordCard).getByText(metricReviewSummaryOne.next_observations)).toBeTruthy();
+    expect(screen.queryByText("Real platform analytics")).toBeNull();
+  });
+
+  it("shows an empty metric review summary state for PublicationRecords without summaries", async () => {
+    await renderProject({
+      publicationRecords: { 1702: [publicationRecordSucceeded] },
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const recordCard = screen.getByLabelText("PublicationRecord 1801");
+
+    expect(within(recordCard).getByText("No metrics review summaries yet.")).toBeTruthy();
+    expect(within(recordCard).getByRole("button", { name: "Generate fake/local summary" })).toBeTruthy();
+  });
+
+  it("creates fake/local metric review summaries and refreshes only that PublicationRecord", async () => {
+    const server = await renderProject({
+      publicationMetricReviewSummaries: {
+        1802: [{ ...metricReviewSummaryOne, id: 2003, publication_record_id: 1802 }],
+      },
+      publicationRecords: { 1702: [publicationRecordSucceeded, publicationRecordSecondSucceeded] },
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const firstRecordCard = screen.getByLabelText("PublicationRecord 1801");
+    await waitFor(() =>
+      expect(
+        server.calls.filter((call) => call === "GET /api/projects/1/publication-records/1802/metric-review-summaries"),
+      ).toHaveLength(1),
+    );
+
+    fireEvent.click(within(firstRecordCard).getByRole("button", { name: "Generate fake/local summary" }));
+
+    expect(await within(firstRecordCard).findByLabelText("MetricReviewSummary 2099")).toBeTruthy();
+    expect(server.calls).toContain("POST /api/projects/1/publication-records/1801/metric-review-summaries/fake");
+    const unchangedSecondRecordCard = screen.getByLabelText("PublicationRecord 1802");
+    expect(within(unchangedSecondRecordCard).getByLabelText("MetricReviewSummary 2003")).toBeTruthy();
+    expect(within(unchangedSecondRecordCard).queryByLabelText("MetricReviewSummary 2099")).toBeNull();
+    expect(
+      server.calls.filter((call) => call === "GET /api/projects/1/publication-records/1801/metric-review-summaries"),
+    ).toHaveLength(2);
+    expect(
+      server.calls.filter((call) => call === "GET /api/projects/1/publication-records/1802/metric-review-summaries"),
+    ).toHaveLength(1);
+  });
+
+  it("shows stable fallback values for sparse metric review summary text", async () => {
+    await renderProject({
+      publicationMetricReviewSummaries: { 1801: [metricReviewSummaryWithSparseText] },
+      publicationRecords: { 1702: [publicationRecordSucceeded] },
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const recordCard = screen.getByLabelText("PublicationRecord 1801");
+    const sparseSummary = within(recordCard).getByLabelText("MetricReviewSummary 2002");
+
+    expect(within(sparseSummary).getByText("No metrics window yet")).toBeTruthy();
+    expect(within(sparseSummary).getAllByText("Not provided for this fake/local summary.")).toHaveLength(4);
+    expect(within(sparseSummary).getByText(/Not real platform analysis/)).toBeTruthy();
+  });
+
+  it("shows fake/local metric review summary API errors without implying recommendations", async () => {
+    await renderProject({
+      createMetricReviewSummaryError: "fake review summary unavailable",
+      publicationRecords: { 1702: [publicationRecordSucceeded] },
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const recordCard = screen.getByLabelText("PublicationRecord 1801");
+    fireEvent.click(within(recordCard).getByRole("button", { name: "Generate fake/local summary" }));
+
+    expect(await screen.findByText("fake review summary unavailable")).toBeTruthy();
+    expect(screen.queryByText("Automatic recommendation")).toBeNull();
+    expect(screen.queryByText("真实平台分析")).toBeNull();
+  });
+
   it("refreshes only the targeted PublicationRecord metrics after fake generation", async () => {
     const server = await renderProject({
       publicationMetrics: {
@@ -1694,7 +1872,8 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect((screen.getByRole("button", { name: "已有 PublishIntent" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.queryByRole("button", { name: "Fake Publish" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Generate fake metrics" })).toBeNull();
-    expect(screen.getByText(/Archived projects are read-only/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Generate fake/local summary" })).toBeNull();
+    expect(screen.getAllByText(/Archived projects are read-only/).length).toBeGreaterThanOrEqual(2);
   });
 });
 
