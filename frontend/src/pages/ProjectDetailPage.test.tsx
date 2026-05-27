@@ -2,7 +2,15 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectDetailPage } from "./ProjectDetailPage";
-import type { ProjectDetail, RenderJob, ScriptDraft, Storyboard, SubtitleDraft, TopicCandidate } from "../api/client";
+import type {
+  ProjectDetail,
+  RenderJob,
+  ReviewDraft,
+  ScriptDraft,
+  Storyboard,
+  SubtitleDraft,
+  TopicCandidate,
+} from "../api/client";
 
 const baseProject: ProjectDetail = {
   id: 1,
@@ -231,6 +239,39 @@ const subtitleDraftWithoutCues: SubtitleDraft = {
   cues: [],
 };
 
+const reviewDraftPending: ReviewDraft = {
+  id: 1501,
+  project_id: 1,
+  content_plan_id: 401,
+  generation_schedule_id: null,
+  generation_run_id: 301,
+  title: "Manual run review draft",
+  draft_summary: "Deterministic fake draft summary from a manual run.",
+  input_source_summary: "ContentPlan #401 plus GenerationRun #301.",
+  hotspot_source_summary: null,
+  review_status: "pending_review",
+  created_at: "2026-05-26T08:19:00Z",
+  updated_at: "2026-05-26T08:19:00Z",
+};
+
+const reviewDraftApproved: ReviewDraft = {
+  ...reviewDraftPending,
+  id: 1502,
+  generation_schedule_id: 701,
+  title: "Approved review draft",
+  hotspot_source_summary: "No external hotspot source used.",
+  review_status: "approved",
+  updated_at: "2026-05-26T08:20:00Z",
+};
+
+const reviewDraftRejected: ReviewDraft = {
+  ...reviewDraftPending,
+  id: 1503,
+  title: "Rejected review draft",
+  review_status: "rejected",
+  updated_at: "2026-05-26T08:21:00Z",
+};
+
 type ServerOptions = {
   project?: ProjectDetail;
   candidates?: TopicCandidate[];
@@ -238,6 +279,7 @@ type ServerOptions = {
   storyboards?: Storyboard[];
   renderJobs?: RenderJob[];
   subtitleDrafts?: SubtitleDraft[];
+  reviewDrafts?: ReviewDraft[];
   generateError?: string;
   generateScriptDraftsError?: string;
   generateStoryboardsError?: string;
@@ -265,6 +307,7 @@ function installFetchMock(options: ServerOptions = {}) {
   let storyboards = [...(options.storyboards ?? [])];
   let renderJobs = [...(options.renderJobs ?? [])];
   let subtitleDrafts = [...(options.subtitleDrafts ?? [])];
+  let reviewDrafts = [...(options.reviewDrafts ?? [])];
   const calls: string[] = [];
   const bodies: Record<string, string | undefined> = {};
 
@@ -292,6 +335,9 @@ function installFetchMock(options: ServerOptions = {}) {
     }
     if (method === "GET" && url.pathname === "/api/projects/1/subtitle-drafts") {
       return jsonResponse(subtitleDrafts);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/review-drafts") {
+      return jsonResponse(reviewDrafts);
     }
     if (method === "POST" && url.pathname === "/api/projects/1/topic-candidates/generate") {
       if (options.generateError) {
@@ -421,6 +467,26 @@ function installFetchMock(options: ServerOptions = {}) {
       }));
       return jsonResponse(subtitleDrafts.find((subtitleDraft) => subtitleDraft.id === 1301));
     }
+    const approveReviewDraftMatch = url.pathname.match(/^\/api\/projects\/1\/review-drafts\/(\d+)\/approve$/);
+    if (method === "POST" && approveReviewDraftMatch) {
+      const reviewDraftId = Number(approveReviewDraftMatch[1]);
+      reviewDrafts = reviewDrafts.map((reviewDraft) => ({
+        ...reviewDraft,
+        review_status: reviewDraft.id === reviewDraftId ? "approved" : reviewDraft.review_status,
+        updated_at: reviewDraft.id === reviewDraftId ? "2026-05-26T08:22:00Z" : reviewDraft.updated_at,
+      }));
+      return jsonResponse(reviewDrafts.find((reviewDraft) => reviewDraft.id === reviewDraftId));
+    }
+    const rejectReviewDraftMatch = url.pathname.match(/^\/api\/projects\/1\/review-drafts\/(\d+)\/reject$/);
+    if (method === "POST" && rejectReviewDraftMatch) {
+      const reviewDraftId = Number(rejectReviewDraftMatch[1]);
+      reviewDrafts = reviewDrafts.map((reviewDraft) => ({
+        ...reviewDraft,
+        review_status: reviewDraft.id === reviewDraftId ? "rejected" : reviewDraft.review_status,
+        updated_at: reviewDraft.id === reviewDraftId ? "2026-05-26T08:23:00Z" : reviewDraft.updated_at,
+      }));
+      return jsonResponse(reviewDrafts.find((reviewDraft) => reviewDraft.id === reviewDraftId));
+    }
     return jsonResponse({ detail: "not found" }, 404);
   });
 
@@ -437,6 +503,7 @@ async function renderProject(options?: ServerOptions) {
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/storyboards"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/renders"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/subtitle-drafts"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/review-drafts"));
   return server;
 }
 
@@ -751,6 +818,79 @@ describe("ProjectDetailPage storyboards", () => {
     fireEvent.click(within(storyboardCard).getByRole("button", { name: "选择" }));
 
     expect(await screen.findByText("当前项目已归档，只能查看，不能继续修改。")).toBeTruthy();
+  });
+});
+
+describe("ProjectDetailPage review drafts", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("requests and shows review drafts when the project detail page loads", async () => {
+    const server = await renderProject({ reviewDrafts: [reviewDraftPending] });
+
+    expect(server.calls).toContain("GET /api/projects/1/review-drafts");
+    const reviewDraftCard = screen.getByLabelText("待审核草稿：Manual run review draft");
+    expect(within(reviewDraftCard).getByText("Deterministic fake draft summary from a manual run.")).toBeTruthy();
+    expect(within(reviewDraftCard).getByText("ContentPlan #401 plus GenerationRun #301.")).toBeTruthy();
+    expect(within(reviewDraftCard).getByText("#301")).toBeTruthy();
+    expect(within(reviewDraftCard).getByText("手动运行 / 无计划")).toBeTruthy();
+  });
+
+  it("shows pending, approved, and rejected review statuses", async () => {
+    await renderProject({ reviewDrafts: [reviewDraftPending, reviewDraftApproved, reviewDraftRejected] });
+
+    expect(within(screen.getByLabelText("待审核草稿：Manual run review draft")).getAllByText("待审核")[0]).toBeTruthy();
+    expect(within(screen.getByLabelText("待审核草稿：Approved review draft")).getAllByText("已通过")[0]).toBeTruthy();
+    expect(within(screen.getByLabelText("待审核草稿：Rejected review draft")).getAllByText("已拒绝")[0]).toBeTruthy();
+  });
+
+  it("shows an explicit hotspot source fallback when the summary is empty", async () => {
+    await renderProject({ reviewDrafts: [reviewDraftPending] });
+
+    const reviewDraftCard = screen.getByLabelText("待审核草稿：Manual run review draft");
+    expect(within(reviewDraftCard).getByText("未启用热点来源 / 无热点来源")).toBeTruthy();
+  });
+
+  it("approves a review draft and refreshes the list", async () => {
+    const server = await renderProject({ reviewDrafts: [reviewDraftPending] });
+
+    fireEvent.click(within(screen.getByLabelText("待审核草稿：Manual run review draft")).getByRole("button", { name: "通过" }));
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("待审核草稿：Manual run review draft").getAttribute("data-status")).toBe("approved"),
+    );
+    expect(server.calls).toContain("POST /api/projects/1/review-drafts/1501/approve");
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(2);
+  });
+
+  it("rejects a review draft and refreshes the list", async () => {
+    const server = await renderProject({ reviewDrafts: [reviewDraftPending] });
+
+    fireEvent.click(within(screen.getByLabelText("待审核草稿：Manual run review draft")).getByRole("button", { name: "拒绝" }));
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("待审核草稿：Manual run review draft").getAttribute("data-status")).toBe("rejected"),
+    );
+    expect(server.calls).toContain("POST /api/projects/1/review-drafts/1501/reject");
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(2);
+  });
+
+  it("keeps review drafts read-only for archived projects", async () => {
+    await renderProject({
+      project: { ...baseProject, status: "archived" },
+      reviewDrafts: [reviewDraftPending],
+    });
+
+    const reviewDraftCard = screen.getByLabelText("待审核草稿：Manual run review draft");
+    expect(screen.getByText("当前项目已归档，只能查看待审核草稿，不能继续审核操作。")).toBeTruthy();
+    expect(within(reviewDraftCard).queryByRole("button", { name: "通过" })).toBeNull();
+    expect(within(reviewDraftCard).queryByRole("button", { name: "拒绝" })).toBeNull();
   });
 });
 

@@ -154,7 +154,7 @@
 
 目标：支持用户配置内容计划和生成频率，并自动生成待审核草稿。
 
-状态：v0.4 Batch 4 已开始并完成 Review Draft backend-only foundation；当前支持项目级 `ContentPlan`、其关联 `GenerationSchedule` 配置、backend-only fake manual `GenerationRun` 记录，以及由 manual run 同步创建的 `review_drafts` pending_review placeholder。本阶段只允许 manual trigger，不执行 scheduled trigger，不实现 Scheduler / Trigger Engine，不自动生成真实草稿，不创建真实 Topic Candidate、Script Draft、Storyboard、Render Job、Subtitle Draft 或媒体文件，不实现完整 `Review Queue` UI、`Notification Service`、热点源或真实 AI Provider。
+状态：v0.4 Batch 5 已开始并完成 Review Draft frontend UI foundation；当前支持项目级 `ContentPlan`、其关联 `GenerationSchedule` 配置、backend-only fake manual `GenerationRun` 记录、由 manual run 同步创建的 `review_drafts` pending_review placeholder，以及项目详情页中的 review drafts 展示和 approve / reject 操作。本阶段只允许 manual trigger，不执行 scheduled trigger，不实现 Scheduler / Trigger Engine，不自动生成真实草稿，不创建真实 Topic Candidate、Script Draft、Storyboard、Render Job、Subtitle Draft 或媒体文件，不实现完整 `Review Queue` 页面、`Notification Service`、热点源或真实 AI Provider。
 
 已完成 Batch 1：实现 ContentPlan backend-only domain foundation。该批次新增项目级 `content_plans` 数据表、Pydantic schemas、API routes 和 backend tests，支持账号定位、内容类型、每周目标频率、偏好文本和启用状态配置；`target_frequency_per_week` 限制为 1 到 14。ContentPlan 只是本地配置，不触发任何自动生成行为，不接调度、发布、热点源或真实 AI Provider。
 
@@ -163,6 +163,8 @@
 已完成 Batch 3：实现 GenerationRun backend-only manual trigger foundation。该批次新增 `generation_runs` 数据表、Pydantic schemas、API routes 和 backend tests，支持基于项目级 `ContentPlan` 与可选 `GenerationSchedule` 创建 fake manual run，并同步标记为 `succeeded`，记录 deterministic input/result summary；本批不执行 schedule，不创建真实草稿或媒体，不接 Scheduler、后台 worker、热点源、发布或真实 AI Provider。
 
 已完成 Batch 4：实现 Review Draft backend-only foundation。该批次新增 `review_drafts` 数据表、Pydantic schemas、API routes 和 backend tests；fake manual `GenerationRun` 成功后同步创建 1 条 `pending_review` review draft placeholder，支持 list / read / approve / reject。approve / reject 只改变 `review_status`，不触发真实生成、渲染、上传、发布或外部 Provider。
+
+已完成 Batch 5：实现 Review Draft frontend UI foundation。该批次在项目详情页新增待审核草稿区块，展示 backend 返回的 `review_drafts` list、审核状态、草稿摘要、输入来源、热点来源 fallback、GenerationRun / GenerationSchedule 信息和创建/更新时间；支持调用已有 approve / reject API 并在成功后刷新列表，archived 项目保持只读。本批不新增后端业务能力，不实现完整 `Review Queue` 页面，不实现 Scheduler / scheduled `GenerationRun`，不创建真实媒体，不接真实 Provider，不发布不上传。
 
 范围：
 
