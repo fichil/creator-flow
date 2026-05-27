@@ -96,6 +96,37 @@ CREATE TABLE IF NOT EXISTS review_drafts (
     CHECK (review_status IN ('pending_review', 'approved', 'rejected'))
 );
 
+CREATE TABLE IF NOT EXISTS publish_intents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    review_draft_id INTEGER NOT NULL,
+    target_platform TEXT NOT NULL,
+    title TEXT NOT NULL,
+    caption TEXT NOT NULL,
+    publish_status TEXT NOT NULL DEFAULT 'pending_confirmation',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (review_draft_id) REFERENCES review_drafts(id) ON DELETE CASCADE,
+    CHECK (publish_status IN ('pending_confirmation', 'confirmed', 'cancelled'))
+);
+
+CREATE TABLE IF NOT EXISTS publication_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    publish_intent_id INTEGER NOT NULL,
+    target_platform TEXT NOT NULL,
+    provider_name TEXT NOT NULL,
+    external_publication_id TEXT,
+    publication_status TEXT NOT NULL DEFAULT 'not_started',
+    error_message TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (publish_intent_id) REFERENCES publish_intents(id) ON DELETE CASCADE,
+    CHECK (publication_status IN ('not_started', 'succeeded', 'failed'))
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -353,6 +384,18 @@ ON review_drafts (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_review_drafts_generation_run_id
 ON review_drafts (generation_run_id);
+
+CREATE INDEX IF NOT EXISTS idx_publish_intents_project_id_created_at
+ON publish_intents (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_publish_intents_review_draft_id
+ON publish_intents (review_draft_id);
+
+CREATE INDEX IF NOT EXISTS idx_publication_records_project_id_created_at
+ON publication_records (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_publication_records_publish_intent_id
+ON publication_records (publish_intent_id);
 
 CREATE INDEX IF NOT EXISTS idx_topic_generation_runs_project_id_created_at
 ON topic_generation_runs (project_id, created_at DESC, id DESC);

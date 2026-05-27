@@ -6,13 +6,13 @@ creator-flow is an open-source AI short-video content pipeline for turning user-
 
 ## Status
 
-`v0.4 Scheduled Draft Generation - Batch 8 Release Candidate`
+`v0.5 Human-Confirmed Douyin Publishing - Batch 2 backend domain foundation`
 
-This repository has completed the v0.1 local runnable skeleton, the v0.2 AI Planning Workflow, the v0.3 fake rendering/subtitle/preview workflow, and v0.4 Batch 1 through Batch 8 of the local fake/manual Scheduled Draft Generation workflow. v0.4 Batch 8 completed Release Candidate stabilization and checklist closure. The current path supports the local deterministic `FakeLLMProvider` workflow for Topic Candidates, Script Drafts, Storyboards, fake render jobs, fake subtitle drafts, and fake preview manifest metadata; v0.4 also supports project-level `ContentPlan`, `GenerationSchedule` configuration, fake manual `GenerationRun` records, and `Review Draft` placeholders created from manual runs, all visible on the project detail page.
+This repository has completed the v0.1 local runnable skeleton, the v0.2 AI Planning Workflow, the v0.3 fake rendering/subtitle/preview workflow, the v0.4 local fake/manual Scheduled Draft Generation workflow, and v0.5 Batch 1 through Batch 2 of the publishing boundary and backend domain foundation. The current path supports the local deterministic `FakeLLMProvider` workflow for Topic Candidates, Script Drafts, Storyboards, fake render jobs, fake subtitle drafts, and fake preview manifest metadata; v0.4 also supports project-level `ContentPlan`, `GenerationSchedule` configuration, fake manual `GenerationRun` records, and `Review Draft` placeholders created from manual runs. v0.5 currently adds backend-only `PublishIntent` / `PublicationRecord` foundations: a publish intent can only be explicitly created from an approved Review Draft in the same project, then read or cancelled.
 
 Local development instructions are available in [`docs/development.md`](docs/development.md).
 
-Real OpenAI, Claude, Gemini, or other LLM integrations are still not implemented. The app does not store API keys, secrets, or tokens and does not call real AI services. v0.4 is still a local fake/manual workflow: scheduled `GenerationRun`, Scheduler / Trigger Engine, a complete `Review Queue`, real MP4 rendering, real video playback, FFmpeg, TTS, real subtitle files, real audio, platform publishing, production deployment, and user accounts are still not implemented. Review Drafts remain placeholders; approve / reject only changes review status and does not publish, upload, render, or generate media.
+Real OpenAI, Claude, Gemini, or other LLM integrations are still not implemented. The app does not store API keys, secrets, or tokens and does not call real AI services. v0.4 is still a local fake/manual workflow: scheduled `GenerationRun`, Scheduler / Trigger Engine, a complete `Review Queue`, real MP4 rendering, real video playback, FFmpeg, TTS, real subtitle files, real audio, platform publishing, production deployment, and user accounts are still not implemented. Review Drafts remain placeholders; approve / reject only changes review status and does not publish, upload, render, or generate media. The v0.5 publishing domain is also only a backend foundation: it does not connect to the Douyin API, implement OAuth, store credentials, upload, publish, schedule, or auto-publish.
 This version is not production ready.
 
 ## Local Quick Start
@@ -48,7 +48,7 @@ Common verification commands:
 - Feed post-publication metrics back into future content review and topic optimization.
 - Use Douyin as the first publishing platform while preserving a multi-platform architecture through Provider abstractions.
 
-Topic Candidate, Script Draft, and Storyboard generation and selection are implemented in v0.2 with a local fake provider. v0.3 has completed Release Candidate closure for fake render jobs, fake preview manifest metadata display, fake subtitle drafts, and subtitle cues. v0.4 has completed Release Candidate closure for ContentPlan, GenerationSchedule, fake manual GenerationRun, and Review Draft placeholders. Real AI, real subtitle files, real audio, asset plans, real MP4 rendering and playback, publishing, scheduled GenerationRun, Scheduler / Trigger Engine, a complete Review Queue, and metrics feedback remain future planned capabilities.
+Topic Candidate, Script Draft, and Storyboard generation and selection are implemented in v0.2 with a local fake provider. v0.3 has completed Release Candidate closure for fake render jobs, fake preview manifest metadata display, fake subtitle drafts, and subtitle cues. v0.4 has completed Release Candidate closure for ContentPlan, GenerationSchedule, fake manual GenerationRun, and Review Draft placeholders. v0.5 has started the PublishIntent / PublicationRecord backend foundation. Real AI, real subtitle files, real audio, asset plans, real MP4 rendering and playback, real publishing, scheduled GenerationRun, Scheduler / Trigger Engine, a complete Review Queue, and metrics feedback remain future planned capabilities.
 
 ## Current Local Capabilities
 
@@ -65,6 +65,8 @@ Topic Candidate, Script Draft, and Storyboard generation and selection are imple
 - Create and view `GenerationSchedule` configuration bound to a `ContentPlan`, including enable / disable state; scheduled triggers are not executed yet.
 - Manually create fake `GenerationRun` records and synchronously create review-ready `Review Draft` placeholders; the project detail page refreshes GenerationRuns and Review Drafts after a manual run.
 - View `Review Draft` placeholders and approve / reject their review status; these actions do not publish, upload, render, or generate media.
+- Explicitly create a `PublishIntent` from an approved `Review Draft` in the same project, list/read publish intents, and cancel pending publish intents; this does not create publication records or execute real platform actions.
+- Query `PublicationRecord` lists for a specific `PublishIntent`; the current backend foundation does not create real publication records by default.
 - View existing materials and planning drafts on archived projects while preventing further generation or selection.
 - Store project and material metadata in local `SQLite`.
 - Store uploaded files under local `uploads/`, excluded from Git.
