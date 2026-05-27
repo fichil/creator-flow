@@ -454,7 +454,7 @@ describe("ProjectDetailPage topic candidates", () => {
     const server = await renderProject();
 
     expect(server.calls).toContain("GET /api/projects/1/topic-candidates");
-    expect(screen.getByText("No topic candidates yet.")).toBeTruthy();
+    expect(screen.getByText("暂无选题候选。")).toBeTruthy();
   });
 
   it("shows candidate title, angle, audience, hook, and rationale", async () => {
@@ -465,13 +465,13 @@ describe("ProjectDetailPage topic candidates", () => {
     expect(screen.getByText("Developers facing similar workflow blocks")).toBeTruthy();
     expect(screen.getByText("Here is the small workflow issue that slowed the project down.")).toBeTruthy();
     expect(screen.getByText("Based on the imported material.")).toBeTruthy();
-    expect(screen.getByText("Source materials: 11")).toBeTruthy();
+    expect(screen.getByText("来源素材：11")).toBeTruthy();
   });
 
   it("calls generate API and refreshes candidates after generation succeeds", async () => {
     const server = await renderProject();
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate Topic Candidates" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成选题候选" }));
 
     await screen.findByText("Checklist topic");
     expect(server.calls).toContain("POST /api/projects/1/topic-candidates/generate");
@@ -482,8 +482,8 @@ describe("ProjectDetailPage topic candidates", () => {
   it("calls select API and refreshes candidates after selection succeeds", async () => {
     const server = await renderProject({ candidates: [candidateOne, candidateTwo] });
 
-    const candidateCard = screen.getByLabelText("Topic candidate: Problem-first topic");
-    fireEvent.click(within(candidateCard).getByRole("button", { name: "Select" }));
+    const candidateCard = screen.getByLabelText("选题候选：Problem-first topic");
+    fireEvent.click(within(candidateCard).getByRole("button", { name: "选择" }));
 
     await waitFor(() => expect(candidateCard.getAttribute("data-status")).toBe("selected"));
     expect(server.calls).toContain("POST /api/projects/1/topic-candidates/101/select");
@@ -493,9 +493,9 @@ describe("ProjectDetailPage topic candidates", () => {
   it("shows a clear selected visual state", async () => {
     await renderProject({ candidates: [candidateTwo] });
 
-    const selectedCard = screen.getByLabelText("Topic candidate: Build log topic");
+    const selectedCard = screen.getByLabelText("选题候选：Build log topic");
     expect(selectedCard.getAttribute("data-status")).toBe("selected");
-    expect(within(selectedCard).getByText("Selected")).toBeTruthy();
+    expect(within(selectedCard).getAllByText("已选择")[0]).toBeTruthy();
   });
 
   it("disables generate and select controls for archived projects", async () => {
@@ -504,26 +504,26 @@ describe("ProjectDetailPage topic candidates", () => {
       candidates: [candidateOne],
     });
 
-    const generateButton = screen.getByRole("button", { name: "Generate Topic Candidates" }) as HTMLButtonElement;
+    const generateButton = screen.getByRole("button", { name: "生成选题候选" }) as HTMLButtonElement;
     expect(generateButton.disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "Select" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getAllByText("Archived projects are read-only.")[0]).toBeTruthy();
+    expect((screen.getByRole("button", { name: "选择" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText("当前项目已归档，只能查看，不能继续修改。")[0]).toBeTruthy();
   });
 
   it("shows a no-materials message when generate returns 409", async () => {
     await renderProject({ generateError: "project has no materials" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate Topic Candidates" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成选题候选" }));
 
-    expect(await screen.findByText("Add at least one material before generating topic candidates.")).toBeTruthy();
+    expect(await screen.findByText("请先添加至少一个素材，再生成选题候选。")).toBeTruthy();
   });
 
   it("shows a read-only message when select returns archived 409", async () => {
     await renderProject({ candidates: [candidateOne], selectError: "archived project cannot select candidates" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+    fireEvent.click(screen.getByRole("button", { name: "选择" }));
 
-    expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
+    expect(await screen.findByText("当前项目已归档，只能查看，不能继续修改。")).toBeTruthy();
   });
 });
 
@@ -541,7 +541,7 @@ describe("ProjectDetailPage script drafts", () => {
     const server = await renderProject();
 
     expect(server.calls).toContain("GET /api/projects/1/script-drafts");
-    expect(screen.getByText("No script drafts yet.")).toBeTruthy();
+    expect(screen.getByText("暂无脚本草稿。")).toBeTruthy();
   });
 
   it("shows script draft title, opening hook, body, call to action, duration, and rationale", async () => {
@@ -551,15 +551,15 @@ describe("ProjectDetailPage script drafts", () => {
     expect(screen.getByText("This workflow looked small until it blocked the whole project.")).toBeTruthy();
     expect(screen.getByText("First, show the bug. Then explain the fix. Close with the repeatable workflow.")).toBeTruthy();
     expect(screen.getByText("Save this flow for your next debugging session.")).toBeTruthy();
-    expect(screen.getByText("58 seconds")).toBeTruthy();
+    expect(screen.getByText("58 秒")).toBeTruthy();
     expect(screen.getByText("Built from the selected topic and imported note.")).toBeTruthy();
-    expect(screen.getByText("Source materials: 11")).toBeTruthy();
+    expect(screen.getByText("来源素材：11")).toBeTruthy();
   });
 
   it("calls generate API and refreshes script drafts after generation succeeds", async () => {
     const server = await renderProject();
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate Script Drafts" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成脚本草稿" }));
 
     await screen.findByText("Checklist script");
     expect(server.calls).toContain("POST /api/projects/1/script-drafts/generate");
@@ -570,10 +570,10 @@ describe("ProjectDetailPage script drafts", () => {
   it("calls select API and refreshes script drafts after selection succeeds", async () => {
     const server = await renderProject({ scriptDrafts: [scriptDraftOne, scriptDraftTwo] });
 
-    const scriptDraftCard = screen.getByLabelText("Script draft: Problem-first script");
-    fireEvent.click(within(scriptDraftCard).getByRole("button", { name: "Select" }));
+    const scriptDraftCard = screen.getByLabelText("脚本草稿：Problem-first script");
+    fireEvent.click(within(scriptDraftCard).getByRole("button", { name: "选择" }));
 
-    await waitFor(() => expect(screen.getByLabelText("Script draft: Problem-first script").getAttribute("data-status")).toBe("selected"));
+    await waitFor(() => expect(screen.getByLabelText("脚本草稿：Problem-first script").getAttribute("data-status")).toBe("selected"));
     expect(server.calls).toContain("POST /api/projects/1/script-drafts/501/select");
     expect(server.calls.filter((call) => call === "GET /api/projects/1/script-drafts")).toHaveLength(2);
   });
@@ -581,9 +581,9 @@ describe("ProjectDetailPage script drafts", () => {
   it("shows a clear selected visual state for script drafts", async () => {
     await renderProject({ scriptDrafts: [scriptDraftTwo] });
 
-    const selectedCard = screen.getByLabelText("Script draft: Build log script");
+    const selectedCard = screen.getByLabelText("脚本草稿：Build log script");
     expect(selectedCard.getAttribute("data-status")).toBe("selected");
-    expect(within(selectedCard).getByText("Selected")).toBeTruthy();
+    expect(within(selectedCard).getAllByText("已选择")[0]).toBeTruthy();
   });
 
   it("disables generate and select controls for archived projects", async () => {
@@ -592,27 +592,27 @@ describe("ProjectDetailPage script drafts", () => {
       scriptDrafts: [scriptDraftOne],
     });
 
-    const generateButton = screen.getByRole("button", { name: "Generate Script Drafts" }) as HTMLButtonElement;
-    const scriptDraftCard = screen.getByLabelText("Script draft: Problem-first script");
+    const generateButton = screen.getByRole("button", { name: "生成脚本草稿" }) as HTMLButtonElement;
+    const scriptDraftCard = screen.getByLabelText("脚本草稿：Problem-first script");
     expect(generateButton.disabled).toBe(true);
-    expect((within(scriptDraftCard).getByRole("button", { name: "Select" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getAllByText("Archived projects are read-only.")[0]).toBeTruthy();
+    expect((within(scriptDraftCard).getByRole("button", { name: "选择" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText("当前项目已归档，只能查看，不能继续修改。")[0]).toBeTruthy();
   });
 
   it("shows a no-materials message when script generation returns 409", async () => {
     await renderProject({ generateScriptDraftsError: "project has no materials" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate Script Drafts" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成脚本草稿" }));
 
-    expect(await screen.findByText("Add at least one material before generating script drafts.")).toBeTruthy();
+    expect(await screen.findByText("请先添加至少一个素材，再生成脚本草稿。")).toBeTruthy();
   });
 
   it("shows a selected-topic message when script generation returns 409", async () => {
     await renderProject({ generateScriptDraftsError: "project has no selected topic candidate" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate Script Drafts" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成脚本草稿" }));
 
-    expect(await screen.findByText("Select a topic candidate before generating script drafts.")).toBeTruthy();
+    expect(await screen.findByText("请先选择一个选题候选，再生成脚本草稿。")).toBeTruthy();
   });
 
   it("shows a read-only message when script draft selection returns archived 409", async () => {
@@ -621,10 +621,10 @@ describe("ProjectDetailPage script drafts", () => {
       selectScriptDraftError: "archived project cannot select script drafts",
     });
 
-    const scriptDraftCard = screen.getByLabelText("Script draft: Problem-first script");
-    fireEvent.click(within(scriptDraftCard).getByRole("button", { name: "Select" }));
+    const scriptDraftCard = screen.getByLabelText("脚本草稿：Problem-first script");
+    fireEvent.click(within(scriptDraftCard).getByRole("button", { name: "选择" }));
 
-    expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
+    expect(await screen.findByText("当前项目已归档，只能查看，不能继续修改。")).toBeTruthy();
   });
 });
 
@@ -642,7 +642,7 @@ describe("ProjectDetailPage storyboards", () => {
     const server = await renderProject();
 
     expect(server.calls).toContain("GET /api/projects/1/storyboards");
-    expect(screen.getByText("No storyboards yet.")).toBeTruthy();
+    expect(screen.getByText("暂无分镜脚本。")).toBeTruthy();
   });
 
   it("shows storyboard title, summary, and visual style", async () => {
@@ -651,25 +651,25 @@ describe("ProjectDetailPage storyboards", () => {
     expect(screen.getByText("Storyboard walkthrough")).toBeTruthy();
     expect(screen.getByText("A source-backed storyboard for the selected script.")).toBeTruthy();
     expect(screen.getByText("Clean screen-recording style")).toBeTruthy();
-    expect(screen.getByText("Source materials")).toBeTruthy();
+    expect(screen.getAllByText("来源素材")[0]).toBeTruthy();
   });
 
   it("shows storyboard scenes with their structured fields", async () => {
     await renderProject({ storyboards: [storyboardOne] });
 
-    const firstScene = screen.getByLabelText("Scene 1: Set up the problem");
-    expect(within(firstScene).getByText("Scene 1: Set up the problem")).toBeTruthy();
+    const firstScene = screen.getByLabelText("场景 1：Set up the problem");
+    expect(within(firstScene).getByText("场景 1：Set up the problem")).toBeTruthy();
     expect(within(firstScene).getByText("Start with the workflow problem.")).toBeTruthy();
     expect(within(firstScene).getByText("Show the imported material that anchors the story.")).toBeTruthy();
     expect(within(firstScene).getByText("The problem")).toBeTruthy();
-    expect(within(firstScene).getByText("12 seconds")).toBeTruthy();
+    expect(within(firstScene).getByText("12 秒")).toBeTruthy();
     expect(within(firstScene).getByText("11")).toBeTruthy();
   });
 
   it("shows storyboard scenes sorted by scene order", async () => {
     await renderProject({ storyboards: [storyboardOne] });
 
-    const storyboardCard = screen.getByLabelText("Storyboard: Storyboard walkthrough");
+    const storyboardCard = screen.getByLabelText("分镜脚本：Storyboard walkthrough");
     const sceneItems = within(storyboardCard).getAllByTestId("storyboard-scene");
     expect(sceneItems.map((scene) => scene.getAttribute("data-scene-order"))).toEqual(["1", "2"]);
   });
@@ -677,7 +677,7 @@ describe("ProjectDetailPage storyboards", () => {
   it("calls generate API and refreshes storyboards after generation succeeds", async () => {
     const server = await renderProject();
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate Storyboards" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成分镜脚本" }));
 
     await screen.findByText("Storyboard walkthrough");
     expect(server.calls).toContain("POST /api/projects/1/storyboards/generate");
@@ -688,10 +688,10 @@ describe("ProjectDetailPage storyboards", () => {
   it("calls select API and refreshes storyboards after selection succeeds", async () => {
     const server = await renderProject({ storyboards: [storyboardOne, storyboardTwo] });
 
-    const storyboardCard = screen.getByLabelText("Storyboard: Storyboard walkthrough");
-    fireEvent.click(within(storyboardCard).getByRole("button", { name: "Select" }));
+    const storyboardCard = screen.getByLabelText("分镜脚本：Storyboard walkthrough");
+    fireEvent.click(within(storyboardCard).getByRole("button", { name: "选择" }));
 
-    await waitFor(() => expect(screen.getByLabelText("Storyboard: Storyboard walkthrough").getAttribute("data-status")).toBe("selected"));
+    await waitFor(() => expect(screen.getByLabelText("分镜脚本：Storyboard walkthrough").getAttribute("data-status")).toBe("selected"));
     expect(server.calls).toContain("POST /api/projects/1/storyboards/801/select");
     expect(server.calls.filter((call) => call === "GET /api/projects/1/storyboards")).toHaveLength(2);
   });
@@ -699,9 +699,9 @@ describe("ProjectDetailPage storyboards", () => {
   it("shows a clear selected visual state for storyboards", async () => {
     await renderProject({ storyboards: [storyboardTwo] });
 
-    const selectedCard = screen.getByLabelText("Storyboard: Selected storyboard");
+    const selectedCard = screen.getByLabelText("分镜脚本：Selected storyboard");
     expect(selectedCard.getAttribute("data-status")).toBe("selected");
-    expect(within(selectedCard).getByText("Selected")).toBeTruthy();
+    expect(within(selectedCard).getAllByText("已选择")[0]).toBeTruthy();
   });
 
   it("disables generate and select controls for archived projects", async () => {
@@ -710,35 +710,35 @@ describe("ProjectDetailPage storyboards", () => {
       storyboards: [storyboardOne],
     });
 
-    const generateButton = screen.getByRole("button", { name: "Generate Storyboards" }) as HTMLButtonElement;
-    const storyboardCard = screen.getByLabelText("Storyboard: Storyboard walkthrough");
+    const generateButton = screen.getByRole("button", { name: "生成分镜脚本" }) as HTMLButtonElement;
+    const storyboardCard = screen.getByLabelText("分镜脚本：Storyboard walkthrough");
     expect(generateButton.disabled).toBe(true);
-    expect((within(storyboardCard).getByRole("button", { name: "Select" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getAllByText("Archived projects are read-only.")[0]).toBeTruthy();
+    expect((within(storyboardCard).getByRole("button", { name: "选择" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText("当前项目已归档，只能查看，不能继续修改。")[0]).toBeTruthy();
   });
 
   it("shows a no-materials message when storyboard generation returns 409", async () => {
     await renderProject({ generateStoryboardsError: "project has no materials" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate Storyboards" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成分镜脚本" }));
 
-    expect(await screen.findByText("Add at least one material before generating storyboards.")).toBeTruthy();
+    expect(await screen.findByText("请先添加至少一个素材，再生成分镜脚本。")).toBeTruthy();
   });
 
   it("shows a selected-topic message when storyboard generation returns 409", async () => {
     await renderProject({ generateStoryboardsError: "project has no selected topic candidate" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate Storyboards" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成分镜脚本" }));
 
-    expect(await screen.findByText("Select a topic candidate before generating storyboards.")).toBeTruthy();
+    expect(await screen.findByText("请先选择一个选题候选，再生成分镜脚本。")).toBeTruthy();
   });
 
   it("shows a selected-script message when storyboard generation returns 409", async () => {
     await renderProject({ generateStoryboardsError: "project has no selected script draft" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate Storyboards" }));
+    fireEvent.click(screen.getByRole("button", { name: "生成分镜脚本" }));
 
-    expect(await screen.findByText("Select a script draft before generating storyboards.")).toBeTruthy();
+    expect(await screen.findByText("请先选择一个脚本草稿，再生成分镜脚本。")).toBeTruthy();
   });
 
   it("shows a read-only message when storyboard selection returns archived 409", async () => {
@@ -747,10 +747,10 @@ describe("ProjectDetailPage storyboards", () => {
       selectStoryboardError: "archived project cannot select storyboards",
     });
 
-    const storyboardCard = screen.getByLabelText("Storyboard: Storyboard walkthrough");
-    fireEvent.click(within(storyboardCard).getByRole("button", { name: "Select" }));
+    const storyboardCard = screen.getByLabelText("分镜脚本：Storyboard walkthrough");
+    fireEvent.click(within(storyboardCard).getByRole("button", { name: "选择" }));
 
-    expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
+    expect(await screen.findByText("当前项目已归档，只能查看，不能继续修改。")).toBeTruthy();
   });
 });
 
@@ -768,28 +768,28 @@ describe("ProjectDetailPage subtitle drafts", () => {
     const server = await renderProject();
 
     expect(server.calls).toContain("GET /api/projects/1/subtitle-drafts");
-    expect(screen.getByText("Subtitle Drafts")).toBeTruthy();
-    expect(screen.getByText("No subtitle drafts yet.")).toBeTruthy();
+    expect(screen.getByText("字幕草稿")).toBeTruthy();
+    expect(screen.getByText("暂无字幕草稿。")).toBeTruthy();
   });
 
   it("shows subtitle draft metadata and cues", async () => {
     await renderProject({ storyboards: [storyboardTwo], subtitleDrafts: [subtitleDraftOne] });
 
-    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
-    expect(within(subtitleDraftCard).getByText("Subtitle draft #1301")).toBeTruthy();
+    const subtitleDraftCard = screen.getByLabelText("字幕草稿 1301");
+    expect(within(subtitleDraftCard).getByText("字幕草稿 #1301")).toBeTruthy();
     expect(within(subtitleDraftCard).getByText("fake_subtitle_generator 0.1")).toBeTruthy();
-    expect(within(subtitleDraftCard).getByText("draft")).toBeTruthy();
+    expect(within(subtitleDraftCard).getByText("草稿")).toBeTruthy();
     expect(within(subtitleDraftCard).getByText("#802")).toBeTruthy();
     expect(within(subtitleDraftCard).getByText("Start with the selected storyboard.")).toBeTruthy();
     expect(within(subtitleDraftCard).getByText("Use deterministic subtitle cue metadata.")).toBeTruthy();
-    expect(within(subtitleDraftCard).getByText("0s - 12s")).toBeTruthy();
-    expect(within(subtitleDraftCard).getByText("12s - 30s")).toBeTruthy();
+    expect(within(subtitleDraftCard).getByText("0 秒 - 12 秒")).toBeTruthy();
+    expect(within(subtitleDraftCard).getByText("12 秒 - 30 秒")).toBeTruthy();
   });
 
   it("shows subtitle cues sorted by cue order", async () => {
     await renderProject({ storyboards: [storyboardTwo], subtitleDrafts: [subtitleDraftOne] });
 
-    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
+    const subtitleDraftCard = screen.getByLabelText("字幕草稿 1301");
     const cueItems = within(subtitleDraftCard).getAllByTestId("subtitle-cue");
     expect(cueItems.map((cue) => cue.getAttribute("data-cue-order"))).toEqual(["1", "2"]);
   });
@@ -797,21 +797,21 @@ describe("ProjectDetailPage subtitle drafts", () => {
   it("shows a fallback when a subtitle draft has no cues", async () => {
     await renderProject({ storyboards: [storyboardTwo], subtitleDrafts: [subtitleDraftWithoutCues] });
 
-    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1303");
-    expect(within(subtitleDraftCard).getByText("No subtitle cues yet.")).toBeTruthy();
+    const subtitleDraftCard = screen.getByLabelText("字幕草稿 1303");
+    expect(within(subtitleDraftCard).getByText("暂无字幕 cue。")).toBeTruthy();
   });
 
   it("creates a fake subtitle draft and refreshes subtitle drafts after creation succeeds", async () => {
     const server = await renderProject({ storyboards: [storyboardTwo] });
 
     await waitFor(() =>
-      expect((screen.getByRole("button", { name: "Create fake subtitle draft" }) as HTMLButtonElement).disabled).toBe(
+      expect((screen.getByRole("button", { name: "创建模拟字幕草稿" }) as HTMLButtonElement).disabled).toBe(
         false,
       ),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Create fake subtitle draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "创建模拟字幕草稿" }));
 
-    await screen.findByText("Subtitle draft #1301");
+    await screen.findByText("字幕草稿 #1301");
     expect(server.calls).toContain("POST /api/projects/1/subtitle-drafts");
     expect(server.bodies["POST /api/projects/1/subtitle-drafts"]).toBe("{}");
     expect(server.calls.filter((call) => call === "GET /api/projects/1/subtitle-drafts")).toHaveLength(2);
@@ -820,10 +820,10 @@ describe("ProjectDetailPage subtitle drafts", () => {
   it("selects a subtitle draft and refreshes subtitle drafts after selection succeeds", async () => {
     const server = await renderProject({ storyboards: [storyboardTwo], subtitleDrafts: [subtitleDraftOne, subtitleDraftTwo] });
 
-    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
-    fireEvent.click(within(subtitleDraftCard).getByRole("button", { name: "Select" }));
+    const subtitleDraftCard = screen.getByLabelText("字幕草稿 1301");
+    fireEvent.click(within(subtitleDraftCard).getByRole("button", { name: "选择" }));
 
-    await waitFor(() => expect(screen.getByLabelText("Subtitle draft 1301").getAttribute("data-status")).toBe("selected"));
+    await waitFor(() => expect(screen.getByLabelText("字幕草稿 1301").getAttribute("data-status")).toBe("selected"));
     expect(server.calls).toContain("POST /api/projects/1/subtitle-drafts/1301/select");
     expect(server.calls.filter((call) => call === "GET /api/projects/1/subtitle-drafts")).toHaveLength(2);
   });
@@ -835,29 +835,29 @@ describe("ProjectDetailPage subtitle drafts", () => {
       subtitleDrafts: [subtitleDraftOne],
     });
 
-    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
-    expect(screen.getByText("Subtitle draft #1301")).toBeTruthy();
-    expect((screen.getByRole("button", { name: "Create fake subtitle draft" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((within(subtitleDraftCard).getByRole("button", { name: "Select" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getAllByText("Archived projects are read-only.")[0]).toBeTruthy();
+    const subtitleDraftCard = screen.getByLabelText("字幕草稿 1301");
+    expect(screen.getByText("字幕草稿 #1301")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "创建模拟字幕草稿" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((within(subtitleDraftCard).getByRole("button", { name: "选择" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText("当前项目已归档，只能查看，不能继续修改。")[0]).toBeTruthy();
   });
 
   it("disables fake subtitle creation when there is no selected storyboard", async () => {
     await renderProject({ storyboards: [storyboardOne] });
 
-    await screen.findByText("Select a storyboard before creating fake subtitle drafts.");
-    expect((screen.getByRole("button", { name: "Create fake subtitle draft" }) as HTMLButtonElement).disabled).toBe(true);
+    await screen.findByText("请先选择一个分镜脚本，再创建模拟字幕草稿。");
+    expect((screen.getByRole("button", { name: "创建模拟字幕草稿" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("shows a visible error when fake subtitle creation fails", async () => {
     await renderProject({ createSubtitleDraftError: "subtitle service unavailable", storyboards: [storyboardTwo] });
 
     await waitFor(() =>
-      expect((screen.getByRole("button", { name: "Create fake subtitle draft" }) as HTMLButtonElement).disabled).toBe(
+      expect((screen.getByRole("button", { name: "创建模拟字幕草稿" }) as HTMLButtonElement).disabled).toBe(
         false,
       ),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Create fake subtitle draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "创建模拟字幕草稿" }));
 
     expect(await screen.findByText("subtitle service unavailable")).toBeTruthy();
   });
@@ -869,10 +869,10 @@ describe("ProjectDetailPage subtitle drafts", () => {
       subtitleDrafts: [subtitleDraftOne],
     });
 
-    const subtitleDraftCard = screen.getByLabelText("Subtitle draft 1301");
-    fireEvent.click(within(subtitleDraftCard).getByRole("button", { name: "Select" }));
+    const subtitleDraftCard = screen.getByLabelText("字幕草稿 1301");
+    fireEvent.click(within(subtitleDraftCard).getByRole("button", { name: "选择" }));
 
-    expect(await screen.findByText("Archived projects are read-only.")).toBeTruthy();
+    expect(await screen.findByText("当前项目已归档，只能查看，不能继续修改。")).toBeTruthy();
   });
 });
 
@@ -890,53 +890,53 @@ describe("ProjectDetailPage render jobs", () => {
     const server = await renderProject();
 
     expect(server.calls).toContain("GET /api/projects/1/renders");
-    expect(screen.getByText("Render Jobs")).toBeTruthy();
-    expect(screen.getByText("No render jobs yet.")).toBeTruthy();
+    expect(screen.getByText("渲染任务")).toBeTruthy();
+    expect(screen.getByText("暂无渲染任务。")).toBeTruthy();
   });
 
   it("shows fake preview manifest metadata", async () => {
     await renderProject({ renderJobs: [renderJobOne], storyboards: [storyboardTwo] });
 
-    const renderJobCard = screen.getByLabelText("Render job 1201");
-    expect(within(renderJobCard).getByText("Render job #1201")).toBeTruthy();
+    const renderJobCard = screen.getByLabelText("渲染任务 1201");
+    expect(within(renderJobCard).getByText("渲染任务 #1201")).toBeTruthy();
     expect(within(renderJobCard).getByText("fake_renderer 0.1")).toBeTruthy();
-    expect(within(renderJobCard).getByText("succeeded")).toBeTruthy();
+    expect(within(renderJobCard).getByText("成功")).toBeTruthy();
     expect(within(renderJobCard).getByText("mp4 / 9:16 / 1080x1920")).toBeTruthy();
-    expect(within(renderJobCard).getByText("Preview manifest metadata")).toBeTruthy();
+    expect(within(renderJobCard).getByText("预览 manifest 元数据")).toBeTruthy();
     expect(within(renderJobCard).getByText("fake_preview_manifest")).toBeTruthy();
     expect(within(renderJobCard).getByText("application/json")).toBeTruthy();
     expect(within(renderJobCard).getByText("386 bytes")).toBeTruthy();
     expect(within(renderJobCard).getByText("a".repeat(64))).toBeTruthy();
-    expect(within(renderJobCard).getByText("30 seconds")).toBeTruthy();
+    expect(within(renderJobCard).getByText("30 秒")).toBeTruthy();
     expect(within(renderJobCard).getByText("1080 x 1920")).toBeTruthy();
     expect(within(renderJobCard).getByText("#1301")).toBeTruthy();
     expect(within(renderJobCard).getByText("project-1-render-1201-preview-manifest.json")).toBeTruthy();
     expect(within(renderJobCard).getByText("data/local/render_previews/project-1/project-1-render-1201-preview-manifest.json")).toBeTruthy();
-    expect(within(renderJobCard).getByText("Not available")).toBeTruthy();
+    expect(within(renderJobCard).getByText("暂无")).toBeTruthy();
   });
 
-  it("shows a fallback when a succeeded render job has no preview metadata", async () => {
+  it("shows a fallback when a 成功 render job has no preview metadata", async () => {
     await renderProject({ renderJobs: [renderJobWithoutArtifact], storyboards: [storyboardTwo] });
 
-    const renderJobCard = screen.getByLabelText("Render job 1202");
-    expect(within(renderJobCard).getByText("No preview artifact metadata available.")).toBeTruthy();
+    const renderJobCard = screen.getByLabelText("渲染任务 1202");
+    expect(within(renderJobCard).getByText("暂无预览元数据。")).toBeTruthy();
   });
 
-  it("does not render a video player for non-succeeded render jobs", async () => {
+  it("does not render a video player for non-成功 render jobs", async () => {
     await renderProject({ renderJobs: [queuedRenderJob], storyboards: [storyboardTwo] });
 
-    const renderJobCard = screen.getByLabelText("Render job 1203");
-    expect(within(renderJobCard).getByText("Preview pending / unavailable.")).toBeTruthy();
+    const renderJobCard = screen.getByLabelText("渲染任务 1203");
+    expect(within(renderJobCard).getByText("预览待生成 / 不可用。")).toBeTruthy();
     expect(document.querySelector("video")).toBeNull();
   });
 
   it("creates a fake render job and refreshes render jobs after creation succeeds", async () => {
     const server = await renderProject({ storyboards: [storyboardTwo] });
 
-    await waitFor(() => expect((screen.getByRole("button", { name: "Create fake render job" }) as HTMLButtonElement).disabled).toBe(false));
-    fireEvent.click(screen.getByRole("button", { name: "Create fake render job" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "创建模拟渲染任务" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "创建模拟渲染任务" }));
 
-    await screen.findByText("Render job #1201");
+    await screen.findByText("渲染任务 #1201");
     expect(server.calls).toContain("POST /api/projects/1/renders");
     expect(server.bodies["POST /api/projects/1/renders"]).toBe(
       '{"requested_format":"mp4","requested_aspect_ratio":"9:16","requested_resolution":"1080x1920"}',
@@ -951,24 +951,24 @@ describe("ProjectDetailPage render jobs", () => {
       storyboards: [storyboardTwo],
     });
 
-    expect(screen.getByText("Render job #1201")).toBeTruthy();
+    expect(screen.getByText("渲染任务 #1201")).toBeTruthy();
     expect(screen.getByText("data/local/render_previews/project-1/project-1-render-1201-preview-manifest.json")).toBeTruthy();
-    expect((screen.getByRole("button", { name: "Create fake render job" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getAllByText("Archived projects are read-only.")[0]).toBeTruthy();
+    expect((screen.getByRole("button", { name: "创建模拟渲染任务" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getAllByText("当前项目已归档，只能查看，不能继续修改。")[0]).toBeTruthy();
   });
 
   it("disables fake render creation when there is no selected storyboard", async () => {
     await renderProject({ storyboards: [storyboardOne] });
 
-    await screen.findByText("Select a storyboard before creating fake render jobs.");
-    expect((screen.getByRole("button", { name: "Create fake render job" }) as HTMLButtonElement).disabled).toBe(true);
+    await screen.findByText("请先选择一个分镜脚本，再创建模拟渲染任务。");
+    expect((screen.getByRole("button", { name: "创建模拟渲染任务" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("shows a visible error when fake render creation fails", async () => {
     await renderProject({ createRenderError: "render service unavailable", storyboards: [storyboardTwo] });
 
-    await waitFor(() => expect((screen.getByRole("button", { name: "Create fake render job" }) as HTMLButtonElement).disabled).toBe(false));
-    fireEvent.click(screen.getByRole("button", { name: "Create fake render job" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "创建模拟渲染任务" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole("button", { name: "创建模拟渲染任务" }));
 
     expect(await screen.findByText("render service unavailable")).toBeTruthy();
   });
