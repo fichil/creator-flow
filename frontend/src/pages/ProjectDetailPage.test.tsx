@@ -389,6 +389,7 @@ type ServerOptions = {
   generateStoryboardsError?: string;
   createRenderError?: string;
   createSubtitleDraftError?: string;
+  createPublishIntentError?: string;
   selectError?: string;
   selectScriptDraftError?: string;
   selectStoryboardError?: string;
@@ -737,6 +738,9 @@ function installFetchMock(options: ServerOptions = {}) {
       return jsonResponse(reviewDrafts.find((reviewDraft) => reviewDraft.id === reviewDraftId));
     }
     if (method === "POST" && url.pathname === "/api/projects/1/publish-intents") {
+      if (options.createPublishIntentError) {
+        return jsonResponse({ detail: options.createPublishIntentError }, 409);
+      }
       const payload = JSON.parse(String(init?.body)) as {
         review_draft_id: number;
         target_platform: string;
@@ -1391,6 +1395,8 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(screen.getByText(/本区块只是本地 fake publishing workflow/)).toBeTruthy();
     expect(screen.getByText(/不会上传、发布、排期，也不会调用 Douyin/)).toBeTruthy();
     expect(screen.getByText("需要先通过 Review Draft，才能创建 PublishIntent。")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Publish$/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /OAuth|授权|上传|排期|真实发布|Real Publish/i })).toBeNull();
   });
 
   it("shows approved review drafts and creates a PublishIntent", async () => {
@@ -1404,6 +1410,18 @@ describe("ProjectDetailPage publishing workflow", () => {
       '{"review_draft_id":1502,"target_platform":"douyin","title":"Approved review draft","caption":"Deterministic fake draft summary from a manual run."}',
     );
     expect(server.calls.filter((call) => call === "GET /api/projects/1/publish-intents")).toHaveLength(2);
+  });
+
+  it("shows a visible publishing API error without implying a real platform action", async () => {
+    await renderProject({
+      createPublishIntentError: "review draft must be approved before creating a publish intent",
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "创建 PublishIntent" }));
+
+    expect(await screen.findByText("review draft must be approved before creating a publish intent")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Publish$/i })).toBeNull();
   });
 
   it("shows pending PublishIntent actions and confirms into a not_started PublicationRecord", async () => {

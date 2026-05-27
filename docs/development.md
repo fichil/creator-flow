@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.5 Batch 5 publishing frontend workflow foundation 本地开发状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、项目详情页本地 fake publishing workflow、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.5 当前只新增发布意图、发布记录、确认流转、本地 fake publisher execution 和项目详情页 UI 接入，不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布。
+本文档面向 v0.5 Publishing workflow Release Candidate 本地开发状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、项目详情页本地 fake publishing workflow、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.5 当前只新增发布意图、发布记录、确认流转、本地 fake publisher execution 和项目详情页 UI 接入，已进入 Release Candidate；仍不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布，也不接真实 PublisherProvider。
 
 ## 环境要求
 
@@ -36,6 +36,25 @@ Get-ChildItem .\scripts\*.ps1 | Unblock-File
 ```
 
 也可以使用后文的手动命令作为 fallback。
+
+## v0.5 Release Candidate 质量门禁
+
+v0.5 RC 收口不接真实平台、不新增真实发布能力。合并或发布候选验收时建议从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+同时执行安全扫描，确认没有真实密钥、token、API key、secret、私钥、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体或运行时 preview artifacts 进入 Git。若扫描命中文档中的运行时路径说明，例如 `data/local/creator_flow.sqlite3`、`uploads/` 或 `data/local/render_previews/`，应确认它们只是文档说明或测试中的 fake metadata 字符串，而不是实际运行时文件。
 
 ## 启动 Backend
 
@@ -281,7 +300,7 @@ Review Draft 内容只来自 ContentPlan、可选 GenerationSchedule 和 Generat
 
 ## Backend PublishIntent / PublicationRecord API 验证
 
-v0.5 Batch 2 新增了 backend-only 的 PublishIntent / PublicationRecord 领域基础，Batch 3 补充了 confirm backend workflow，Batch 4 补充了本地 FakePublisherProvider execution workflow。PublishIntent 只能基于同一项目内已 `approved` 的 Review Draft 显式创建；Review Draft approved 本身不会自动创建 PublishIntent，也不会触发发布、上传或排期发布。confirm 只把 PublishIntent 状态改为 `confirmed`，并创建 1 条本地 `not_started` 的 PublicationRecord placeholder。fake publish 只调用 deterministic `FakePublisherProvider`，把本地 PublicationRecord 更新为 `succeeded` 并写入 fake external publication id；不接真实 PublisherProvider。
+v0.5 Batch 2 新增了 backend-only 的 PublishIntent / PublicationRecord 领域基础，Batch 3 补充了 confirm backend workflow，Batch 4 补充了本地 FakePublisherProvider execution workflow，Batch 5 接入了项目详情页 Publishing / Fake Publishing UI，Batch 6 完成 RC checklist 收口。PublishIntent 只能基于同一项目内已 `approved` 的 Review Draft 显式创建；Review Draft approved 本身不会自动创建 PublishIntent，也不会触发发布、上传或排期发布。confirm 只把 PublishIntent 状态改为 `confirmed`，并创建 1 条本地 `not_started` 的 PublicationRecord placeholder。fake publish 只调用 deterministic `FakePublisherProvider`，把本地 PublicationRecord 更新为 `succeeded` 并写入 fake external publication id；不接真实 PublisherProvider。
 
 可以在 backend 启动后用 PowerShell 手动验证：
 
