@@ -308,6 +308,78 @@ CREATE TABLE IF NOT EXISTS provider_security_audit_events (
     CHECK (redaction_status IN ('not_required', 'active', 'redacted'))
 );
 
+CREATE TABLE IF NOT EXISTS provider_oauth_boundaries (
+    provider_id TEXT PRIMARY KEY,
+    source_type TEXT NOT NULL,
+    oauth_policy_status TEXT NOT NULL,
+    state_policy_status TEXT NOT NULL,
+    callback_policy_status TEXT NOT NULL,
+    csrf_protection_status TEXT NOT NULL,
+    redirect_uri_policy_status TEXT NOT NULL,
+    token_exchange_policy_status TEXT NOT NULL,
+    token_storage_policy_status TEXT NOT NULL,
+    error_redaction_policy_status TEXT NOT NULL,
+    audit_event_policy_status TEXT NOT NULL,
+    safe_status_message TEXT NOT NULL,
+    last_status_change_reason TEXT NOT NULL DEFAULT 'initial_metadata',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (oauth_policy_status IN ('not_required', 'planned', 'not_implemented', 'unavailable')),
+    CHECK (
+        state_policy_status IN (
+            'not_required',
+            'planned',
+            'required_planned',
+            'not_implemented',
+            'unavailable'
+        )
+    ),
+    CHECK (
+        callback_policy_status IN (
+            'not_required',
+            'planned',
+            'required_planned',
+            'not_implemented',
+            'unavailable'
+        )
+    ),
+    CHECK (
+        csrf_protection_status IN (
+            'not_required',
+            'required_planned',
+            'active_metadata_only',
+            'not_implemented'
+        )
+    ),
+    CHECK (
+        redirect_uri_policy_status IN (
+            'not_required',
+            'required_planned',
+            'not_configured',
+            'not_implemented'
+        )
+    ),
+    CHECK (
+        token_exchange_policy_status IN (
+            'not_required',
+            'planned',
+            'not_implemented',
+            'unavailable'
+        )
+    ),
+    CHECK (
+        token_storage_policy_status IN (
+            'none',
+            'planned',
+            'not_implemented',
+            'unavailable'
+        )
+    ),
+    CHECK (error_redaction_policy_status IN ('active', 'planned', 'not_required')),
+    CHECK (audit_event_policy_status IN ('metadata_only', 'planned', 'not_required'))
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,

@@ -13,6 +13,7 @@ from app.api.routes import (
     metrics,
     provider_connections,
     provider_credential_references,
+    provider_oauth_boundaries,
     provider_registry,
     provider_security_audit,
     projects,
@@ -61,6 +62,11 @@ app.include_router(
     provider_security_audit.router,
     prefix="/api/provider-security-audit-events",
     tags=["provider-security-audit-events"],
+)
+app.include_router(
+    provider_oauth_boundaries.router,
+    prefix="/api/provider-oauth-boundaries",
+    tags=["provider-oauth-boundaries"],
 )
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(materials.router, prefix="/api/projects", tags=["materials"])

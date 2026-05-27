@@ -196,6 +196,16 @@ Frontend 不保存、不缓存、不展示 token、secret、API key、authorizat
 
 Future real provider planning 只能通过 `implementation_status`、`event_type`、`event_status`、`redaction_status` 和 `boundary_notes` 展示，不能通过按钮、connected 状态、authorized 状态、stored 状态、synced 状态或 published 状态暗示已可用。Provider Security Audit Event UI 不等于真实 provider adapter，不等于 OAuth、Credential 管理界面、Secret Manager、SIEM、compliance archive，也不等于平台账号设置页。
 
+### Provider OAuth State & Callback Boundary Backend Foundation
+
+v0.8 Batch 10 增加 backend-only Provider OAuth Boundary metadata layer。该层依赖 Provider Registry 作为 provider source of truth，只为 registry 中存在的 `fake_local`、`douyin_sandbox` 和 `douyin_real` 返回 OAuth boundary metadata；数据库中未知 `provider_id` 的记录不得被视为真实 provider OAuth boundary，也不得出现在只读 API response 中。
+
+Provider OAuth Boundary 可以返回 `oauth_policy_status`、`state_policy_status`、`callback_policy_status`、`csrf_protection_status`、`redirect_uri_policy_status`、`token_exchange_policy_status`、`token_storage_policy_status`、`error_redaction_policy_status`、`audit_event_policy_status`、`safe_status_message` 和 `boundary_notes`，用于表达 OAuth readiness、state/callback/CSRF/redirect URI/token exchange/token storage/error redaction/audit event policy 的安全边界。
+
+该 metadata layer 只保存非敏感 OAuth boundary metadata，不保存 token、secret、API key、credential material、authorization code、OAuth client secret、OAuth state value、private key、raw request、raw response 或 raw payload。它不读取环境变量中的真实平台密钥，不读取本地凭据文件，不调用外部服务，不实现 OAuth，不生成真实 provider authorization URL，不实现 callback route，不实现 state storage，不执行 token exchange，不等于 Credential storage，也不等于 real provider adapter。
+
+Frontend 和 API consumer 只能看到非敏感 OAuth boundary metadata。Future real provider planning 只能通过 `implementation_status`、`oauth_policy_status`、`state_policy_status`、`callback_policy_status`、`csrf_protection_status`、`redirect_uri_policy_status`、`token_exchange_policy_status`、`token_storage_policy_status`、`error_redaction_policy_status`、`audit_event_policy_status` 和 `boundary_notes` 表达，不能通过 enabled、connected、authorized、state stored、callback active、token exchanged、token stored 或 real synced 状态暗示已可用。
+
 ### Credential Boundary
 
 - token、secret、refresh token、API key 和平台账号凭据不得进入 Git。

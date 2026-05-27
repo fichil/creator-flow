@@ -365,6 +365,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。若扫描命中文档中的安全边界说明、UI 的“不保存 token / OAuth 未实现 / raw request 不展示”文案、测试中的禁止字段名断言、测试中的 fake/redacted input、既有忽略规则或依赖元数据，应逐项确认它们只是边界说明、redaction 测试输入或测试断言，不是真实值。
 
+## v0.8 Batch 10 Provider OAuth State & Callback Boundary backend foundation 验收
+
+v0.8 Batch 10 允许新增 backend-only provider OAuth boundary metadata table、backend-only provider OAuth boundary metadata service 和只读 provider OAuth boundary metadata API。本批新增的数据表只允许保存非敏感 metadata，用于表达 OAuth state / callback / CSRF / redirect URI / token exchange / token storage / error redaction / audit event policy readiness。
+
+本批不新增前端 UI，不新增真实 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不新增 token exchange，不新增授权 URL 生成，不新增 Credential storage / token storage / real provider，也不新增 connect / authorize / refresh / revoke / disconnect 写 API。本批 OAuth boundary metadata 不代表真实 OAuth implementation、callback route、state store 或 token exchange。
+
+本地质量门禁要从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。文档和测试中的 token / OAuth / credential / secret / authorization code / state / callback 只能作为“不保存、不实现、不暴露”的边界说明、fake 测试输入或黑名单断言。
+
 ## 启动 Backend
 
 ```powershell
