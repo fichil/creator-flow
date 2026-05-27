@@ -380,7 +380,7 @@
 
 目标：为真实平台接入建立 Provider、OAuth、Credential 和 Secret 管理边界，先解决安全基础和架构基础，再进入抖音 POC。
 
-状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，仅完成文档与 ADR 边界，不代表 v0.8 release 已完成。
+状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation；这些批次不代表 v0.8 release 已完成。
 
 Batch 1（已完成）：
 
@@ -397,7 +397,7 @@ Batch 1（已完成）：
 - 不抓取真实指标。
 - 不上传、不发布、不排期发布。
 
-Batch 2（本批）：
+Batch 2（已完成）：
 
 - Provider Registry & Capability Metadata backend foundation。
 - backend-only。
@@ -415,6 +415,26 @@ Batch 2（本批）：
 - 不抓取真实指标。
 - 不上传、不发布、不排期发布。
 - 不调用外部服务。
+
+Batch 3（本批）：
+
+- Provider Registry frontend read-only UI foundation。
+- frontend-only 或 frontend + docs only。
+- 基于 Batch 2 的只读 `/api/providers` metadata API。
+- 在前端展示 provider metadata、source type、connection status、capability metadata 和 boundary notes。
+- 明确区分 `fake_local`、`douyin_sandbox` 和 `douyin_real`。
+- 明确 planned / unavailable provider 不得显示为可用真实集成。
+- 不新增 backend API。
+- 不新增数据库表。
+- 不实现 OAuth。
+- 不保存 token。
+- 不新增 Credential storage。
+- 不新增 connect / authorize / refresh / revoke / disconnect 操作。
+- 不接真实 Douyin API。
+- 不抓取真实指标。
+- 不上传、不发布、不排期发布。
+- 不调用外部服务。
+- 不修改 v0.7.0 release scope。
 
 范围：
 

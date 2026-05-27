@@ -118,6 +118,16 @@ Frontend 和 API consumer 只能看到非敏感 metadata、source type、connect
 
 Provider Registry 不读取 token、secret、credential、API key 或 OAuth client secret，不读取环境变量中的真实密钥，不连接数据库，不调用外部服务。Registry 只描述 metadata，不等于真实 provider adapter，也不执行 OAuth、连接、刷新、撤销、指标读取、上传、发布或排期发布。
 
+### Provider Registry Frontend Read-only Boundary
+
+v0.8 Batch 3 在前端增加只读 Provider Registry UI，但 frontend 只能消费 backend Provider Registry 的只读 metadata。该 UI 展示 provider metadata、source type、implementation status、connection status、capability metadata 和 boundary notes，帮助用户和审查者区分 `fake_local`、`douyin_sandbox` 和 `douyin_real`。
+
+Frontend 不保存、不缓存、不展示 token、secret、credential、authorization code、API key 或 OAuth client secret，也不能从 metadata 推断真实平台已经可用。`fake_local` 可以展示为 local fake/demo/test workflow；`douyin_sandbox` 和 `douyin_real` 必须展示为 placeholder / not available，planned / unavailable provider 不能显示为可用真实集成。
+
+未实现的 OAuth、metrics read、publish prepare、real publish、token refresh、disconnect 和 revoke 能力必须显示为 unavailable / disabled / not implemented。future real provider planning 只能通过 `implementation_status` 和 `boundary_notes` 表达，不能通过 capability `true`、按钮或其他交互暗示已可用。
+
+该 UI 不提供 connect / authorize / refresh / revoke / disconnect / upload / publish / schedule 操作，也不新增写 API。它不等于真实 provider adapter，不等于 OAuth 管理界面，也不等于 Credential 管理界面。
+
 ### Credential Boundary
 
 - token、secret、refresh token、API key 和平台账号凭据不得进入 Git。

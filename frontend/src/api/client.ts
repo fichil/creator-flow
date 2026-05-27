@@ -321,6 +321,35 @@ export type GenerationRun = {
   updated_at: string;
 };
 
+export type ProviderCapabilityMetadata = {
+  supports_oauth: boolean;
+  supports_metrics_read: boolean;
+  supports_publish_prepare: boolean;
+  supports_real_publish: boolean;
+  supports_sandbox: boolean;
+  supports_token_refresh: boolean;
+  supports_disconnect: boolean;
+  supports_revoke: boolean;
+};
+
+export type PlatformProvider = {
+  provider_id: string;
+  provider_name: string;
+  provider_type: string;
+  source_type: string;
+  implementation_status: string;
+  connection_status: string;
+  is_available: boolean;
+  is_real_provider: boolean;
+  requires_user_authorization: boolean;
+  capabilities: ProviderCapabilityMetadata;
+  boundary_notes: string[];
+};
+
+export type ProviderRegistryListResponse = {
+  providers: PlatformProvider[];
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -351,6 +380,11 @@ export function listProjects(options: { includeArchived?: boolean } = {}): Promi
   }
   const query = params.toString();
   return request<Project[]>(`/api/projects${query ? `?${query}` : ""}`);
+}
+
+export async function listPlatformProviders(): Promise<PlatformProvider[]> {
+  const response = await request<ProviderRegistryListResponse>("/api/providers");
+  return response.providers;
 }
 
 export function createProject(payload: { title: string; description?: string }): Promise<Project> {

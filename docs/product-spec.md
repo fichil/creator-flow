@@ -156,6 +156,19 @@ v0.8 Batch 2 产品边界：
 - v0.8 Batch 2 不承诺真实发布、上传或排期发布。
 - v0.8 Batch 2 不承诺生产级 credential storage 已实现。
 
+v0.8 Batch 3 产品边界：
+
+- 用户可以看到 provider、source、capability 和 connection status。
+- 用户可以看到 `fake_local` 是当前可用 local fake workflow。
+- 用户可以看到 `douyin_sandbox` 和 `douyin_real` 当前只是 placeholder metadata。
+- 用户不会看到连接、授权、刷新、撤销、断开、上传、发布或排期发布入口。
+- UI 不得让用户误以为真实 Douyin 已接入。
+- v0.8 Batch 3 不承诺真实 Douyin 可用。
+- v0.8 Batch 3 不承诺真实 OAuth。
+- v0.8 Batch 3 不承诺真实指标读取。
+- v0.8 Batch 3 不承诺真实发布、上传或排期发布。
+- v0.8 Batch 3 不承诺生产级 credential storage 已实现。
+
 ## Road to Douyin user testing
 
 v0.7.0 已完成 local fake/manual metrics review summary workflow。v0.7.0 之后的路线不再从 local fake/manual workflow 直接跳到生产级真实平台能力，而是继续进入 v0.8、v0.9 和 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。

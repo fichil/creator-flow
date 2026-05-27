@@ -204,6 +204,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。安全扫描如果命中文档边界说明、provider registry capability 字段名或测试中的敏感字段名黑名单，应逐项确认它们只是边界说明或测试断言，不是真实值。
 
+## v0.8 Batch 3 Provider Registry frontend read-only UI foundation 验收
+
+v0.8 Batch 3 允许新增 frontend read-only Provider Registry UI 和 frontend API client 类型，用于消费 Batch 2 的只读 `/api/providers` metadata API，并展示 provider metadata、source type、connection status、capability metadata 和 boundary notes。
+
+本批不新增 backend API，不新增数据库表，不实现 OAuth，不新增 Credential storage，不新增 token storage，不新增真实 Provider，不新增 connect / authorize / refresh / revoke / disconnect 操作入口，不接真实 Douyin API，不抓取真实指标，不上传、不发布、不排期发布，也不调用外部服务。UI 文案中的 token / OAuth / credential 只能作为“不保存、不实现、不暴露”的边界说明。
+
+本地质量门禁从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。安全扫描如果命中文档中的安全边界说明、UI 的“不保存 token / OAuth 未实现”文案、测试中的禁止字段名断言、既有忽略规则或依赖元数据，应逐项确认它们只是边界说明或测试断言，不是真实值。
+
 ## 启动 Backend
 
 ```powershell

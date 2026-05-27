@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { listProjects, Project } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
+import { ProviderRegistryPanel } from "../components/ProviderRegistryPanel";
 import { StatusBadge } from "../components/StatusBadge";
 
 type ProjectListPageProps = {
@@ -41,6 +42,7 @@ export function ProjectListPage({ onCreate, onOpen }: ProjectListPageProps) {
           新建项目
         </button>
       </div>
+      <ProviderRegistryPanel />
       <label className="mt-5 inline-flex items-center gap-2 text-sm text-stone-700">
         <input
           checked={includeArchived}
