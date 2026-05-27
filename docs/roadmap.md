@@ -209,7 +209,7 @@
 
 目标：在人工确认前提下支持抖音发布准备与发布动作。
 
-状态：Release Candidate。v0.5 Batch 6 已完成 Publishing workflow Release Candidate stabilization / checklist。当前已有发布意图与发布记录数据表、Pydantic schemas、API、`PublishIntent` confirm 状态流转、本地 deterministic `FakePublisherProvider` fake execution，以及项目详情页本地 fake publishing workflow；`Review Draft` approved 仍不等于发布，`PublishIntent` confirmed 也不等于真实发布，fake succeeded 只表示本地 fake execution 成功。本阶段仍不实现真实 OAuth、真实发布、真实上传、排期发布、自动发布、token 保存或真实 PublisherProvider，也不修改 v0.4 local fake/manual workflow 或 v0.3 render/subtitle/preview workflow。
+状态：Release Candidate，已完成 Final release validation / tag preparation 文档收口。v0.5 Batch 6 已完成 Publishing workflow Release Candidate stabilization / checklist。当前已有发布意图与发布记录数据表、Pydantic schemas、API、`PublishIntent` confirm 状态流转、本地 deterministic `FakePublisherProvider` fake execution，以及项目详情页本地 fake publishing workflow；`Review Draft` approved 仍不等于发布，`PublishIntent` confirmed 也不等于真实发布，fake succeeded 只表示本地 fake execution 成功。本阶段仍不实现真实 OAuth、真实发布、真实上传、排期发布、自动发布、token 保存或真实 PublisherProvider，也不修改 v0.4 local fake/manual workflow 或 v0.3 render/subtitle/preview workflow。
 
 已完成 Batch 1：实现 Human-Confirmed Publishing Provider Boundary documentation foundation。该批次只更新产品规格、架构、路线图和 ADR，明确 v0.5 的目标是 Human-Confirmed Douyin Publishing；发布必须由用户明确确认后触发；`Review Draft` approved 不等于发布；系统不得静默发布、自动发布或绕过用户审核；`PublisherProvider` 必须隔离平台细节；抖音只是首个平台实现方向，不能写死到核心模型；凭据不得进入 Git；后续真实发布能力必须基于 `PublishIntent` / `PublicationRecord` 或等价模型并保留人工确认状态。
 
@@ -222,6 +222,8 @@
 已完成 Batch 5：实现 Publishing frontend workflow foundation。该批次在项目详情页新增 Publishing / Fake Publishing 区块，接入已有 backend API，让用户可以从已 approved Review Draft 创建 `PublishIntent`、查看发布意图状态、confirm、cancel、查看 `PublicationRecord`，并对 confirmed PublishIntent 执行本地 Fake Publish。UI 明确提示这是本地 fake publishing workflow，不上传、不发布、不排期、不调用 Douyin；fake publish succeeded 只表示本地 fake execution 成功，不代表真实平台发布成功。本批不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布，也不接真实 PublisherProvider。
 
 已完成 Batch 6：实现 Publishing workflow Release Candidate stabilization / checklist。该批次不新增大功能、不接真实平台、不改变既有业务语义，只统一 README、README.en.md、路线图和本地开发说明中的 v0.5 RC 状态，补充 Publishing frontend workflow 的错误展示与误导性按钮文案边界测试，并确认 v0.5 当前仍是 local fake/manual publishing workflow。本批不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布，也不接真实 PublisherProvider。
+
+已完成 Final validation：实现 v0.5 Release validation / tag preparation。该批次只新增 v0.5 RC checklist、统一 README / README.en.md / roadmap / development 的 release readiness 说明，并运行最终本地质量门禁；不新增业务功能、不新增 API、不新增数据库表、不改核心业务语义、不创建 Git tag、不 push、不 merge main。
 
 范围：
 
@@ -269,6 +271,8 @@
 ## v0.6 Metrics Feedback Loop
 
 目标：采集基础发布指标，帮助用户复盘并优化下一轮内容。
+
+状态：未开始。v0.5 Release Candidate 不实现 Metrics Feedback Loop，不采集真实平台指标，不接真实发布平台状态查询。
 
 范围：
 
