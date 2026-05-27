@@ -124,7 +124,7 @@ v0.6 的目标是为发布后的内容记录指标反馈，帮助用户复盘内
 
 ## Road to Douyin user testing
 
-v0.6.0 之后的路线不再从 local fake/manual workflow 直接跳到生产级真实平台能力，而是分为 v0.7、v0.8、v0.9 和 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。
+v0.7.0 已完成 local fake/manual metrics review summary workflow。v0.7.0 之后的路线不再从 local fake/manual workflow 直接跳到生产级真实平台能力，而是继续进入 v0.8、v0.9 和 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。
 
 用户测试目标：
 
