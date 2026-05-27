@@ -117,6 +117,20 @@ def test_create_metrics_for_missing_publication_record_returns_404(client: TestC
     assert_no_metrics_side_effects()
 
 
+def test_metrics_for_missing_project_returns_404(client: TestClient):
+    list_response = client.get("/api/projects/999/publication-records/1/metrics")
+    create_response = create_fake_metrics_snapshot(client, 999, 1)
+    read_response = client.get("/api/projects/999/publication-records/1/metrics/1")
+
+    assert list_response.status_code == 404
+    assert list_response.json()["detail"] == "project not found"
+    assert create_response.status_code == 404
+    assert create_response.json()["detail"] == "project not found"
+    assert read_response.status_code == 404
+    assert read_response.json()["detail"] == "project not found"
+    assert_no_metrics_side_effects()
+
+
 def test_cross_project_publication_record_metrics_access_returns_404(client: TestClient):
     first_project_id, _, publication_record = prepare_publication_record(client)
     second_project_id = create_project(client, "Second metrics project")
@@ -147,6 +161,16 @@ def test_metric_snapshot_mismatched_publication_record_returns_404(client: TestC
     assert response.status_code == 404
     assert response.json()["detail"] == "metric snapshot not found"
     assert_no_metrics_side_effects(expected_metric_snapshots=1)
+
+
+def test_missing_metric_snapshot_returns_404(client: TestClient):
+    project_id, _, publication_record = prepare_publication_record(client)
+
+    response = client.get(f"/api/projects/{project_id}/publication-records/{publication_record['id']}/metrics/999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "metric snapshot not found"
+    assert_no_metrics_side_effects()
 
 
 def test_archived_project_can_read_but_cannot_create_fake_metrics(client: TestClient):
