@@ -33,6 +33,7 @@ import { EmptyState } from "../components/EmptyState";
 import { StatusBadge } from "../components/StatusBadge";
 import { ContentPlansPanel } from "./project-detail/ContentPlansPanel";
 import { formatStatus } from "./project-detail/formatting";
+import { ProjectPublishingSection } from "./project-detail/ProjectPublishingSection";
 import { ReviewDraftsPanel } from "./project-detail/ReviewDraftsPanel";
 
 type ProjectDetailPageProps = {
@@ -62,6 +63,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
   const [error, setError] = useState<string | null>(null);
   const [hasSelectedStoryboard, setHasSelectedStoryboard] = useState<boolean | null>(null);
   const [reviewDraftRefreshKey, setReviewDraftRefreshKey] = useState(0);
+  const [publishingRefreshKey, setPublishingRefreshKey] = useState(0);
   const isArchived = project?.status === "archived";
 
   async function reload() {
@@ -80,6 +82,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
   useEffect(() => {
     setHasSelectedStoryboard(null);
     setReviewDraftRefreshKey(0);
+    setPublishingRefreshKey(0);
     void reload();
   }, [projectId]);
 
@@ -138,6 +141,12 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
                 isArchived={isArchived}
                 projectId={project.id}
                 refreshKey={reviewDraftRefreshKey}
+                onReviewDraftsChanged={() => setPublishingRefreshKey((value) => value + 1)}
+              />
+              <ProjectPublishingSection
+                isArchived={isArchived}
+                projectId={project.id}
+                refreshKey={publishingRefreshKey}
               />
               <SubtitleDraftsPanel
                 hasSelectedStoryboard={hasSelectedStoryboard}

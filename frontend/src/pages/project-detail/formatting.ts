@@ -10,6 +10,10 @@
   pending_review: "待审核",
   approved: "已通过",
   rejected: "已拒绝",
+  pending_confirmation: "待确认",
+  confirmed: "已确认",
+  cancelled: "已取消",
+  not_started: "未开始",
 };
 
 export function formatStatus(status: string) {

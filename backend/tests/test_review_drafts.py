@@ -216,10 +216,9 @@ def assert_no_real_output_records() -> None:
             "render_artifacts": connection.execute("SELECT COUNT(*) FROM render_artifacts").fetchone()[0],
             "subtitle_drafts": connection.execute("SELECT COUNT(*) FROM subtitle_drafts").fetchone()[0],
             "subtitle_cues": connection.execute("SELECT COUNT(*) FROM subtitle_cues").fetchone()[0],
+            "publish_intents": connection.execute("SELECT COUNT(*) FROM publish_intents").fetchone()[0],
+            "publication_records": connection.execute("SELECT COUNT(*) FROM publication_records").fetchone()[0],
         }
-        publication_table = connection.execute(
-            "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('publish_intents', 'publications')"
-        ).fetchall()
     assert counts == {
         "topic_generation_runs": 0,
         "topic_candidates": 0,
@@ -231,5 +230,6 @@ def assert_no_real_output_records() -> None:
         "render_artifacts": 0,
         "subtitle_drafts": 0,
         "subtitle_cues": 0,
+        "publish_intents": 0,
+        "publication_records": 0,
     }
-    assert publication_table == []
