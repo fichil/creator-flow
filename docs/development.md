@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.4 Batch 6 本地开发状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。
+本文档面向 v0.4 Batch 7 本地开发状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。Batch 7 只做项目详情页 v0.4 前端组件拆分与稳定化，不新增后端能力或业务能力。
 
 ## 环境要求
 
@@ -121,6 +121,7 @@ uv run --extra test pytest
 - Review Draft list / read / approve / reject，以及 pending_review placeholder、archived project、cross-project 访问和 approve / reject 无副作用边界。
 - ContentPlan / GenerationSchedule / Manual GenerationRun frontend UI list/create/enable/disable/manual trigger，以及 trigger 成功后刷新 GenerationRuns 和 Review Drafts。
 - Review Draft frontend UI list/status 展示、热点来源 fallback、approve / reject 成功后刷新，以及 archived 项目只读。
+- v0.4 project detail frontend component extraction，确保拆分后的 ContentPlan、GenerationSchedule、GenerationRun 和 Review Draft 组件行为不变。
 - Topic Candidate、Script Draft、Storyboard、FakeRenderer、FakeSubtitle、fake preview manifest metadata 和对应 frontend UI 的本地 deterministic workflow。
 
 ## API Smoke Checklist
