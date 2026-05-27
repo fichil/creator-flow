@@ -272,9 +272,11 @@
 
 目标：为发布后的内容记录指标反馈，帮助用户复盘内容表现，并为未来根据表现优化 `TopicCandidate`、`ScriptDraft` 和 `ContentPlan` 提供基础输入。指标来源未来可以来自抖音或其他平台 Provider，但核心模型不能写死抖音。
 
-状态：已开始。v0.6 Batch 1 已完成 Metrics Feedback Loop documentation foundation；本批只定义产品、领域模型和 Provider 边界，不实现功能。
+状态：已开始。v0.6 Batch 1 已完成 Metrics Feedback Loop documentation foundation；v0.6 Batch 2 已完成 backend-only fake metrics domain foundation。当前只支持本地 deterministic fake metrics snapshots，不实现真实指标抓取、真实平台 API、OAuth、token 保存、定时同步、数据分析推荐算法或前端 UI。
 
 已完成 Batch 1：实现 Metrics Feedback Loop documentation foundation。该批次只更新产品规格、架构、路线图、README 和 ADR，明确指标反馈用于发布后复盘，不用于自动发布；未来指标快照应与 `PublicationRecord` 关联；平台指标能力通过 `MetricsProvider` 或等价 Provider 抽象隔离；fake/local metrics 与真实平台 metrics 必须显式区分；真实 Douyin API、OAuth、token 保存、定时同步、真实指标抓取和数据分析推荐算法均不在本批实现。
+
+已完成 Batch 2：实现 Metrics Feedback Loop backend-only fake metrics domain foundation。该批次新增 `publication_metric_snapshots` 后端数据表、metrics schemas、metrics API routes、deterministic `FakeMetricsProvider` 和 backend tests；支持基于现有 `PublicationRecord` 创建 `fake_local` metrics snapshot，查询某个 `PublicationRecord` 下的 metrics snapshots，并读取单个 metrics snapshot。指标字段允许部分为空，`completion_rate` 限制在 0 到 1，所有 fake metrics 都明确标记为 fake/local data。该批次不新增前端 UI，不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不调用外部服务，不做定时同步，不抓取真实平台指标，不做数据分析推荐算法，也不修改 v0.5 fake publishing workflow、v0.4 scheduled draft workflow 或 v0.3 rendering workflow 语义。
 
 范围：
 
