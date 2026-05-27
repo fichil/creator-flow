@@ -39,6 +39,24 @@ CREATE TABLE IF NOT EXISTS content_plans (
     CHECK (is_enabled IN (0, 1))
 );
 
+CREATE TABLE IF NOT EXISTS generation_schedules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    content_plan_id INTEGER NOT NULL,
+    frequency_per_week INTEGER NOT NULL,
+    timezone TEXT NOT NULL,
+    preferred_days TEXT,
+    preferred_time TEXT NOT NULL,
+    is_enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (content_plan_id) REFERENCES content_plans(id) ON DELETE CASCADE,
+    CHECK (frequency_per_week BETWEEN 1 AND 14),
+    CHECK (length(preferred_time) = 5),
+    CHECK (is_enabled IN (0, 1))
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -278,6 +296,12 @@ ON user_materials (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_content_plans_project_id_created_at
 ON content_plans (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_generation_schedules_project_id_created_at
+ON generation_schedules (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_generation_schedules_content_plan_id
+ON generation_schedules (content_plan_id);
 
 CREATE INDEX IF NOT EXISTS idx_topic_generation_runs_project_id_created_at
 ON topic_generation_runs (project_id, created_at DESC, id DESC);
