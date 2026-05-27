@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.4 Batch 7 本地开发状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。Batch 7 只做项目详情页 v0.4 前端组件拆分与稳定化，不新增后端能力或业务能力。
+本文档面向 v0.4 Batch 8 Release Candidate 本地开发状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.4 当前是 local fake/manual workflow；Batch 8 只做 RC stabilization / checklist，不新增后端能力、前端功能或业务能力。
 
 ## 环境要求
 
@@ -122,6 +122,7 @@ uv run --extra test pytest
 - ContentPlan / GenerationSchedule / Manual GenerationRun frontend UI list/create/enable/disable/manual trigger，以及 trigger 成功后刷新 GenerationRuns 和 Review Drafts。
 - Review Draft frontend UI list/status 展示、热点来源 fallback、approve / reject 成功后刷新，以及 archived 项目只读。
 - v0.4 project detail frontend component extraction，确保拆分后的 ContentPlan、GenerationSchedule、GenerationRun 和 Review Draft 组件行为不变。
+- v0.4 RC checklist 覆盖 local fake/manual workflow、archived read-only、manual run refresh，以及未实现 scheduled `GenerationRun`、Scheduler / Trigger Engine、真实媒体、真实 Provider、发布和上传的边界。
 - Topic Candidate、Script Draft、Storyboard、FakeRenderer、FakeSubtitle、fake preview manifest metadata 和对应 frontend UI 的本地 deterministic workflow。
 
 ## API Smoke Checklist
@@ -314,6 +315,26 @@ npm.cmd run dev
 - archived 项目只读，不允许 approve / reject。
 
 该 UI 不实现完整 Review Queue 页面，不实现 Scheduler / scheduled `GenerationRun`，不创建真实 Topic Candidate、Script Draft、Storyboard、Render Job、Subtitle Draft、视频、音频、字幕或媒体文件，不接热点源、真实 AI Provider、`FFmpeg`、TTS、发布或上传能力。
+
+## v0.4 Release Candidate 验证
+
+v0.4 Batch 8 是 RC stabilization / checklist，不新增后端能力、前端功能或业务能力。当前 v0.4 只覆盖 local fake/manual workflow：`GenerationSchedule` 只是配置，fake manual `GenerationRun` 只记录 deterministic summary 并同步创建 `Review Draft` placeholder。
+
+本地手动 smoke checklist：
+
+- 启动 backend 与 frontend，确认项目详情页可以打开。
+- 创建一个未归档项目，创建 `ContentPlan`，确认 list / read 展示账号定位、内容类型、目标频率、偏好文本和启用状态。
+- update / enable / disable `ContentPlan`，确认状态变化；归档项目下 create / update / enable / disable 应保持禁止。
+- 在该 `ContentPlan` 下创建 `GenerationSchedule`，确认 list / read 展示 frequency、timezone、preferred days、preferred time 和启用状态。
+- update / enable / disable `GenerationSchedule`，确认状态变化；归档项目下 create / update / enable / disable 应保持禁止。
+- 手动创建 fake `GenerationRun`，分别验证无 schedule 与指定 schedule 两种路径。
+- manual `GenerationRun` 成功后，确认项目详情页刷新 GenerationRuns list 和 Review Drafts list。
+- 确认生成的 `Review Draft` 是 `pending_review` placeholder，展示草稿摘要、输入来源、热点来源 fallback、GenerationRun / GenerationSchedule 信息和 created / updated 时间。
+- approve / reject 只改变 `review_status` 并刷新列表；归档项目仍可读取 Review Draft，但不允许 approve / reject。
+- 确认不会执行 scheduled `GenerationRun`，不会注册 Scheduler / Trigger Engine，不会创建真实 Topic Candidate、Script Draft、Storyboard、Render Job、Subtitle Draft、视频、音频、字幕、上传文件或发布记录。
+- 确认不接热点源、Notification Service、真实 AI Provider、`FFmpeg`、TTS、发布或上传能力。
+
+更完整的收口清单见 [`docs/releases/v0.4-rc-checklist.md`](releases/v0.4-rc-checklist.md)。
 
 ## Backend Topic Candidate API 验证
 

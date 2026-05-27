@@ -6,13 +6,13 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 
 ## 当前状态
 
-`v0.3 Rendering Workflow - Batch 7 Release Candidate`
+`v0.4 Scheduled Draft Generation - Batch 8 Release Candidate`
 
-当前仓库已完成 v0.1 本地可运行骨架、v0.2 AI Planning Workflow，以及 v0.3 Batch 1 到 Batch 7 的 fake rendering/subtitle/preview workflow。v0.3 Batch 7 已完成 fake workflow stabilization 与 Release Candidate 收口。当前主链路使用本地 deterministic `FakeLLMProvider`，支持从显式导入素材生成并选择 Topic Candidate、Script Draft 和 Storyboard，并在项目详情页查看分镜 scenes；应用也可以基于 selected Storyboard 创建 fake render job、展示 fake preview manifest metadata、创建 fake subtitle draft 和展示 subtitle cues。
+当前仓库已完成 v0.1 本地可运行骨架、v0.2 AI Planning Workflow、v0.3 fake rendering/subtitle/preview workflow，以及 v0.4 Batch 1 到 Batch 8 的 local fake/manual Scheduled Draft Generation workflow。v0.4 Batch 8 已完成 Release Candidate stabilization 与 checklist 收口。当前主链路支持本地 deterministic `FakeLLMProvider` 的 Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata workflow；v0.4 支持项目级 `ContentPlan`、`GenerationSchedule` 配置、fake manual `GenerationRun` 记录，以及由 manual run 同步创建的 `Review Draft` placeholder，并在项目详情页展示和操作这些本地 fake/manual workflow 状态。
 
 本地开发说明见 [`docs/development.md`](docs/development.md)。
 
-当前仍不接真实 OpenAI / Claude / Gemini / 其他 LLM，不保存 API key、secret 或 token，不联网调用真实 AI。v0.3 已完成 fake rendering/subtitle/preview metadata workflow 的 RC 收口，但真实 MP4 渲染、真实视频播放、FFmpeg、TTS、真实字幕文件、真实音频、定时生成、平台发布、生产部署和账号体系仍未实现。
+当前仍不接真实 OpenAI / Claude / Gemini / 其他 LLM，不保存 API key、secret 或 token，不联网调用真实 AI。v0.4 当前仍是 local fake/manual workflow：scheduled `GenerationRun`、Scheduler / Trigger Engine、完整 `Review Queue`、真实 MP4 渲染、真实视频播放、FFmpeg、TTS、真实字幕文件、真实音频、平台发布、生产部署和账号体系仍未实现。Review Draft 仍是 placeholder；approve / reject 只改变审核状态，不发布、不上传、不渲染、不生成媒体。
 当前版本不适合作为生产部署使用。
 
 ## 本地启动快捷入口
@@ -48,7 +48,7 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 - 发布后指标回流，用于后续内容复盘和选题优化。
 - 以抖音作为首个发布平台，同时通过 Provider 抽象保留多平台扩展能力。
 
-其中 Topic Candidate、Script Draft 和 Storyboard 的生成与选择已在 v0.2 中以本地 fake provider 形式实现；v0.3 已完成 fake render job、fake preview manifest metadata 展示、fake subtitle draft 和 subtitle cues 的 RC 收口。真实 AI、真实字幕文件、真实音频、素材方案、真实 MP4 渲染与播放、发布、调度和指标回流仍属于后续计划方向。
+其中 Topic Candidate、Script Draft 和 Storyboard 的生成与选择已在 v0.2 中以本地 fake provider 形式实现；v0.3 已完成 fake render job、fake preview manifest metadata 展示、fake subtitle draft 和 subtitle cues 的 RC 收口；v0.4 已完成 ContentPlan、GenerationSchedule、fake manual GenerationRun 和 Review Draft placeholder 的 RC 收口。真实 AI、真实字幕文件、真实音频、素材方案、真实 MP4 渲染与播放、发布、scheduled GenerationRun、Scheduler / Trigger Engine、完整 Review Queue 和指标回流仍属于后续计划方向。
 
 ## 当前本地能力
 
@@ -61,6 +61,10 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 - 基于 selected Topic Candidate、selected Script Draft 和显式导入素材生成 Storyboard，并查看有序 scenes。
 - 基于 selected Storyboard 创建 fake render job，并保存 deterministic fake preview manifest metadata；项目详情页可以展示这些 metadata，但不会读取运行时 manifest 文件或播放真实视频，也不会生成真实 MP4 文件。
 - 基于 selected Storyboard 创建 fake subtitle draft，并保存 deterministic subtitle cues metadata；当前不会生成真实 `.srt` / `.vtt` 文件、音频或视频。
+- 创建和查看 `ContentPlan`，配置账号定位、内容类型、每周目标频率和偏好文本，并启用或停用计划。
+- 创建和查看绑定到 `ContentPlan` 的 `GenerationSchedule` 配置，并启用或停用计划；当前不会执行 scheduled trigger。
+- 手动创建 fake `GenerationRun`，并同步创建待审核的 `Review Draft` placeholder；项目详情页会刷新 GenerationRuns 与 Review Drafts。
+- 查看 `Review Draft` placeholder，并执行 approve / reject 状态变更；该操作不会发布、上传、渲染或生成媒体。
 - 归档项目仍可查看已有素材和规划草稿，但不能继续生成或选择。
 - 将项目与素材元数据保存到本地 `SQLite`。
 - 将用户上传文件保存到本地 `uploads/`，且不提交到 Git。
