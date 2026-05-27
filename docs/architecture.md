@@ -174,6 +174,18 @@ Frontend 不保存、不缓存、不展示 token、secret、API key、authorizat
 
 Future real provider planning 只能通过 `implementation_status`、`reference_status`、`storage_status`、`redaction_policy_status` 和 `boundary_notes` 展示，不能通过按钮、configured 状态、stored 状态或 connected 状态暗示已可用。Provider Credential Reference UI 不等于真实 provider adapter，不等于 OAuth、Credential 管理界面、Secret Manager，也不等于平台账号设置页。
 
+### Provider Security Audit Event Backend Boundary
+
+v0.8 Batch 8 增加 backend-only Provider Security Audit Event metadata layer。该层依赖 Provider Registry 作为 provider source of truth，只为 registry 中已知的 `fake_local`、`douyin_sandbox` 和 `douyin_real` 返回 audit event metadata；数据库中未知 `provider_id` 的记录不得被视为真实 provider audit event，也不得出现在只读 API response 中。
+
+Provider Security Audit Event 可以返回 `event_type`、`event_status`、`event_severity`、`actor_type`、`redaction_status`、`safe_event_message`、`safe_metadata` 和 `boundary_notes`，用于表达 provider security boundary、connection status、authorization status、credential reference、redaction 和错误状态相关的安全审计方向。该 metadata layer 只保存非敏感 / redacted metadata，不保存 token、secret、API key、credential material、authorization code、OAuth client secret、private key、raw request、raw response、raw payload、真实平台返回或任何可用于真实授权的值。
+
+该 metadata layer 不读取环境变量中的真实平台密钥，不读取本地凭据文件，不调用外部服务，不实现 OAuth，不执行 token exchange，不等于 OAuth audit trail，不等于 production SIEM、external log shipping、compliance archive 或 security monitoring platform，也不等于 real provider adapter。frontend 和 API consumer 只能看到非敏感 / redacted audit metadata。
+
+Batch 8 新增的 `provider_security_audit_events` 表只允许保存 audit event id、provider id、source type、event type、event status、event severity、actor type、redaction status、safe event message、safe metadata、boundary notes 和创建时间等 metadata。表结构不得出现可承载敏感值的字段名，例如 access token、refresh token、token value、API key、secret value、client secret、OAuth client secret、authorization code、credential material、encrypted credential、private key、raw request、raw response、raw payload、OAuth code、password、bearer token 或 session cookie。
+
+audit event service 必须复用 secret redaction helper。写入 audit event 时，`source_type` 必须从 Provider Registry 派生，不能信任调用方传入；`safe_event_message` 和 `safe_metadata` 必须先脱敏再保存。future real provider planning 只能通过 `implementation_status`、`event_type`、`event_status`、`redaction_status` 和 `boundary_notes` 表达，不能通过 connected、authorized、stored、published 或 real synced 状态暗示已可用。
+
 ### Credential Boundary
 
 - token、secret、refresh token、API key 和平台账号凭据不得进入 Git。

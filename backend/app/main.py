@@ -14,6 +14,7 @@ from app.api.routes import (
     provider_connections,
     provider_credential_references,
     provider_registry,
+    provider_security_audit,
     projects,
     publishing,
     render_jobs,
@@ -55,6 +56,11 @@ app.include_router(
     provider_credential_references.router,
     prefix="/api/provider-credential-references",
     tags=["provider-credential-references"],
+)
+app.include_router(
+    provider_security_audit.router,
+    prefix="/api/provider-security-audit-events",
+    tags=["provider-security-audit-events"],
 )
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(materials.router, prefix="/api/projects", tags=["materials"])

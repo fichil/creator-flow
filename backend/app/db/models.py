@@ -264,6 +264,50 @@ CREATE TABLE IF NOT EXISTS provider_credential_references (
     CHECK (redaction_policy_status IN ('active', 'planned', 'not_required'))
 );
 
+CREATE TABLE IF NOT EXISTS provider_security_audit_events (
+    audit_event_id TEXT PRIMARY KEY,
+    provider_id TEXT NOT NULL,
+    source_type TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    event_status TEXT NOT NULL,
+    event_severity TEXT NOT NULL,
+    actor_type TEXT NOT NULL,
+    redaction_status TEXT NOT NULL,
+    safe_event_message TEXT NOT NULL,
+    safe_metadata_json TEXT NOT NULL DEFAULT '{}',
+    boundary_notes_json TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (
+        event_type IN (
+            'boundary_initialized',
+            'connection_status_checked',
+            'authorization_status_checked',
+            'credential_reference_checked',
+            'redaction_applied',
+            'authorization_failed',
+            'permission_denied',
+            'token_expired',
+            'provider_error',
+            'disconnect_requested',
+            'revoke_requested',
+            'boundary_violation_blocked'
+        )
+    ),
+    CHECK (
+        event_status IN (
+            'recorded',
+            'redacted',
+            'blocked',
+            'planned',
+            'not_implemented'
+        )
+    ),
+    CHECK (event_severity IN ('info', 'warning', 'error', 'security')),
+    CHECK (actor_type IN ('system', 'internal', 'user_placeholder')),
+    CHECK (redaction_status IN ('not_required', 'active', 'redacted'))
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
