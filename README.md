@@ -15,6 +15,17 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 当前仍不接真实 OpenAI / Claude / Gemini / 其他 LLM，不保存 API key、secret 或 token，不联网调用真实 AI。v0.4 当前仍是 local fake/manual workflow：scheduled `GenerationRun`、Scheduler / Trigger Engine、完整 `Review Queue`、真实 MP4 渲染、真实视频播放、FFmpeg、TTS、真实字幕文件、真实音频、生产部署和账号体系仍未实现。Review Draft 仍是 placeholder；approve / reject 只改变审核状态，不发布、不上传、不渲染、不生成媒体。v0.5 发布流程当前也只是本地 fake workflow：confirm 表示用户确认进入发布执行准备阶段，Fake Publish succeeded 只表示本地 fake execution 成功，不代表真实平台发布成功；当前仍不接 Douyin API，不实现 OAuth，不保存凭据，不上传、不发布、不排期、不自动发布，也不接真实 PublisherProvider。v0.6.0 metrics 也只是 fake/local workflow，不抓取真实 Douyin metrics，不接真实 Douyin API，不实现 OAuth，不保存 token，不定时同步指标，不提供数据分析推荐算法，不提供真实平台 dashboard，不自动优化内容，也不把 fake metrics 当作真实平台表现。
 当前版本不适合作为生产部署使用。
 
+## 后续路线
+
+当前稳定版本仍是 `v0.6.0 - local fake/manual metrics feedback workflow`。后续路线已补齐为渐进式抖音用户测试路径：
+
+- v0.7 Metrics Review Summary：基于 fake/local metrics snapshots 形成内容复盘摘要，仍不接真实 Douyin。
+- v0.8 Provider & Credential Security Foundation：建立 Provider、OAuth、Credential、Secret 和 token 生命周期安全边界。
+- v0.9 Douyin Provider POC / Sandbox Integration：进行抖音 Provider POC、sandbox/mock callback、账号连接状态和最小指标读取预研。
+- v1.0 Douyin Integration User Test Release：面向用户测试的抖音接入版本，不是生产级自动化发布版本。
+
+真实 Douyin 接入仍取决于平台开放能力、应用审核、OAuth、API 权限与用户授权。README 中的后续路线不表示当前已经接入真实抖音，也不表示已经具备真实发布、自动发布、批量发布、定时发布或生产级平台 dashboard。
+
 ## 本地启动快捷入口
 
 在 Windows PowerShell 中，可以从仓库根目录运行：
