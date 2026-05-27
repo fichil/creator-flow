@@ -221,6 +221,46 @@ export type ReviewDraft = {
   updated_at: string;
 };
 
+export type ContentPlan = {
+  id: number;
+  project_id: number;
+  name: string;
+  account_positioning: string;
+  content_type: string;
+  target_frequency_per_week: number;
+  preferences: string | null;
+  is_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type GenerationSchedule = {
+  id: number;
+  project_id: number;
+  content_plan_id: number;
+  frequency_per_week: number;
+  timezone: string;
+  preferred_days: string | null;
+  preferred_time: string;
+  is_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type GenerationRun = {
+  id: number;
+  project_id: number;
+  content_plan_id: number;
+  generation_schedule_id: number | null;
+  status: "queued" | "running" | "succeeded" | "failed";
+  trigger_type: "manual" | "scheduled";
+  input_summary: string;
+  result_summary: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -356,6 +396,85 @@ export function approveReviewDraft(projectId: number, reviewDraftId: number): Pr
 export function rejectReviewDraft(projectId: number, reviewDraftId: number): Promise<ReviewDraft> {
   return request<ReviewDraft>(`/api/projects/${projectId}/review-drafts/${reviewDraftId}/reject`, {
     method: "POST",
+  });
+}
+
+export function getContentPlans(projectId: number): Promise<ContentPlan[]> {
+  return request<ContentPlan[]>(`/api/projects/${projectId}/content-plans`);
+}
+
+export function createContentPlan(
+  projectId: number,
+  payload: {
+    name: string;
+    account_positioning: string;
+    content_type: string;
+    target_frequency_per_week: number;
+    preferences?: string | null;
+  },
+): Promise<ContentPlan> {
+  return request<ContentPlan>(`/api/projects/${projectId}/content-plans`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function enableContentPlan(projectId: number, contentPlanId: number): Promise<ContentPlan> {
+  return request<ContentPlan>(`/api/projects/${projectId}/content-plans/${contentPlanId}/enable`, {
+    method: "POST",
+  });
+}
+
+export function disableContentPlan(projectId: number, contentPlanId: number): Promise<ContentPlan> {
+  return request<ContentPlan>(`/api/projects/${projectId}/content-plans/${contentPlanId}/disable`, {
+    method: "POST",
+  });
+}
+
+export function getGenerationSchedules(projectId: number): Promise<GenerationSchedule[]> {
+  return request<GenerationSchedule[]>(`/api/projects/${projectId}/generation-schedules`);
+}
+
+export function createGenerationSchedule(
+  projectId: number,
+  contentPlanId: number,
+  payload: {
+    frequency_per_week?: number | null;
+    timezone: string;
+    preferred_days?: string | null;
+    preferred_time: string;
+  },
+): Promise<GenerationSchedule> {
+  return request<GenerationSchedule>(`/api/projects/${projectId}/content-plans/${contentPlanId}/generation-schedules`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function enableGenerationSchedule(projectId: number, generationScheduleId: number): Promise<GenerationSchedule> {
+  return request<GenerationSchedule>(`/api/projects/${projectId}/generation-schedules/${generationScheduleId}/enable`, {
+    method: "POST",
+  });
+}
+
+export function disableGenerationSchedule(projectId: number, generationScheduleId: number): Promise<GenerationSchedule> {
+  return request<GenerationSchedule>(`/api/projects/${projectId}/generation-schedules/${generationScheduleId}/disable`, {
+    method: "POST",
+  });
+}
+
+export function getGenerationRuns(projectId: number): Promise<GenerationRun[]> {
+  return request<GenerationRun[]>(`/api/projects/${projectId}/generation-runs`);
+}
+
+export function createGenerationRun(
+  projectId: number,
+  contentPlanId: number,
+  payload: { generation_schedule_id?: number } = {},
+): Promise<GenerationRun> {
+  return request<GenerationRun>(`/api/projects/${projectId}/content-plans/${contentPlanId}/generation-runs`, {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 
