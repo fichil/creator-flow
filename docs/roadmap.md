@@ -324,27 +324,189 @@
 - 不自动优化内容。
 - 不把 fake 指标当成真实表现。
 
-## v1.0 Extensible Creator Workflow
+## v0.7 Metrics Review Summary
 
-目标：形成稳定、可扩展、可贡献的创作者工作流。
+目标：基于 v0.6.0 已有的 local fake/manual metrics snapshots，为每条 `PublicationRecord` 形成内容复盘摘要，把指标变化转化为用户可读的 review insight，并为下一轮 `TopicCandidate`、`ScriptDraft` 和 `ContentPlan` 提供人工参考输入。
+
+状态：Planned。
 
 范围：
 
-- 稳定 Provider 架构。
-- 多平台发布扩展文档。
-- 完整本地部署与贡献文档。
-- 稳定的内容计划、生成、渲染、审核、发布和复盘流程。
-- 更完善的错误处理与审计记录。
+- 基于 `PublicationMetricSnapshot` 的内容表现摘要方向。
+- `PublicationRecord` 级复盘说明，例如表现亮点、低表现信号和可人工参考的下一步观察。
+- 指标趋势的基础展示或摘要，继续允许指标字段部分为空。
+- 将 fake/local metrics 转换为 review insight，但不把 insight 描述为自动推荐算法结果。
+- 为下一轮选题、脚本和内容计划提供人工参考，不自动改写或生成优化内容。
+- 保留 fake/local metrics source label，避免被误解为真实平台表现。
 
 验收标准：
 
-- 新 Provider 可以按文档接入。
-- 抖音之外的平台可以通过扩展方式支持。
-- 核心工作流稳定可用。
-- 文档足够支持开源贡献者理解和参与。
+- 用户可以从已有 fake/local metrics snapshots 查看内容复盘摘要。
+- 复盘摘要明确关联到 `PublicationRecord` 和指标来源。
+- fake/local insight 明确标记为本地开发、演示或测试数据。
+- 复盘信息可以作为人工参考输入，但不会自动修改 `TopicCandidate`、`ScriptDraft` 或 `ContentPlan`。
+- archived project 仍保持只读。
 
 明确不做事项：
 
-- 不牺牲人工确认发布原则。
-- 不引入平台锁定。
-- 不把用户私有素材或生成媒体纳入 Git。
+- 不接真实 Douyin API。
+- 不实现 OAuth。
+- 不保存 token、API key、secret 或平台账号凭据。
+- 不做自动推荐算法。
+- 不自动优化内容。
+- 不做真实平台 dashboard。
+- 不抓取真实指标或定时同步指标。
+
+与上一版本的关系：
+
+- v0.7 直接建立在 v0.6.0 的 `PublicationRecord` metrics snapshots、backend fake metrics provider、metrics API、项目详情页 metrics display、manual fake metrics generation 和 fake/local boundary labels 之上。
+- v0.7 不改变真实平台接入边界，仍然是 local fake/manual workflow。
+
+进入下一版本的条件：
+
+- 复盘摘要的字段、来源标记和人工参考边界稳定。
+- fake/local insight 不会被 UI、文档或接口描述为真实平台分析。
+- 已确认复盘摘要不会绕过 human-in-the-loop publishing 原则，也不会触发自动发布或自动优化。
+
+## v0.8 Provider & Credential Security Foundation
+
+目标：为真实平台接入建立 Provider、OAuth、Credential 和 Secret 管理边界，先解决安全基础和架构基础，再进入抖音 POC。
+
+状态：Planned。
+
+范围：
+
+- `PlatformProvider` registry 或等价 Provider registry 抽象方向。
+- Credential model、secret boundary 和本地安全存储策略设计。
+- OAuth state、callback、CSRF 防护、错误回跳和授权状态边界设计。
+- access token / refresh token 加密保存策略与 refresh token 生命周期策略。
+- provider capability metadata，例如是否支持 OAuth、指标读取、发布准备、真实发布或 sandbox。
+- audit log、connection status、授权失败状态和断开连接方向。
+- fake/local provider 与 future real provider 的隔离，确保 `fake_local` 不会伪装成真实平台来源。
+
+验收标准：
+
+- Provider registry 和 capability metadata 的边界可审查。
+- Credential 与 secret 不进入 Git、不进入日志、不暴露给前端。
+- OAuth state / callback 安全边界有明确设计。
+- token 保存、刷新、过期、撤销和断开连接的生命周期有明确策略。
+- fake/local provider 与 future real provider 的 source、授权状态和错误语义清晰隔离。
+
+明确不做事项：
+
+- 不抓取真实指标。
+- 不真实发布。
+- 不上传真实视频。
+- 不绕过平台授权。
+- 不把 token、API key、secret 或 refresh token 写入 Git。
+- 不把真实平台能力伪装成已完成。
+- 不做生产部署、Docker 文件或 GitHub Actions。
+
+与上一版本的关系：
+
+- v0.8 接在 v0.7 的 metrics review summary 之后，补齐真实平台接入前必须具备的安全和 Provider 边界。
+- v0.8 可以继续保留 fake/local workflow 作为默认可用路径，真实平台能力仍不承诺可用。
+
+进入下一版本的条件：
+
+- Credential、OAuth、token lifecycle 和 provider capability metadata 的设计经过审查。
+- 安全边界能够支持 Douyin sandbox/mock POC，而不要求真实 token 进入仓库或前端。
+- fake/local workflow 在没有授权时仍可用。
+
+## v0.9 Douyin Provider POC / Sandbox Integration
+
+目标：进行抖音 Provider 最小可行接入预研与 POC，验证 Provider contract、OAuth 回调和最小指标读取路径；该版本面向开发者/内部测试，不承诺用户级稳定可用。
+
+状态：Planned。
+
+范围：
+
+- Douyin provider adapter skeleton，遵守 v0.8 的 Provider registry、credential boundary 和 capability metadata。
+- Douyin open platform app configuration guide。
+- OAuth callback smoke test 或 mock/sandbox callback 验证。
+- account connection status 和授权错误状态方向。
+- token refresh dry-run 或 sandbox 验证，前提是平台权限允许。
+- 最小真实指标读取 POC，前提是平台开放能力、应用审核、OAuth scope 和 API 权限允许。
+- 如果真实 API 权限不可用，则使用 manual import 或 mock/sandbox provider contract test 作为 fallback。
+- 明确区分 `fake_local`、`douyin_sandbox` 和 `douyin_real` source，不混淆来源。
+
+验收标准：
+
+- Douyin provider POC 可以在 sandbox/mock 条件下验证 Provider contract。
+- OAuth callback 或 mock callback 的 smoke test 能明确成功、失败和 state 校验路径。
+- account connection status 能表达未连接、已连接、授权失败、token 过期或权限不足等状态方向。
+- 在平台权限允许时，至少一种真实指标读取路径被 POC 验证；权限不可用时，有 manual import 或 mock/sandbox contract test fallback。
+- 文档明确 Douyin API 权限、应用审核和平台可用性是风险项。
+
+明确不做事项：
+
+- 不承诺生产级真实发布。
+- 不做自动发布。
+- 不做大规模定时同步。
+- 不做多账号矩阵运营。
+- 不做商业 dashboard。
+- 不绕过平台 API 权限或审核。
+- 不采集未授权账号数据。
+- 不把 sandbox/mock 结果描述成真实用户可用能力。
+
+与上一版本的关系：
+
+- v0.9 使用 v0.8 建立的 Provider、Credential、OAuth 和 token lifecycle 边界进行 Douyin POC。
+- v0.9 仍保留 fake/local workflow；当 Douyin 权限不可用或授权失败时，系统必须能回退到 manual import 或 mock/sandbox provider contract test。
+
+进入下一版本的条件：
+
+- Douyin app 配置、OAuth callback、授权状态和 token refresh 风险已被验证或明确记录。
+- 至少一种指标读取路径完成真实、sandbox、mock 或 manual import fallback 验证。
+- source 标记、授权状态和错误提示不会混淆 `fake_local`、`douyin_sandbox` 与 `douyin_real`。
+- 平台 API 权限风险已形成 v1.0 用户测试 checklist 的前置条件。
+
+## v1.0 Douyin Integration User Test Release
+
+目标：达到可以进行用户抖音接入测试的 v1.0.0 版本，验证用户授权、账号连接状态和至少一种真实或 sandbox/manual fallback 指标回流路径。v1.0.0 是 User Test Release，不是生产级自动化运营或自动发布版本。
+
+状态：Planned。
+
+范围：
+
+- 用户可以配置 Douyin provider，前提是平台应用配置和权限满足用户测试要求。
+- 用户可以完成 OAuth 授权，所有真实平台能力都必须经过用户授权。
+- 系统可以安全保存并刷新 token，且 token、secret、refresh token 不进入 Git、日志或前端。
+- 系统可以验证授权账号状态，并展示连接、授权失败、token 过期、权限不足或接口失败等错误提示。
+- 系统可以读取至少一种真实指标，例如 `views`、`likes`、`comments` 或 `shares` 中的一种或多种，具体取决于平台权限。
+- 真实或 sandbox/manual fallback 指标可以保存为 `PublicationMetricSnapshot`，并明确显示 source，例如 `douyin_real`、`douyin_sandbox` 或 `fake_local`。
+- 没有授权或授权失败时，fake/local workflow 仍可用。
+- 具备 Douyin integration user test checklist。
+
+验收标准：
+
+- 用户测试人员可以按文档配置 Douyin provider 并完成授权或明确看到失败原因。
+- 授权账号状态可验证，token 过期、权限不足和接口失败有明确错误提示。
+- 在平台权限允许时，至少一种真实 Douyin 指标可以回流为 `PublicationMetricSnapshot`；权限不可用时，manual import 或 sandbox/mock provider contract test fallback 可用于验证流程边界。
+- UI 和文档不会混淆 `fake_local` 与 `douyin_real` / `douyin_sandbox`。
+- 未授权状态下，本地 fake/manual workflow 继续可用。
+- human-in-the-loop publishing 原则仍保留，任何公开发布、上传或排期发布都需要用户审核与明确确认。
+
+明确不做事项：
+
+- 不承诺生产级自动发布。
+- 不承诺批量发布。
+- 不承诺定时发布。
+- 不承诺大规模定时指标同步。
+- 不承诺多账号矩阵运营。
+- 不承诺自动内容优化。
+- 不承诺商业级 dashboard。
+- 不绕过平台审核、权限或授权范围。
+- 不采集未授权账号数据。
+
+与上一版本的关系：
+
+- v1.0 基于 v0.9 的 Douyin Provider POC / Sandbox Integration，把已验证的 Provider、OAuth、token lifecycle、connection status 和 metrics fallback 边界整理为用户测试版本。
+- v1.0 不是把 sandbox/mock 能力直接宣布为生产能力；真实 Douyin 接入仍取决于平台开放能力、应用审核、OAuth、API 权限与用户授权。
+
+进入下一版本的条件：
+
+- 用户测试 checklist 完成，真实或 fallback 指标回流路径、错误提示和 source 标记经过验证。
+- token 和 secret 安全边界经过审查，确认不会进入 Git、日志、前端或测试 fixtures。
+- 平台权限风险、授权失败风险和 fallback 方案已记录。
+- v1.0 用户测试反馈可以支持后续定义生产级能力，但后续版本仍必须保留人工确认发布原则。

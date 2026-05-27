@@ -15,6 +15,17 @@ Local development instructions are available in [`docs/development.md`](docs/dev
 Real OpenAI, Claude, Gemini, or other LLM integrations are still not implemented. The app does not store API keys, secrets, or tokens and does not call real AI services. v0.4 is still a local fake/manual workflow: scheduled `GenerationRun`, Scheduler / Trigger Engine, a complete `Review Queue`, real MP4 rendering, real video playback, FFmpeg, TTS, real subtitle files, real audio, production deployment, and user accounts are still not implemented. Review Drafts remain placeholders; approve / reject only changes review status and does not publish, upload, render, or generate media. The v0.5 publishing flow is still only a local fake workflow: confirm means the user has confirmed moving into publishing execution preparation, and Fake Publish succeeded only means local fake execution succeeded; it does not connect to the Douyin API, implement OAuth, store credentials, upload, publish, schedule, auto-publish, or connect a real PublisherProvider. v0.6.0 metrics are also only a fake/local workflow; the app does not fetch real Douyin metrics, connect to the real Douyin API, implement OAuth, store tokens, synchronize metrics on a schedule, provide analytics recommendation algorithms, include a real platform dashboard, automatically optimize content, or represent fake metrics as real platform performance.
 This version is not production ready.
 
+## Roadmap To Douyin User Testing
+
+The current stable version remains `v0.6.0 - local fake/manual metrics feedback workflow`. The next roadmap now uses a gradual path toward Douyin user testing:
+
+- v0.7 Metrics Review Summary: turn fake/local metrics snapshots into content review summaries without connecting to real Douyin.
+- v0.8 Provider & Credential Security Foundation: define Provider, OAuth, credential, secret, and token lifecycle boundaries.
+- v0.9 Douyin Provider POC / Sandbox Integration: validate a Douyin provider POC, sandbox/mock callbacks, account connection status, and minimal metrics-reading paths.
+- v1.0 Douyin Integration User Test Release: a Douyin integration user test release, not a production-grade automated publishing release.
+
+Real Douyin integration still depends on platform availability, app review, OAuth, API permissions, and explicit user authorization. This roadmap does not mean the current app already connects to real Douyin, publishes real content, auto-publishes, batch-publishes, schedules publishing, or provides a production platform dashboard.
+
 ## Local Quick Start
 
 From the repository root in Windows PowerShell:
