@@ -76,6 +76,26 @@ CREATE TABLE IF NOT EXISTS generation_runs (
     CHECK (trigger_type IN ('manual', 'scheduled'))
 );
 
+CREATE TABLE IF NOT EXISTS review_drafts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    content_plan_id INTEGER NOT NULL,
+    generation_schedule_id INTEGER,
+    generation_run_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    draft_summary TEXT NOT NULL,
+    input_source_summary TEXT NOT NULL,
+    hotspot_source_summary TEXT,
+    review_status TEXT NOT NULL DEFAULT 'pending_review',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (content_plan_id) REFERENCES content_plans(id) ON DELETE CASCADE,
+    FOREIGN KEY (generation_schedule_id) REFERENCES generation_schedules(id) ON DELETE SET NULL,
+    FOREIGN KEY (generation_run_id) REFERENCES generation_runs(id) ON DELETE CASCADE,
+    CHECK (review_status IN ('pending_review', 'approved', 'rejected'))
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -327,6 +347,12 @@ ON generation_runs (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_generation_runs_content_plan_id
 ON generation_runs (content_plan_id);
+
+CREATE INDEX IF NOT EXISTS idx_review_drafts_project_id_created_at
+ON review_drafts (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_review_drafts_generation_run_id
+ON review_drafts (generation_run_id);
 
 CREATE INDEX IF NOT EXISTS idx_topic_generation_runs_project_id_created_at
 ON topic_generation_runs (project_id, created_at DESC, id DESC);
