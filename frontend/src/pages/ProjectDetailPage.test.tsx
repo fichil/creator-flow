@@ -6,6 +6,8 @@ import type {
   ContentPlan,
   GenerationRun,
   GenerationSchedule,
+  PublicationRecord,
+  PublishIntent,
   ProjectDetail,
   RenderJob,
   ReviewDraft,
@@ -275,6 +277,46 @@ const reviewDraftRejected: ReviewDraft = {
   updated_at: "2026-05-26T08:21:00Z",
 };
 
+const publishIntentPending: PublishIntent = {
+  id: 1701,
+  project_id: 1,
+  review_draft_id: 1502,
+  target_platform: "douyin",
+  title: "Approved review draft",
+  caption: "Deterministic fake draft summary from a manual run.",
+  publish_status: "pending_confirmation",
+  created_at: "2026-05-26T08:28:00Z",
+  updated_at: "2026-05-26T08:28:00Z",
+};
+
+const publishIntentConfirmed: PublishIntent = {
+  ...publishIntentPending,
+  id: 1702,
+  publish_status: "confirmed",
+  updated_at: "2026-05-26T08:29:00Z",
+};
+
+const publicationRecordNotStarted: PublicationRecord = {
+  id: 1801,
+  project_id: 1,
+  publish_intent_id: 1702,
+  target_platform: "douyin",
+  provider_name: "placeholder",
+  external_publication_id: null,
+  publication_status: "not_started",
+  error_message: null,
+  created_at: "2026-05-26T08:29:00Z",
+  updated_at: "2026-05-26T08:29:00Z",
+};
+
+const publicationRecordSucceeded: PublicationRecord = {
+  ...publicationRecordNotStarted,
+  provider_name: "fake_publisher",
+  external_publication_id: "fake-publication-1801",
+  publication_status: "succeeded",
+  updated_at: "2026-05-26T08:30:00Z",
+};
+
 const contentPlanOne: ContentPlan = {
   id: 401,
   project_id: 1,
@@ -337,6 +379,8 @@ type ServerOptions = {
   renderJobs?: RenderJob[];
   subtitleDrafts?: SubtitleDraft[];
   reviewDrafts?: ReviewDraft[];
+  publishIntents?: PublishIntent[];
+  publicationRecords?: Record<number, PublicationRecord[]>;
   contentPlans?: ContentPlan[];
   generationSchedules?: GenerationSchedule[];
   generationRuns?: GenerationRun[];
@@ -368,6 +412,10 @@ function installFetchMock(options: ServerOptions = {}) {
   let renderJobs = [...(options.renderJobs ?? [])];
   let subtitleDrafts = [...(options.subtitleDrafts ?? [])];
   let reviewDrafts = [...(options.reviewDrafts ?? [])];
+  let publishIntents = [...(options.publishIntents ?? [])];
+  let publicationRecordsByIntentId: Record<number, PublicationRecord[]> = Object.fromEntries(
+    Object.entries(options.publicationRecords ?? {}).map(([intentId, records]) => [Number(intentId), [...records]]),
+  );
   let contentPlans = [...(options.contentPlans ?? [])];
   let generationSchedules = [...(options.generationSchedules ?? [])];
   let generationRuns = [...(options.generationRuns ?? [])];
@@ -401,6 +449,16 @@ function installFetchMock(options: ServerOptions = {}) {
     }
     if (method === "GET" && url.pathname === "/api/projects/1/review-drafts") {
       return jsonResponse(reviewDrafts);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/publish-intents") {
+      return jsonResponse(publishIntents);
+    }
+    const listPublicationRecordsMatch = url.pathname.match(
+      /^\/api\/projects\/1\/publish-intents\/(\d+)\/publication-records$/,
+    );
+    if (method === "GET" && listPublicationRecordsMatch) {
+      const publishIntentId = Number(listPublicationRecordsMatch[1]);
+      return jsonResponse(publicationRecordsByIntentId[publishIntentId] ?? []);
     }
     if (method === "GET" && url.pathname === "/api/projects/1/content-plans") {
       return jsonResponse(contentPlans);
@@ -678,6 +736,80 @@ function installFetchMock(options: ServerOptions = {}) {
       }));
       return jsonResponse(reviewDrafts.find((reviewDraft) => reviewDraft.id === reviewDraftId));
     }
+    if (method === "POST" && url.pathname === "/api/projects/1/publish-intents") {
+      const payload = JSON.parse(String(init?.body)) as {
+        review_draft_id: number;
+        target_platform: string;
+        title: string;
+        caption: string;
+      };
+      const createdIntent: PublishIntent = {
+        id: 1799,
+        project_id: 1,
+        review_draft_id: payload.review_draft_id,
+        target_platform: payload.target_platform,
+        title: payload.title,
+        caption: payload.caption,
+        publish_status: "pending_confirmation",
+        created_at: "2026-05-26T08:28:00Z",
+        updated_at: "2026-05-26T08:28:00Z",
+      };
+      publishIntents = [createdIntent, ...publishIntents];
+      publicationRecordsByIntentId = { ...publicationRecordsByIntentId, [createdIntent.id]: [] };
+      return jsonResponse(createdIntent, 201);
+    }
+    const confirmPublishIntentMatch = url.pathname.match(/^\/api\/projects\/1\/publish-intents\/(\d+)\/confirm$/);
+    if (method === "POST" && confirmPublishIntentMatch) {
+      const publishIntentId = Number(confirmPublishIntentMatch[1]);
+      publishIntents = publishIntents.map((intent) => ({
+        ...intent,
+        publish_status:
+          intent.id === publishIntentId ? ("confirmed" as PublishIntent["publish_status"]) : intent.publish_status,
+        updated_at: intent.id === publishIntentId ? "2026-05-26T08:29:00Z" : intent.updated_at,
+      }));
+      const intent = publishIntents.find((item) => item.id === publishIntentId) ?? publishIntentPending;
+      publicationRecordsByIntentId = {
+        ...publicationRecordsByIntentId,
+        [publishIntentId]: [
+          {
+            ...publicationRecordNotStarted,
+            id: 1899,
+            publish_intent_id: publishIntentId,
+            target_platform: intent.target_platform,
+          },
+        ],
+      };
+      return jsonResponse(publishIntents.find((intent) => intent.id === publishIntentId));
+    }
+    const cancelPublishIntentMatch = url.pathname.match(/^\/api\/projects\/1\/publish-intents\/(\d+)\/cancel$/);
+    if (method === "POST" && cancelPublishIntentMatch) {
+      const publishIntentId = Number(cancelPublishIntentMatch[1]);
+      publishIntents = publishIntents.map((intent) => ({
+        ...intent,
+        publish_status:
+          intent.id === publishIntentId ? ("cancelled" as PublishIntent["publish_status"]) : intent.publish_status,
+        updated_at: intent.id === publishIntentId ? "2026-05-26T08:29:00Z" : intent.updated_at,
+      }));
+      return jsonResponse(publishIntents.find((intent) => intent.id === publishIntentId));
+    }
+    const fakePublishIntentMatch = url.pathname.match(/^\/api\/projects\/1\/publish-intents\/(\d+)\/fake-publish$/);
+    if (method === "POST" && fakePublishIntentMatch) {
+      const publishIntentId = Number(fakePublishIntentMatch[1]);
+      const existingRecord = (publicationRecordsByIntentId[publishIntentId] ?? [publicationRecordNotStarted])[0];
+      const updatedRecord: PublicationRecord = {
+        ...existingRecord,
+        provider_name: "fake_publisher",
+        external_publication_id: `fake-publication-${existingRecord.id}`,
+        publication_status: "succeeded",
+        error_message: null,
+        updated_at: "2026-05-26T08:30:00Z",
+      };
+      publicationRecordsByIntentId = {
+        ...publicationRecordsByIntentId,
+        [publishIntentId]: [updatedRecord],
+      };
+      return jsonResponse(updatedRecord);
+    }
     return jsonResponse({ detail: "not found" }, 404);
   });
 
@@ -695,6 +827,7 @@ async function renderProject(options?: ServerOptions) {
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/renders"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/subtitle-drafts"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/review-drafts"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/publish-intents"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/content-plans"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/generation-schedules"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/generation-runs"));
@@ -813,7 +946,7 @@ describe("ProjectDetailPage content plans", () => {
     expect(server.calls).toContain("POST /api/projects/1/content-plans/401/generation-runs");
     expect(server.bodies["POST /api/projects/1/content-plans/401/generation-runs"]).toBe("{}");
     expect(server.calls.filter((call) => call === "GET /api/projects/1/generation-runs")).toHaveLength(2);
-    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(2);
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(3);
   });
 
   it("creates a manual generation run with a generation schedule", async () => {
@@ -1213,7 +1346,7 @@ describe("ProjectDetailPage review drafts", () => {
       expect(screen.getByLabelText("待审核草稿：Manual run review draft").getAttribute("data-status")).toBe("approved"),
     );
     expect(server.calls).toContain("POST /api/projects/1/review-drafts/1501/approve");
-    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(2);
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(4);
   });
 
   it("rejects a review draft and refreshes the list", async () => {
@@ -1225,7 +1358,7 @@ describe("ProjectDetailPage review drafts", () => {
       expect(screen.getByLabelText("待审核草稿：Manual run review draft").getAttribute("data-status")).toBe("rejected"),
     );
     expect(server.calls).toContain("POST /api/projects/1/review-drafts/1501/reject");
-    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(2);
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(4);
   });
 
   it("keeps review drafts read-only for archived projects", async () => {
@@ -1238,6 +1371,114 @@ describe("ProjectDetailPage review drafts", () => {
     expect(screen.getByText("当前项目已归档，只能查看待审核草稿，不能继续审核操作。")).toBeTruthy();
     expect(within(reviewDraftCard).queryByRole("button", { name: "通过" })).toBeNull();
     expect(within(reviewDraftCard).queryByRole("button", { name: "拒绝" })).toBeNull();
+  });
+});
+
+describe("ProjectDetailPage publishing workflow", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("shows the fake publishing section and explains that it is not real platform publishing", async () => {
+    await renderProject();
+
+    expect(screen.getByText("Publishing / Fake Publishing")).toBeTruthy();
+    expect(screen.getByText(/本区块只是本地 fake publishing workflow/)).toBeTruthy();
+    expect(screen.getByText(/不会上传、发布、排期，也不会调用 Douyin/)).toBeTruthy();
+    expect(screen.getByText("需要先通过 Review Draft，才能创建 PublishIntent。")).toBeTruthy();
+  });
+
+  it("shows approved review drafts and creates a PublishIntent", async () => {
+    const server = await renderProject({ reviewDrafts: [reviewDraftApproved] });
+
+    fireEvent.click(screen.getByRole("button", { name: "创建 PublishIntent" }));
+
+    await screen.findByLabelText("PublishIntent 1799");
+    expect(server.calls).toContain("POST /api/projects/1/publish-intents");
+    expect(server.bodies["POST /api/projects/1/publish-intents"]).toBe(
+      '{"review_draft_id":1502,"target_platform":"douyin","title":"Approved review draft","caption":"Deterministic fake draft summary from a manual run."}',
+    );
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/publish-intents")).toHaveLength(2);
+  });
+
+  it("shows pending PublishIntent actions and confirms into a not_started PublicationRecord", async () => {
+    const server = await renderProject({
+      publishIntents: [publishIntentPending],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const intentCard = screen.getByLabelText("PublishIntent 1701");
+    expect(within(intentCard).getByRole("button", { name: "确认 PublishIntent" })).toBeTruthy();
+    expect(within(intentCard).getByRole("button", { name: "取消 PublishIntent" })).toBeTruthy();
+
+    fireEvent.click(within(intentCard).getByRole("button", { name: "确认 PublishIntent" }));
+
+    const updatedIntentCard = await screen.findByLabelText("PublishIntent 1701");
+    await waitFor(() => expect(updatedIntentCard.getAttribute("data-status")).toBe("confirmed"));
+    expect(server.calls).toContain("POST /api/projects/1/publish-intents/1701/confirm");
+    expect(await screen.findByLabelText("PublicationRecord 1899")).toBeTruthy();
+    expect(screen.getByText("未开始")).toBeTruthy();
+  });
+
+  it("cancels a pending PublishIntent and refreshes the list", async () => {
+    const server = await renderProject({
+      publishIntents: [publishIntentPending],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const intentCard = screen.getByLabelText("PublishIntent 1701");
+    fireEvent.click(within(intentCard).getByRole("button", { name: "取消 PublishIntent" }));
+
+    await waitFor(() => expect(screen.getByLabelText("PublishIntent 1701").getAttribute("data-status")).toBe("cancelled"));
+    expect(server.calls).toContain("POST /api/projects/1/publish-intents/1701/cancel");
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/publish-intents")).toHaveLength(2);
+  });
+
+  it("runs Fake Publish for a confirmed intent with a not_started record", async () => {
+    const server = await renderProject({
+      publicationRecords: { 1702: [publicationRecordNotStarted] },
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const intentCard = screen.getByLabelText("PublishIntent 1702");
+    fireEvent.click(within(intentCard).getByRole("button", { name: "Fake Publish" }));
+
+    await waitFor(() => expect(screen.getByLabelText("PublicationRecord 1801").getAttribute("data-status")).toBe("succeeded"));
+    expect(server.calls).toContain("POST /api/projects/1/publish-intents/1702/fake-publish");
+    expect(screen.getByText("fake-publication-1801")).toBeTruthy();
+    expect(screen.getByText("Fake execution succeeded. Not a real platform publication.")).toBeTruthy();
+  });
+
+  it("shows succeeded fake publication records without offering repeated Fake Publish", async () => {
+    await renderProject({
+      publicationRecords: { 1702: [publicationRecordSucceeded] },
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const intentCard = screen.getByLabelText("PublishIntent 1702");
+    expect(within(intentCard).getByText("fake-publication-1801")).toBeTruthy();
+    expect(within(intentCard).queryByRole("button", { name: "Fake Publish" })).toBeNull();
+    expect(within(intentCard).getByText("Fake execution succeeded. Not a real platform publication.")).toBeTruthy();
+  });
+
+  it("keeps publishing workflow actions disabled for archived projects", async () => {
+    await renderProject({
+      project: { ...baseProject, status: "archived" },
+      publicationRecords: { 1702: [publicationRecordNotStarted] },
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    expect(screen.getByText(/当前项目已归档，只能查看已有 PublishIntent 和 PublicationRecord/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: "已有 PublishIntent" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: "Fake Publish" })).toBeNull();
   });
 });
 

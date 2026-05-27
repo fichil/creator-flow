@@ -221,6 +221,31 @@ export type ReviewDraft = {
   updated_at: string;
 };
 
+export type PublishIntent = {
+  id: number;
+  project_id: number;
+  review_draft_id: number;
+  target_platform: string;
+  title: string;
+  caption: string;
+  publish_status: "pending_confirmation" | "confirmed" | "cancelled";
+  created_at: string;
+  updated_at: string;
+};
+
+export type PublicationRecord = {
+  id: number;
+  project_id: number;
+  publish_intent_id: number;
+  target_platform: string;
+  provider_name: string;
+  external_publication_id: string | null;
+  publication_status: "not_started" | "succeeded" | "failed";
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ContentPlan = {
   id: number;
   project_id: number;
@@ -395,6 +420,44 @@ export function approveReviewDraft(projectId: number, reviewDraftId: number): Pr
 
 export function rejectReviewDraft(projectId: number, reviewDraftId: number): Promise<ReviewDraft> {
   return request<ReviewDraft>(`/api/projects/${projectId}/review-drafts/${reviewDraftId}/reject`, {
+    method: "POST",
+  });
+}
+
+export function getPublishIntents(projectId: number): Promise<PublishIntent[]> {
+  return request<PublishIntent[]>(`/api/projects/${projectId}/publish-intents`);
+}
+
+export function createPublishIntent(
+  projectId: number,
+  payload: { review_draft_id: number; target_platform: string; title: string; caption: string },
+): Promise<PublishIntent> {
+  return request<PublishIntent>(`/api/projects/${projectId}/publish-intents`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function confirmPublishIntent(projectId: number, publishIntentId: number): Promise<PublishIntent> {
+  return request<PublishIntent>(`/api/projects/${projectId}/publish-intents/${publishIntentId}/confirm`, {
+    method: "POST",
+  });
+}
+
+export function cancelPublishIntent(projectId: number, publishIntentId: number): Promise<PublishIntent> {
+  return request<PublishIntent>(`/api/projects/${projectId}/publish-intents/${publishIntentId}/cancel`, {
+    method: "POST",
+  });
+}
+
+export function getPublicationRecords(projectId: number, publishIntentId: number): Promise<PublicationRecord[]> {
+  return request<PublicationRecord[]>(
+    `/api/projects/${projectId}/publish-intents/${publishIntentId}/publication-records`,
+  );
+}
+
+export function fakePublishIntent(projectId: number, publishIntentId: number): Promise<PublicationRecord> {
+  return request<PublicationRecord>(`/api/projects/${projectId}/publish-intents/${publishIntentId}/fake-publish`, {
     method: "POST",
   });
 }

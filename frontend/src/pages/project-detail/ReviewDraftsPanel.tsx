@@ -5,10 +5,12 @@ import { formatStatus } from "./formatting";
 
 export function ReviewDraftsPanel({
   isArchived,
+  onReviewDraftsChanged,
   projectId,
   refreshKey,
 }: {
   isArchived: boolean;
+  onReviewDraftsChanged?: () => void;
   projectId: number;
   refreshKey: number;
 }) {
@@ -43,6 +45,7 @@ export function ReviewDraftsPanel({
     try {
       await approveReviewDraft(projectId, reviewDraftId);
       await reloadReviewDrafts();
+      onReviewDraftsChanged?.();
     } catch (err) {
       setError(formatReviewDraftError(err, "通过待审核草稿失败"));
     } finally {
@@ -59,6 +62,7 @@ export function ReviewDraftsPanel({
     try {
       await rejectReviewDraft(projectId, reviewDraftId);
       await reloadReviewDrafts();
+      onReviewDraftsChanged?.();
     } catch (err) {
       setError(formatReviewDraftError(err, "拒绝待审核草稿失败"));
     } finally {

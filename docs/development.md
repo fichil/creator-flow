@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.5 Batch 4 fake publisher execution foundation 本地开发状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.5 当前只新增发布意图、发布记录、确认流转和本地 fake publisher execution 的 backend-only 领域基础，不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布。
+本文档面向 v0.5 Batch 5 publishing frontend workflow foundation 本地开发状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、项目详情页本地 fake publishing workflow、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.5 当前只新增发布意图、发布记录、确认流转、本地 fake publisher execution 和项目详情页 UI 接入，不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布。
 
 ## 环境要求
 
@@ -120,6 +120,7 @@ uv run --extra test pytest
 - GenerationRun backend-only manual trigger create / list / read，以及 missing / archived project、missing / cross-project content plan、missing / cross-project schedule 边界。
 - Review Draft list / read / approve / reject，以及 pending_review placeholder、archived project、cross-project 访问和 approve / reject 无副作用边界。
 - PublishIntent create / list / read / cancel / confirm / fake publish，以及必须基于同项目 approved Review Draft、archived project 只读、cross-project 访问 404、confirm 创建 `not_started` PublicationRecord placeholder、fake publish 更新为本地 `succeeded`、Review Draft 状态不变和无真实发布 / 上传 / OAuth / 真实 Provider 副作用边界。
+- 项目详情页 Publishing / Fake Publishing UI，覆盖 approved Review Draft 创建 PublishIntent、pending 确认与取消、confirmed 后查看 PublicationRecord、执行本地 Fake Publish、fake succeeded 提示，以及 archived 项目只读。
 - ContentPlan / GenerationSchedule / Manual GenerationRun frontend UI list/create/enable/disable/manual trigger，以及 trigger 成功后刷新 GenerationRuns 和 Review Drafts。
 - Review Draft frontend UI list/status 展示、热点来源 fallback、approve / reject 成功后刷新，以及 archived 项目只读。
 - v0.4 project detail frontend component extraction，确保拆分后的 ContentPlan、GenerationSchedule、GenerationRun 和 Review Draft 组件行为不变。
