@@ -9,6 +9,7 @@ import type {
   ProviderCredentialReference,
   ProviderOAuthBoundary,
   ProviderSecurityAuditEvent,
+  ProviderTokenLifecycleBoundary,
 } from "../api/client";
 
 const providers: PlatformProvider[] = [
@@ -403,6 +404,123 @@ const oauthBoundaries: ProviderOAuthBoundary[] = [
   },
 ];
 
+const tokenLifecycleBoundaries: ProviderTokenLifecycleBoundary[] = [
+  {
+    provider_id: "fake_local",
+    provider_name: "Local Fake Provider",
+    source_type: "fake_local",
+    implementation_status: "available_local_fake",
+    token_lifecycle_policy_status: "not_required",
+    token_storage_policy_status: "none",
+    refresh_policy_status: "not_required",
+    expiry_policy_status: "not_required",
+    revoke_policy_status: "not_required",
+    disconnect_policy_status: "not_required",
+    rotation_policy_status: "not_required",
+    error_redaction_policy_status: "active",
+    audit_event_policy_status: "metadata_only",
+    is_available: true,
+    is_real_provider: false,
+    requires_user_authorization: false,
+    can_refresh_token: false,
+    can_revoke_token: false,
+    can_disconnect: false,
+    can_rotate_token: false,
+    can_mark_token_expired: false,
+    safe_status_message:
+      "Local fake provider does not require token storage, refresh, expiry handling, revoke, disconnect, or rotation.",
+    boundary_notes: [
+      "local fake/demo/test data only",
+      "not real Douyin data",
+      "OAuth is not required",
+      "no token stored",
+      "no refresh token stored",
+      "no token refresh",
+      "no token expiry handling required",
+      "no token revoke",
+      "no disconnect operation",
+      "no external service call",
+    ],
+  },
+  {
+    provider_id: "douyin_sandbox",
+    provider_name: "Douyin Sandbox Placeholder",
+    source_type: "sandbox",
+    implementation_status: "planned",
+    token_lifecycle_policy_status: "not_implemented",
+    token_storage_policy_status: "not_implemented",
+    refresh_policy_status: "required_planned",
+    expiry_policy_status: "required_planned",
+    revoke_policy_status: "required_planned",
+    disconnect_policy_status: "required_planned",
+    rotation_policy_status: "required_planned",
+    error_redaction_policy_status: "active",
+    audit_event_policy_status: "metadata_only",
+    is_available: false,
+    is_real_provider: false,
+    requires_user_authorization: true,
+    can_refresh_token: false,
+    can_revoke_token: false,
+    can_disconnect: false,
+    can_rotate_token: false,
+    can_mark_token_expired: false,
+    safe_status_message:
+      "Douyin sandbox token lifecycle boundary is placeholder metadata only; token storage, refresh, expiry handling, revoke, and disconnect are not implemented.",
+    boundary_notes: [
+      "placeholder token lifecycle boundary metadata only",
+      "OAuth is not implemented",
+      "tokens are not stored",
+      "refresh tokens are not stored",
+      "token refresh is not implemented",
+      "token expiry handling is planned but not active",
+      "token revoke is not implemented",
+      "disconnect is not implemented",
+      "no token exchange",
+      "no real Douyin API call",
+    ],
+  },
+  {
+    provider_id: "douyin_real",
+    provider_name: "Douyin Real Placeholder",
+    source_type: "real",
+    implementation_status: "planned",
+    token_lifecycle_policy_status: "not_implemented",
+    token_storage_policy_status: "not_implemented",
+    refresh_policy_status: "required_planned",
+    expiry_policy_status: "required_planned",
+    revoke_policy_status: "required_planned",
+    disconnect_policy_status: "required_planned",
+    rotation_policy_status: "required_planned",
+    error_redaction_policy_status: "active",
+    audit_event_policy_status: "metadata_only",
+    is_available: false,
+    is_real_provider: true,
+    requires_user_authorization: true,
+    can_refresh_token: false,
+    can_revoke_token: false,
+    can_disconnect: false,
+    can_rotate_token: false,
+    can_mark_token_expired: false,
+    safe_status_message:
+      "Douyin real token lifecycle boundary is a future placeholder only; token storage, refresh, expiry handling, revoke, disconnect, metrics fetching, upload, publish, and scheduling are not implemented.",
+    boundary_notes: [
+      "future real provider token lifecycle boundary placeholder only",
+      "not real Douyin integration",
+      "OAuth is not implemented",
+      "no access token or refresh token storage",
+      "token refresh is not implemented",
+      "token expiry handling is planned but not active",
+      "token revoke is not implemented",
+      "disconnect is not implemented",
+      "no API key storage",
+      "no secret storage",
+      "no token exchange",
+      "no real metrics fetching",
+      "no upload / publish / scheduling",
+    ],
+  },
+];
+
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(
     new Response(JSON.stringify(body), {
@@ -431,6 +549,9 @@ function installListPageFetchMock(projects: Project[] = [project]) {
     }
     if (url.pathname === "/api/provider-oauth-boundaries") {
       return jsonResponse({ oauth_boundaries: oauthBoundaries });
+    }
+    if (url.pathname === "/api/provider-token-lifecycle-boundaries") {
+      return jsonResponse({ token_lifecycle_boundaries: tokenLifecycleBoundaries });
     }
     if (url.pathname === "/api/projects") {
       return jsonResponse(projects);
@@ -474,11 +595,15 @@ describe("ProjectListPage", () => {
     expect(await screen.findByLabelText("Provider OAuth boundary fake_local")).toBeTruthy();
     expect(screen.getByLabelText("Provider OAuth boundary douyin_sandbox")).toBeTruthy();
     expect(screen.getByLabelText("Provider OAuth boundary douyin_real")).toBeTruthy();
+    expect(await screen.findByLabelText("Provider token lifecycle boundary fake_local")).toBeTruthy();
+    expect(screen.getByLabelText("Provider token lifecycle boundary douyin_sandbox")).toBeTruthy();
+    expect(screen.getByLabelText("Provider token lifecycle boundary douyin_real")).toBeTruthy();
     await waitFor(() => expect(server.calls).toContain("GET /api/providers"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-connections"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-credential-references"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-security-audit-events?limit=20"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-oauth-boundaries"));
+    await waitFor(() => expect(server.calls).toContain("GET /api/provider-token-lifecycle-boundaries"));
     await waitFor(() => expect(server.calls).toContain("GET /api/projects"));
   });
 

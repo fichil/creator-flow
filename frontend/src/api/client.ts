@@ -459,6 +459,39 @@ export type ProviderOAuthBoundaryListResponse = {
   oauth_boundaries: ProviderOAuthBoundary[];
 };
 
+export type ProviderTokenLifecycleBoundary = {
+  provider_id: string;
+  provider_name: string;
+  source_type: string;
+  implementation_status: string;
+  token_lifecycle_policy_status: string;
+  token_storage_policy_status: string;
+  refresh_policy_status: string;
+  expiry_policy_status: string;
+  revoke_policy_status: string;
+  disconnect_policy_status: string;
+  rotation_policy_status: string;
+  error_redaction_policy_status: string;
+  audit_event_policy_status: string;
+  is_available: boolean;
+  is_real_provider: boolean;
+  requires_user_authorization: boolean;
+  can_refresh_token: boolean;
+  can_revoke_token: boolean;
+  can_disconnect: boolean;
+  can_rotate_token: boolean;
+  can_mark_token_expired: boolean;
+  safe_status_message: string;
+  boundary_notes: string[];
+  last_status_change_reason?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type ProviderTokenLifecycleBoundaryListResponse = {
+  token_lifecycle_boundaries: ProviderTokenLifecycleBoundary[];
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -527,6 +560,13 @@ export async function listProviderSecurityAuditEvents(
 export async function listProviderOAuthBoundaries(): Promise<ProviderOAuthBoundary[]> {
   const response = await request<ProviderOAuthBoundaryListResponse>("/api/provider-oauth-boundaries");
   return response.oauth_boundaries;
+}
+
+export async function listProviderTokenLifecycleBoundaries(): Promise<ProviderTokenLifecycleBoundary[]> {
+  const response = await request<ProviderTokenLifecycleBoundaryListResponse>(
+    "/api/provider-token-lifecycle-boundaries",
+  );
+  return response.token_lifecycle_boundaries;
 }
 
 export function createProject(payload: { title: string; description?: string }): Promise<Project> {

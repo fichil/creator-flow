@@ -7,6 +7,7 @@ import { ProviderCredentialReferencePanel } from "../components/ProviderCredenti
 import { ProviderOAuthBoundaryPanel } from "../components/ProviderOAuthBoundaryPanel";
 import { ProviderRegistryPanel } from "../components/ProviderRegistryPanel";
 import { ProviderSecurityAuditPanel } from "../components/ProviderSecurityAuditPanel";
+import { ProviderTokenLifecyclePanel } from "../components/ProviderTokenLifecyclePanel";
 import { StatusBadge } from "../components/StatusBadge";
 
 type ProjectListPageProps = {
@@ -51,6 +52,7 @@ export function ProjectListPage({ onCreate, onOpen }: ProjectListPageProps) {
       <ProviderCredentialReferencePanel />
       <ProviderSecurityAuditPanel />
       <ProviderOAuthBoundaryPanel />
+      <ProviderTokenLifecyclePanel />
       <label className="mt-5 inline-flex items-center gap-2 text-sm text-stone-700">
         <input
           checked={includeArchived}
