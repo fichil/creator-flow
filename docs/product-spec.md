@@ -254,6 +254,29 @@ v0.8 Batch 8 产品边界：
 - v0.8 Batch 8 不承诺真实发布。
 - v0.8 Batch 8 只建立 backend audit metadata 和 redacted audit log foundation。
 
+v0.8 Batch 9 产品边界：
+
+- 用户可以看到 provider security audit event readiness。
+- 用户可以区分 `event_type`、`event_status`、`event_severity`、`actor_type` 和 `redaction_status`。
+- 用户可以看到 `fake_local`、`douyin_sandbox` 和 `douyin_real` 的 audit metadata source separation。
+- 用户只能看到 `safe_event_message` 和 `safe_metadata`。
+- `fake_local` 只表示 local fake/demo/test audit metadata。
+- `douyin_sandbox` 和 `douyin_real` 当前只是 placeholder audit metadata。
+- 当前不会显示真实 OAuth audit trail。
+- 当前不会显示真实 token lifecycle event。
+- 当前不会显示真实外部平台返回。
+- 当前不会显示 raw request、raw response 或 raw payload。
+- 当前不会提供 audit event 写入 UI。
+- 当前不会提供连接、授权、刷新、撤销、断开、上传、发布或排期发布入口。
+- 当前不会新增 secret input、token viewer 或 credential 管理界面。
+- v0.8 Batch 9 不承诺真实 Douyin 可用。
+- v0.8 Batch 9 不承诺真实 OAuth。
+- v0.8 Batch 9 不承诺真实 Credential storage。
+- v0.8 Batch 9 不承诺生产级 SIEM、compliance log 或外部日志系统。
+- v0.8 Batch 9 不承诺真实指标读取。
+- v0.8 Batch 9 不承诺真实发布。
+- v0.8 Batch 9 只建立 frontend read-only audit metadata display foundation。
+
 ## Road to Douyin user testing
 
 v0.7.0 已完成 local fake/manual metrics review summary workflow。v0.7.0 之后的路线不再从 local fake/manual workflow 直接跳到生产级真实平台能力，而是继续进入 v0.8、v0.9 和 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。

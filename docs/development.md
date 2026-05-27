@@ -342,6 +342,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。若扫描命中文档中的安全边界说明、redaction helper 的敏感 key 列表、测试中的 fake/redacted input、禁止字段名断言、既有忽略规则或依赖元数据，应逐项确认它们只是边界说明或测试断言，不是真实值。
 
+## v0.8 Batch 9 Provider Security Audit Event frontend read-only UI foundation 验收
+
+v0.8 Batch 9 允许新增 frontend read-only Provider Security Audit Event UI，并允许新增 frontend API client 类型和只读 fetch function。本批前端只能消费 Batch 8 的只读 `/api/provider-security-audit-events` metadata API，展示 redacted / safe audit metadata、`event_type`、`event_status`、`event_severity`、`actor_type`、`redaction_status`、`safe_event_message`、`safe_metadata`、`boundary_notes` 和 `created_at`。
+
+本批不新增 backend API，不修改数据库表，不新增 audit event 写入 UI，不新增 secret input、token viewer 或 credential 管理界面，不新增 OAuth / Credential storage / token storage / real provider，也不新增 connect / authorize / refresh / revoke / disconnect 写 API 或 UI action。本批 UI 不得展示 raw request、raw response 或 raw payload；UI 文案中的 token / OAuth / credential / secret / raw request / raw response 只能作为“不保存、不实现、不暴露”的边界说明。
+
+本地质量门禁要从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。若扫描命中文档中的安全边界说明、UI 的“不保存 token / OAuth 未实现 / raw request 不展示”文案、测试中的禁止字段名断言、测试中的 fake/redacted input、既有忽略规则或依赖元数据，应逐项确认它们只是边界说明、redaction 测试输入或测试断言，不是真实值。
+
 ## 启动 Backend
 
 ```powershell

@@ -2,7 +2,13 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectListPage } from "./ProjectListPage";
-import type { PlatformProvider, Project, ProviderConnectionState, ProviderCredentialReference } from "../api/client";
+import type {
+  PlatformProvider,
+  Project,
+  ProviderConnectionState,
+  ProviderCredentialReference,
+  ProviderSecurityAuditEvent,
+} from "../api/client";
 
 const providers: PlatformProvider[] = [
   {
@@ -215,6 +221,77 @@ const credentialReferences: ProviderCredentialReference[] = [
   },
 ];
 
+const auditEvents: ProviderSecurityAuditEvent[] = [
+  {
+    audit_event_id: "audit-fake-local",
+    provider_id: "fake_local",
+    provider_name: "Local Fake Provider",
+    source_type: "fake_local",
+    implementation_status: "available_local_fake",
+    event_type: "boundary_initialized",
+    event_status: "recorded",
+    event_severity: "info",
+    actor_type: "system",
+    redaction_status: "active",
+    safe_event_message: "fake_local provider boundary initialized",
+    safe_metadata: { status: "recorded" },
+    boundary_notes: [
+      "local fake/demo/test audit metadata only",
+      "not real Douyin data",
+      "no OAuth required",
+      "no token stored",
+      "no secret stored",
+      "no external service call",
+    ],
+    created_at: "2026-05-27T08:00:00Z",
+  },
+  {
+    audit_event_id: "audit-douyin-sandbox",
+    provider_id: "douyin_sandbox",
+    provider_name: "Douyin Sandbox Placeholder",
+    source_type: "sandbox",
+    implementation_status: "planned",
+    event_type: "credential_reference_checked",
+    event_status: "planned",
+    event_severity: "warning",
+    actor_type: "internal",
+    redaction_status: "active",
+    safe_event_message: "sandbox placeholder audit metadata checked",
+    safe_metadata: { status: "planned" },
+    boundary_notes: [
+      "placeholder audit metadata only",
+      "OAuth is not implemented",
+      "tokens are not stored",
+      "secrets are not stored",
+      "no real Douyin API call",
+    ],
+    created_at: "2026-05-27T08:01:00Z",
+  },
+  {
+    audit_event_id: "audit-douyin-real",
+    provider_id: "douyin_real",
+    provider_name: "Douyin Real Placeholder",
+    source_type: "real",
+    implementation_status: "planned",
+    event_type: "authorization_status_checked",
+    event_status: "not_implemented",
+    event_severity: "security",
+    actor_type: "user_placeholder",
+    redaction_status: "redacted",
+    safe_event_message: "redacted_value=[REDACTED] Bearer [REDACTED]",
+    safe_metadata: { redacted_field: "[REDACTED]", safe: "visible" },
+    boundary_notes: [
+      "future real provider placeholder audit metadata only",
+      "not real Douyin integration",
+      "OAuth is not implemented",
+      "no access token or refresh token storage",
+      "no real metrics fetching",
+      "no upload / publish / scheduling",
+    ],
+    created_at: "2026-05-27T08:02:00Z",
+  },
+];
+
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(
     new Response(JSON.stringify(body), {
@@ -237,6 +314,9 @@ function installListPageFetchMock(projects: Project[] = [project]) {
     }
     if (url.pathname === "/api/provider-credential-references") {
       return jsonResponse({ credential_references: credentialReferences });
+    }
+    if (url.pathname === "/api/provider-security-audit-events") {
+      return jsonResponse({ audit_events: auditEvents });
     }
     if (url.pathname === "/api/projects") {
       return jsonResponse(projects);
@@ -274,9 +354,13 @@ describe("ProjectListPage", () => {
     expect(await screen.findByLabelText("Provider credential reference fake_local")).toBeTruthy();
     expect(screen.getByLabelText("Provider credential reference douyin_sandbox")).toBeTruthy();
     expect(screen.getByLabelText("Provider credential reference douyin_real")).toBeTruthy();
+    expect(await screen.findByLabelText("Provider security audit event fake_local")).toBeTruthy();
+    expect(screen.getByLabelText("Provider security audit event douyin_sandbox")).toBeTruthy();
+    expect(screen.getByLabelText("Provider security audit event douyin_real")).toBeTruthy();
     await waitFor(() => expect(server.calls).toContain("GET /api/providers"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-connections"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-credential-references"));
+    await waitFor(() => expect(server.calls).toContain("GET /api/provider-security-audit-events?limit=20"));
     await waitFor(() => expect(server.calls).toContain("GET /api/projects"));
   });
 

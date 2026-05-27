@@ -400,6 +400,32 @@ export type ProviderCredentialReferenceListResponse = {
   credential_references: ProviderCredentialReference[];
 };
 
+export type ProviderSecurityAuditEvent = {
+  audit_event_id: string;
+  provider_id: string;
+  provider_name: string;
+  source_type: string;
+  implementation_status: string;
+  event_type: string;
+  event_status: string;
+  event_severity: string;
+  actor_type: string;
+  redaction_status: string;
+  safe_event_message: string;
+  safe_metadata: Record<string, unknown>;
+  boundary_notes: string[];
+  created_at: string;
+};
+
+export type ProviderSecurityAuditEventListResponse = {
+  audit_events: ProviderSecurityAuditEvent[];
+};
+
+export type ListProviderSecurityAuditEventsOptions = {
+  providerId?: string;
+  limit?: number;
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -445,6 +471,24 @@ export async function listProviderConnectionStates(): Promise<ProviderConnection
 export async function listProviderCredentialReferences(): Promise<ProviderCredentialReference[]> {
   const response = await request<ProviderCredentialReferenceListResponse>("/api/provider-credential-references");
   return response.credential_references;
+}
+
+export async function listProviderSecurityAuditEvents(
+  options: ListProviderSecurityAuditEventsOptions = {},
+): Promise<ProviderSecurityAuditEvent[]> {
+  const params = new URLSearchParams();
+  if (options.providerId) {
+    params.set("provider_id", options.providerId);
+  }
+  if (typeof options.limit === "number") {
+    const safeLimit = Math.min(Math.max(Math.trunc(options.limit), 1), 100);
+    params.set("limit", String(safeLimit));
+  }
+  const query = params.toString();
+  const response = await request<ProviderSecurityAuditEventListResponse>(
+    `/api/provider-security-audit-events${query ? `?${query}` : ""}`,
+  );
+  return response.audit_events;
 }
 
 export function createProject(payload: { title: string; description?: string }): Promise<Project> {

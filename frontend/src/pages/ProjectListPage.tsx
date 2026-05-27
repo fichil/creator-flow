@@ -5,6 +5,7 @@ import { EmptyState } from "../components/EmptyState";
 import { ProviderConnectionStatePanel } from "../components/ProviderConnectionStatePanel";
 import { ProviderCredentialReferencePanel } from "../components/ProviderCredentialReferencePanel";
 import { ProviderRegistryPanel } from "../components/ProviderRegistryPanel";
+import { ProviderSecurityAuditPanel } from "../components/ProviderSecurityAuditPanel";
 import { StatusBadge } from "../components/StatusBadge";
 
 type ProjectListPageProps = {
@@ -47,6 +48,7 @@ export function ProjectListPage({ onCreate, onOpen }: ProjectListPageProps) {
       <ProviderRegistryPanel />
       <ProviderConnectionStatePanel />
       <ProviderCredentialReferencePanel />
+      <ProviderSecurityAuditPanel />
       <label className="mt-5 inline-flex items-center gap-2 text-sm text-stone-700">
         <input
           checked={includeArchived}
