@@ -206,6 +206,21 @@ export type SubtitleDraft = {
   cues: SubtitleCue[];
 };
 
+export type ReviewDraft = {
+  id: number;
+  project_id: number;
+  content_plan_id: number;
+  generation_schedule_id: number | null;
+  generation_run_id: number;
+  title: string;
+  draft_summary: string;
+  input_source_summary: string;
+  hotspot_source_summary: string | null;
+  review_status: "pending_review" | "approved" | "rejected";
+  created_at: string;
+  updated_at: string;
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -324,6 +339,22 @@ export function createSubtitleDraft(projectId: number): Promise<SubtitleDraft> {
 
 export function selectSubtitleDraft(projectId: number, subtitleDraftId: number): Promise<SubtitleDraft> {
   return request<SubtitleDraft>(`/api/projects/${projectId}/subtitle-drafts/${subtitleDraftId}/select`, {
+    method: "POST",
+  });
+}
+
+export function getReviewDrafts(projectId: number): Promise<ReviewDraft[]> {
+  return request<ReviewDraft[]>(`/api/projects/${projectId}/review-drafts`);
+}
+
+export function approveReviewDraft(projectId: number, reviewDraftId: number): Promise<ReviewDraft> {
+  return request<ReviewDraft>(`/api/projects/${projectId}/review-drafts/${reviewDraftId}/approve`, {
+    method: "POST",
+  });
+}
+
+export function rejectReviewDraft(projectId: number, reviewDraftId: number): Promise<ReviewDraft> {
+  return request<ReviewDraft>(`/api/projects/${projectId}/review-drafts/${reviewDraftId}/reject`, {
     method: "POST",
   });
 }
