@@ -388,6 +388,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。文档和测试中的 token / OAuth / credential / secret / authorization code / state / callback 只能作为“不保存、不实现、不暴露”的边界说明、fake 测试输入或黑名单断言。
 
+## v0.8 Batch 11 Provider OAuth Boundary frontend read-only UI foundation 验收
+
+v0.8 Batch 11 允许新增 frontend read-only Provider OAuth Boundary UI，并允许新增 frontend API client 类型和只读 fetch function。本批前端只能消费 Batch 10 的只读 `/api/provider-oauth-boundaries` metadata API，展示非敏感 OAuth boundary metadata、`oauth_policy_status`、`state_policy_status`、`callback_policy_status`、`csrf_protection_status`、`redirect_uri_policy_status`、`token_exchange_policy_status`、`token_storage_policy_status`、`error_redaction_policy_status`、`audit_event_policy_status`、`safe_status_message` 和 `boundary_notes`。
+
+本批不新增 backend API，不修改数据库表，不新增真实 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不新增 token exchange，不新增授权 URL 生成，不新增 Credential storage / token storage / real provider。本批不新增 secret input、token viewer、credential 管理界面、authorization code input、OAuth state input、raw request viewer、raw response viewer 或 raw payload viewer。本批 OAuth boundary UI 不代表真实 OAuth implementation、callback route、state store 或 token exchange。
+
+本地质量门禁要从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。UI 文案中的 token / OAuth / credential / secret / authorization code / state / callback 只能作为“不保存、不实现、不暴露”的边界说明。
+
 ## 启动 Backend
 
 ```powershell

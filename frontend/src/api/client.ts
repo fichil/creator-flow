@@ -426,6 +426,39 @@ export type ListProviderSecurityAuditEventsOptions = {
   limit?: number;
 };
 
+export type ProviderOAuthBoundary = {
+  provider_id: string;
+  provider_name: string;
+  source_type: string;
+  implementation_status: string;
+  oauth_policy_status: string;
+  state_policy_status: string;
+  callback_policy_status: string;
+  csrf_protection_status: string;
+  redirect_uri_policy_status: string;
+  token_exchange_policy_status: string;
+  token_storage_policy_status: string;
+  error_redaction_policy_status: string;
+  audit_event_policy_status: string;
+  is_available: boolean;
+  is_real_provider: boolean;
+  requires_user_authorization: boolean;
+  can_start_oauth: boolean;
+  can_handle_callback: boolean;
+  can_exchange_token: boolean;
+  can_refresh_token: boolean;
+  can_revoke_token: boolean;
+  safe_status_message: string;
+  boundary_notes: string[];
+  last_status_change_reason?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type ProviderOAuthBoundaryListResponse = {
+  oauth_boundaries: ProviderOAuthBoundary[];
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -489,6 +522,11 @@ export async function listProviderSecurityAuditEvents(
     `/api/provider-security-audit-events${query ? `?${query}` : ""}`,
   );
   return response.audit_events;
+}
+
+export async function listProviderOAuthBoundaries(): Promise<ProviderOAuthBoundary[]> {
+  const response = await request<ProviderOAuthBoundaryListResponse>("/api/provider-oauth-boundaries");
+  return response.oauth_boundaries;
 }
 
 export function createProject(payload: { title: string; description?: string }): Promise<Project> {

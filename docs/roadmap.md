@@ -611,7 +611,7 @@ Batch 9（已完成）：
 - 不调用外部服务。
 - 不修改 v0.7.0 release scope。
 
-Batch 10（本批）：
+Batch 10（已完成）：
 
 - Provider OAuth State & Callback Boundary backend foundation。
 - backend-only。
@@ -641,6 +641,47 @@ Batch 10（本批）：
 - 不保存 raw request、raw response 或 raw payload。
 - 不新增真实 Credential storage。
 - 不新增 connect / authorize / refresh / revoke / disconnect 写 API。
+- 不接真实 Douyin API。
+- 不抓取真实指标。
+- 不上传、不发布、不排期发布。
+- 不调用外部服务。
+- 不修改 v0.7.0 release scope。
+
+Batch 11（本批）：
+
+- Provider OAuth Boundary frontend read-only UI foundation。
+- frontend-only 或 frontend + docs only。
+- 基于 Batch 10 的只读 `/api/provider-oauth-boundaries` metadata API。
+- 在前端展示 provider OAuth boundary metadata、source type、implementation status、`oauth_policy_status`、`state_policy_status`、`callback_policy_status`、`csrf_protection_status`、`redirect_uri_policy_status`、`token_exchange_policy_status`、`token_storage_policy_status`、`error_redaction_policy_status`、`audit_event_policy_status`、`safe_status_message` 和 boundary notes。
+- 明确区分 `fake_local`、`douyin_sandbox`、`douyin_real`。
+- 明确 OAuth boundary UI 只展示非敏感 policy/status metadata。
+- 明确 planned / unavailable provider 不得显示为可用真实集成。
+- 明确 OAuth boundary metadata 不等于真实 OAuth implementation。
+- 明确 OAuth boundary metadata 不等于真实 callback route。
+- 明确 OAuth boundary metadata 不等于真实 state storage。
+- 明确 OAuth boundary metadata 不等于 token exchange。
+- 明确 frontend 不提供 OAuth authorize / callback / connect / token lifecycle 操作。
+- 不新增 backend API。
+- 不修改数据库表。
+- 不新增 OAuth start / authorize / callback UI。
+- 不新增 secret input 表单。
+- 不新增 token viewer。
+- 不新增 credential 管理界面。
+- 不实现 OAuth。
+- 不新增 OAuth callback route。
+- 不新增 OAuth state storage。
+- 不新增 token exchange。
+- 不生成真实 provider authorization URL。
+- 不保存 token。
+- 不保存 secret。
+- 不保存 API key。
+- 不保存 authorization code。
+- 不保存 OAuth client secret。
+- 不保存 OAuth state value。
+- 不保存 credential material。
+- 不保存 raw request、raw response 或 raw payload。
+- 不新增真实 Credential storage。
+- 不新增 connect / authorize / refresh / revoke / disconnect 操作。
 - 不接真实 Douyin API。
 - 不抓取真实指标。
 - 不上传、不发布、不排期发布。

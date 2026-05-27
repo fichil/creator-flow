@@ -7,6 +7,7 @@ import type {
   Project,
   ProviderConnectionState,
   ProviderCredentialReference,
+  ProviderOAuthBoundary,
   ProviderSecurityAuditEvent,
 } from "../api/client";
 
@@ -292,6 +293,116 @@ const auditEvents: ProviderSecurityAuditEvent[] = [
   },
 ];
 
+const oauthBoundaries: ProviderOAuthBoundary[] = [
+  {
+    provider_id: "fake_local",
+    provider_name: "Local Fake Provider",
+    source_type: "fake_local",
+    implementation_status: "available_local_fake",
+    oauth_policy_status: "not_required",
+    state_policy_status: "not_required",
+    callback_policy_status: "not_required",
+    csrf_protection_status: "not_required",
+    redirect_uri_policy_status: "not_required",
+    token_exchange_policy_status: "not_required",
+    token_storage_policy_status: "none",
+    error_redaction_policy_status: "active",
+    audit_event_policy_status: "metadata_only",
+    is_available: true,
+    is_real_provider: false,
+    requires_user_authorization: false,
+    can_start_oauth: false,
+    can_handle_callback: false,
+    can_exchange_token: false,
+    can_refresh_token: false,
+    can_revoke_token: false,
+    safe_status_message:
+      "Local fake provider does not require OAuth state, callback handling, token exchange, or token storage.",
+    boundary_notes: [
+      "local fake/demo/test data only",
+      "not real Douyin data",
+      "OAuth is not required",
+      "no state value stored",
+      "no authorization code stored",
+      "no token exchange",
+      "no token stored",
+      "no secret stored",
+      "no external service call",
+    ],
+  },
+  {
+    provider_id: "douyin_sandbox",
+    provider_name: "Douyin Sandbox Placeholder",
+    source_type: "sandbox",
+    implementation_status: "planned",
+    oauth_policy_status: "not_implemented",
+    state_policy_status: "required_planned",
+    callback_policy_status: "required_planned",
+    csrf_protection_status: "required_planned",
+    redirect_uri_policy_status: "required_planned",
+    token_exchange_policy_status: "not_implemented",
+    token_storage_policy_status: "not_implemented",
+    error_redaction_policy_status: "active",
+    audit_event_policy_status: "metadata_only",
+    is_available: false,
+    is_real_provider: false,
+    requires_user_authorization: true,
+    can_start_oauth: false,
+    can_handle_callback: false,
+    can_exchange_token: false,
+    can_refresh_token: false,
+    can_revoke_token: false,
+    safe_status_message:
+      "Douyin sandbox OAuth boundary is placeholder metadata only; OAuth is not implemented and no state value, authorization code, or token is stored.",
+    boundary_notes: [
+      "placeholder OAuth boundary metadata only",
+      "OAuth is not implemented",
+      "OAuth callback route is not implemented",
+      "OAuth state storage is not implemented",
+      "tokens are not stored",
+      "secrets are not stored",
+      "no token exchange",
+      "no real Douyin API call",
+    ],
+  },
+  {
+    provider_id: "douyin_real",
+    provider_name: "Douyin Real Placeholder",
+    source_type: "real",
+    implementation_status: "planned",
+    oauth_policy_status: "not_implemented",
+    state_policy_status: "required_planned",
+    callback_policy_status: "required_planned",
+    csrf_protection_status: "required_planned",
+    redirect_uri_policy_status: "required_planned",
+    token_exchange_policy_status: "not_implemented",
+    token_storage_policy_status: "not_implemented",
+    error_redaction_policy_status: "active",
+    audit_event_policy_status: "metadata_only",
+    is_available: false,
+    is_real_provider: true,
+    requires_user_authorization: true,
+    can_start_oauth: false,
+    can_handle_callback: false,
+    can_exchange_token: false,
+    can_refresh_token: false,
+    can_revoke_token: false,
+    safe_status_message:
+      "Douyin real OAuth boundary is a future placeholder only; OAuth callback, state validation, token exchange, token storage, metrics fetching, upload, publish, and scheduling are not implemented.",
+    boundary_notes: [
+      "future real provider OAuth boundary placeholder only",
+      "not real Douyin integration",
+      "OAuth is not implemented",
+      "OAuth callback route is not implemented",
+      "OAuth state storage is not implemented",
+      "no access token or refresh token storage",
+      "no token exchange",
+      "no real metrics fetching",
+      "no upload / publish / scheduling",
+    ],
+  },
+];
+
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(
     new Response(JSON.stringify(body), {
@@ -317,6 +428,9 @@ function installListPageFetchMock(projects: Project[] = [project]) {
     }
     if (url.pathname === "/api/provider-security-audit-events") {
       return jsonResponse({ audit_events: auditEvents });
+    }
+    if (url.pathname === "/api/provider-oauth-boundaries") {
+      return jsonResponse({ oauth_boundaries: oauthBoundaries });
     }
     if (url.pathname === "/api/projects") {
       return jsonResponse(projects);
@@ -357,10 +471,14 @@ describe("ProjectListPage", () => {
     expect(await screen.findByLabelText("Provider security audit event fake_local")).toBeTruthy();
     expect(screen.getByLabelText("Provider security audit event douyin_sandbox")).toBeTruthy();
     expect(screen.getByLabelText("Provider security audit event douyin_real")).toBeTruthy();
+    expect(await screen.findByLabelText("Provider OAuth boundary fake_local")).toBeTruthy();
+    expect(screen.getByLabelText("Provider OAuth boundary douyin_sandbox")).toBeTruthy();
+    expect(screen.getByLabelText("Provider OAuth boundary douyin_real")).toBeTruthy();
     await waitFor(() => expect(server.calls).toContain("GET /api/providers"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-connections"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-credential-references"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-security-audit-events?limit=20"));
+    await waitFor(() => expect(server.calls).toContain("GET /api/provider-oauth-boundaries"));
     await waitFor(() => expect(server.calls).toContain("GET /api/projects"));
   });
 

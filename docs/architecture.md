@@ -206,6 +206,16 @@ Provider OAuth Boundary 可以返回 `oauth_policy_status`、`state_policy_statu
 
 Frontend 和 API consumer 只能看到非敏感 OAuth boundary metadata。Future real provider planning 只能通过 `implementation_status`、`oauth_policy_status`、`state_policy_status`、`callback_policy_status`、`csrf_protection_status`、`redirect_uri_policy_status`、`token_exchange_policy_status`、`token_storage_policy_status`、`error_redaction_policy_status`、`audit_event_policy_status` 和 `boundary_notes` 表达，不能通过 enabled、connected、authorized、state stored、callback active、token exchanged、token stored 或 real synced 状态暗示已可用。
 
+### Provider OAuth Boundary Frontend Read-only Boundary
+
+v0.8 Batch 11 在前端增加只读 Provider OAuth Boundary UI，但 frontend 只能消费 backend Provider OAuth Boundary 的只读 metadata。该 UI 可以展示 `oauth_policy_status`、`state_policy_status`、`callback_policy_status`、`csrf_protection_status`、`redirect_uri_policy_status`、`token_exchange_policy_status`、`token_storage_policy_status`、`error_redaction_policy_status`、`audit_event_policy_status`、`safe_status_message` 和 `boundary_notes`，帮助用户和审查者理解 provider OAuth state / callback / token boundary。
+
+Frontend 不保存、不缓存、不展示 token、secret、API key、authorization code、OAuth client secret、OAuth state value、credential material、private key、raw request、raw response 或 raw payload，也不能从 OAuth boundary metadata 推断真实平台已经可用。UI 必须显式区分 `fake_local`、`douyin_sandbox` 和 `douyin_real`；planned / unavailable provider 只能展示为 placeholder / not available / not_implemented / required_planned。
+
+该 UI 不提供 connect / authorize / OAuth start / callback / token exchange / refresh / revoke / disconnect / upload / publish / schedule 操作，也不新增写 API。该 UI 不提供 secret input、token viewer、credential viewer、authorization code input、OAuth state input、raw request viewer、raw response viewer 或 raw payload viewer。`required_planned` 只能作为未来边界规划展示，不能暗示 CSRF / state / callback 保护已经启用。
+
+`token_exchange_policy_status` 和 `token_storage_policy_status` 只能作为安全边界 metadata 展示，不能暗示 token exchange 或 token storage 已实现。Future real provider planning 只能通过 `implementation_status`、`oauth_policy_status`、`state_policy_status`、`callback_policy_status`、`csrf_protection_status`、`redirect_uri_policy_status`、`token_exchange_policy_status`、`token_storage_policy_status`、`error_redaction_policy_status`、`audit_event_policy_status` 和 `boundary_notes` 展示，不能通过按钮、connected 状态、authorized 状态、state stored、callback active、token exchanged、token stored 或 real synced 状态暗示已可用。Provider OAuth Boundary UI 不等于真实 provider adapter，不等于 OAuth、Credential 管理界面、Secret Manager、SIEM、callback debugger、token console，也不等于平台账号设置页。
+
 ### Credential Boundary
 
 - token、secret、refresh token、API key 和平台账号凭据不得进入 Git。
