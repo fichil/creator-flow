@@ -23,6 +23,22 @@ CREATE TABLE IF NOT EXISTS user_materials (
     CHECK (material_type IN ('text', 'link', 'image', 'screenshot', 'summary', 'project_record'))
 );
 
+CREATE TABLE IF NOT EXISTS content_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    account_positioning TEXT NOT NULL,
+    content_type TEXT NOT NULL,
+    target_frequency_per_week INTEGER NOT NULL,
+    preferences TEXT,
+    is_enabled INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    CHECK (target_frequency_per_week BETWEEN 1 AND 14),
+    CHECK (is_enabled IN (0, 1))
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -259,6 +275,9 @@ ON content_projects (created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_user_materials_project_id_created_at
 ON user_materials (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_content_plans_project_id_created_at
+ON content_plans (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_topic_generation_runs_project_id_created_at
 ON topic_generation_runs (project_id, created_at DESC, id DESC);
