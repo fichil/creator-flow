@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.6.0 Metrics Feedback Loop local fake/manual metrics workflow release 状态，并补充 v0.7 Metrics Review Summary Batch 1 backend-only foundation 与 Batch 2 frontend UI foundation 验收说明。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、PublicationMetricSnapshot backend foundation、FakeMetricsProvider backend workflow、PublicationMetricReviewSummary backend foundation、项目详情页本地 fake publishing workflow、fake metrics UI 与 fake/local metrics review summary UI、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.6.0 当前只支持项目详情页查看和手动生成 fake/local metrics snapshots；v0.7 Batch 1 当前支持 backend API 创建、查询和读取 fake/local metrics review summary；v0.7 Batch 2 当前支持项目详情页展示和手动生成 fake/local metrics review summary；仍不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布，不做定时指标同步，不抓取真实平台指标，也不接真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.6.0 Metrics Feedback Loop local fake/manual metrics workflow release 状态，并补充 v0.7 Metrics Review Summary RC candidate 验收说明。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、PublicationMetricSnapshot backend foundation、FakeMetricsProvider backend workflow、PublicationMetricReviewSummary backend foundation、项目详情页本地 fake publishing workflow、fake metrics UI 与 fake/local metrics review summary UI、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.6.0 当前只支持项目详情页查看和手动生成 fake/local metrics snapshots；v0.7 Batch 1 支持 backend API 创建、查询和读取 fake/local metrics review summary；v0.7 Batch 2 支持项目详情页展示和手动生成 fake/local metrics review summary；v0.7 Batch 3 已完成 workflow stabilization 与 RC checklist。当前仍不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布，不做定时指标同步，不抓取真实平台指标，也不接真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -122,6 +122,43 @@ git status --short
 功能验收应覆盖：完成 v0.5 local fake publishing workflow 后得到 `PublicationRecord`，在项目详情页查看 metrics snapshots 和 review summaries，手动点击 `Generate fake/local summary` 创建 `fake_local` summary，确认创建后只刷新对应 `PublicationRecord` 的 summaries list，确认 fake/local insight、local development / demo / test data、not real Douyin performance、not real platform analysis、not automatic recommendation、does not modify content automatically 等文案可见。无 summaries 时应展示明确空状态；summary 文本字段为空时应展示 fallback，不得伪装成真实平台数据。archived project 保持只读，只能查看已有 summaries，不显示生成入口。
 
 同时执行安全扫描，确认没有真实密钥、token、API key、secret、私钥、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体或运行时文件进入 Git。v0.7 Batch 2 不新增后端 API、数据库表、provider 语义、图表库或独立 analytics 页面；不接真实 Douyin API、不实现 OAuth、不保存凭据、不抓取真实指标、不调用外部服务、不做定时指标同步、不做数据分析推荐算法、不新增真实平台 dashboard，也不自动优化内容或触发上传、发布、排期发布。
+
+## v0.7 Metrics Review Summary RC candidate 验收
+
+v0.7 RC candidate 只覆盖 local fake/manual metrics review summary workflow。RC checklist 见 [`docs/checklists/v0.7-metrics-review-summary-rc.md`](checklists/v0.7-metrics-review-summary-rc.md)。本阶段不新增真实平台能力，不改变 v0.7 Batch 1 / Batch 2 业务语义；fake/local insight 只作为人工复盘参考，不是真实平台分析、不是真实 Douyin 表现，也不是自动推荐算法结果。
+
+本地质量门禁从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+人工验收路径：
+
+```text
+approved ReviewDraft
+-> create PublishIntent
+-> confirm PublishIntent
+-> create PublicationRecord not_started
+-> fake publish
+-> PublicationRecord succeeded
+-> manually generate fake metrics snapshot
+-> manually generate fake/local metrics review summary
+-> view fake/local review summaries on the project detail page
+```
+
+人工验收时应确认：项目详情页能查看每条 `PublicationRecord` 的 review summaries；用户只能手动生成 `fake_local` summary；生成成功后只刷新对应 `PublicationRecord` 的 summaries list；fake/local insight、local development / demo / test data、not real platform analysis、not real Douyin performance、not automatic recommendation 和 does not modify content automatically 文案可见；字段为空时显示稳定 fallback；archived project 只读；cross-project 访问返回 404。
+
+同时执行安全扫描，确认没有真实密钥、token、API key、secret、私钥、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体、运行时文件、真实平台返回数据、真实 Douyin 凭据或真实 OAuth 回调凭据进入 Git。v0.7 RC candidate 不接真实 Douyin API、不实现 OAuth、不保存 access token / refresh token / API key / secret / credential、不抓取真实指标、不做定时同步、不做自动推荐算法、不自动优化内容、不新增真实平台 dashboard、不新增图表库、不新增独立 analytics 页面，也不触发真实上传、发布、排期发布或外部服务调用。
 
 ## 启动 Backend
 

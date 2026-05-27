@@ -1734,6 +1734,10 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(within(recordCard).getByText(metricReviewSummaryOne.low_performance_signals)).toBeTruthy();
     expect(within(recordCard).getByText(metricReviewSummaryOne.next_observations)).toBeTruthy();
     expect(screen.queryByText("Real platform analytics")).toBeNull();
+    expect(screen.queryByText("Real platform analysis")).toBeNull();
+    expect(screen.queryByText("Real platform performance")).toBeNull();
+    expect(screen.queryByText("Real Douyin performance")).toBeNull();
+    expect(screen.queryByText("Automatic recommendation result")).toBeNull();
   });
 
   it("shows an empty metric review summary state for PublicationRecords without summaries", async () => {
@@ -1772,7 +1776,9 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(server.calls).toContain("POST /api/projects/1/publication-records/1801/metric-review-summaries/fake");
     const unchangedSecondRecordCard = screen.getByLabelText("PublicationRecord 1802");
     expect(within(unchangedSecondRecordCard).getByLabelText("MetricReviewSummary 2003")).toBeTruthy();
+    expect(within(unchangedSecondRecordCard).getByText(metricReviewSummaryOne.summary_text)).toBeTruthy();
     expect(within(unchangedSecondRecordCard).queryByLabelText("MetricReviewSummary 2099")).toBeNull();
+    expect(within(unchangedSecondRecordCard).queryByText("2026-05-26T08:35:00Z")).toBeNull();
     expect(
       server.calls.filter((call) => call === "GET /api/projects/1/publication-records/1801/metric-review-summaries"),
     ).toHaveLength(2);

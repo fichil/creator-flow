@@ -94,6 +94,39 @@ def test_create_fake_metric_review_summary_from_snapshots(client: TestClient):
     assert_no_metric_review_side_effects(expected_metric_snapshots=2, expected_summaries=1)
 
 
+def test_create_fake_metric_review_summary_uses_stable_snapshot_window(client: TestClient):
+    project_id, _, publication_record = prepare_publication_record(client)
+    with sqlite3.connect(get_settings().database_path) as connection:
+        connection.executemany(
+            """
+            INSERT INTO publication_metric_snapshots (
+                project_id, publication_record_id, source, captured_at, views, likes,
+                comments, shares, favorites, average_watch_time_seconds, completion_rate,
+                provider_payload_summary
+            )
+            VALUES (?, ?, 'fake_local', ?, ?, ?, ?, ?, ?, ?, ?, 'stable fake/local metrics')
+            """,
+            [
+                (project_id, publication_record["id"], "2026-05-27 09:00:00", 100, 8, 1, 1, 2, 9.0, 0.4),
+                (project_id, publication_record["id"], "2026-05-27 11:00:00", 230, 30, 6, 4, 9, 16.5, 0.7),
+                (project_id, publication_record["id"], "2026-05-27 10:00:00", 180, 18, 4, 2, 5, 13.0, 0.55),
+            ],
+        )
+
+    response = create_fake_metric_review_summary(client, project_id, publication_record["id"])
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["source"] == "fake_local"
+    assert body["is_fake_local"] is True
+    assert body["snapshot_count"] == 3
+    assert body["metric_window_start"] == "2026-05-27 09:00:00"
+    assert body["metric_window_end"] == "2026-05-27 11:00:00"
+    assert "views +130" in body["highlights"]
+    assert "completion_rate +30pp" in body["highlights"]
+    assert_no_metric_review_side_effects(expected_metric_snapshots=3, expected_summaries=1)
+
+
 def test_create_fake_metric_review_summary_allows_missing_metric_fields(client: TestClient):
     project_id, _, publication_record = prepare_publication_record(client)
     with sqlite3.connect(get_settings().database_path) as connection:
@@ -285,9 +318,13 @@ def test_metric_review_summary_workflow_does_not_call_real_platform_or_modify_co
     assert response.status_code == 201
     body = response.json()
     assert body["source"] == "fake_local"
+    assert body["is_fake_local"] is True
     assert "Douyin API" not in body["summary_text"]
     assert "OAuth" not in body["summary_text"]
     assert "token" not in body["summary_text"].lower()
+    assert "upload" not in body["summary_text"].lower()
+    assert "publish" not in body["summary_text"].lower()
+    assert "schedule" not in body["summary_text"].lower()
     assert review_drafts_response.json()[0]["review_status"] == "approved"
     assert publish_intent_response.json()["publish_status"] == "confirmed"
     assert not get_settings().uploads_dir.exists() or list(get_settings().uploads_dir.rglob("*")) == []
