@@ -19,7 +19,7 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 
 当前稳定版本仍是 `v0.7.0 - local fake/manual metrics review summary workflow`。下一阶段是 v0.8 Provider & Credential Security Foundation，后续路线继续保持渐进式抖音用户测试路径：
 
-- v0.8 Provider & Credential Security Foundation：Batch 1 已完成 Provider、Credential、OAuth、Secret 和 token lifecycle 的文档 / ADR 边界；Batch 2 已完成 backend-only Provider Registry & Capability Metadata foundation，新增只读 provider metadata API，用于明确 `fake_local`、`douyin_sandbox`、`douyin_real` 的 source separation、connection status 和 capability metadata；Batch 3 是 frontend read-only Provider Registry UI foundation，前端只展示 provider metadata、source type、connection status、capability metadata 和 boundary notes。本阶段不接真实 Douyin、不实现 OAuth、不保存 token、不抓取真实指标、不上传、不发布、不排期发布。
+- v0.8 Provider & Credential Security Foundation：Batch 1 已完成 Provider、Credential、OAuth、Secret 和 token lifecycle 的文档 / ADR 边界；Batch 2 已完成 backend-only Provider Registry & Capability Metadata foundation，新增只读 provider metadata API，用于明确 `fake_local`、`douyin_sandbox`、`douyin_real` 的 source separation、connection status 和 capability metadata；Batch 3 已完成 frontend read-only Provider Registry UI foundation，前端只展示 provider metadata、source type、connection status、capability metadata 和 boundary notes；Batch 4 是 backend-only Provider Connection State & Sensitive Storage Status foundation，新增只读 connection state metadata API 和 metadata-only table。本阶段不接真实 Douyin、不实现 OAuth、不保存 token、不保存 secret、不保存 API key、不保存 credential material、不抓取真实指标、不上传、不发布、不排期发布。
 - v0.9 Douyin Provider POC / Sandbox Integration：才进入 Douyin Provider POC / Sandbox Integration，验证 sandbox/mock callback、账号连接状态和最小指标读取预研。
 - v1.0 Douyin Integration User Test Release：才进入面向用户测试的抖音接入版本，不是生产级自动化发布版本。
 

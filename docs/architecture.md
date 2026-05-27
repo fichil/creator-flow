@@ -128,6 +128,16 @@ Frontend 不保存、不缓存、不展示 token、secret、credential、authori
 
 该 UI 不提供 connect / authorize / refresh / revoke / disconnect / upload / publish / schedule 操作，也不新增写 API。它不等于真实 provider adapter，不等于 OAuth 管理界面，也不等于 Credential 管理界面。
 
+### Provider Connection State Backend Boundary
+
+v0.8 Batch 4 增加 backend-only Provider Connection State metadata layer。该层依赖 Provider Registry 作为 provider source of truth，只为 registry 中已知的 `fake_local`、`douyin_sandbox` 和 `douyin_real` 返回 connection state metadata；数据库中未知 `provider_id` 的记录不得被视为真实 provider，也不得出现在只读 API response 中。
+
+Provider Connection State 可以返回 `connection_status`、`authorization_status`、`sensitive_storage_status`、`safe_status_message` 和 boundary notes，用于表达未连接、未实现、授权失败、权限不足、token 过期或 provider error 等状态方向。该状态层只保存非敏感 metadata，不保存 token、secret、API key、credential material、authorization code、OAuth client secret 或平台原始响应。
+
+该 metadata layer 不读取环境变量中的真实平台密钥，不读取本地凭据文件，不调用外部服务，不实现 OAuth，不执行 token exchange，不等于 Credential storage，也不等于 real provider adapter。frontend 和 API consumer 只能看到非敏感 status metadata；future real provider planning 只能通过 `implementation_status`、`connection_status`、`authorization_status`、`sensitive_storage_status` 和 `boundary_notes` 表达，不能通过 capability `true`、`connected` 状态或写 API 暗示已可用。
+
+Batch 4 新增的 `provider_connection_states` 表只允许保存 provider id、source type、connection status、authorization status、sensitive storage status、safe status message、状态变化原因和创建/更新时间等 metadata。表结构不得出现可承载敏感值的字段名，例如 access token、refresh token、API key、client secret、authorization code、credential material、encrypted credential、private key、raw response、OAuth code 或 password。
+
 ### Credential Boundary
 
 - token、secret、refresh token、API key 和平台账号凭据不得进入 Git。

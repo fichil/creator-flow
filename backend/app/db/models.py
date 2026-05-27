@@ -177,6 +177,49 @@ CREATE TABLE IF NOT EXISTS publication_metric_review_summaries (
     CHECK (snapshot_count >= 0)
 );
 
+CREATE TABLE IF NOT EXISTS provider_connection_states (
+    provider_id TEXT PRIMARY KEY,
+    source_type TEXT NOT NULL,
+    connection_status TEXT NOT NULL,
+    authorization_status TEXT NOT NULL,
+    sensitive_storage_status TEXT NOT NULL,
+    safe_status_message TEXT NOT NULL,
+    last_status_change_reason TEXT NOT NULL DEFAULT 'initial_metadata',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (
+        connection_status IN (
+            'not_required',
+            'not_connected',
+            'connected',
+            'authorization_failed',
+            'token_expired',
+            'permission_denied',
+            'provider_error'
+        )
+    ),
+    CHECK (
+        authorization_status IN (
+            'not_required',
+            'not_authorized',
+            'authorized',
+            'authorization_failed',
+            'permission_denied',
+            'not_implemented'
+        )
+    ),
+    CHECK (
+        sensitive_storage_status IN (
+            'none',
+            'not_configured',
+            'not_implemented',
+            'reference_only',
+            'encrypted_storage_planned'
+        )
+    )
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
