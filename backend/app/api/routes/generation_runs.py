@@ -82,6 +82,24 @@ def create_generation_run(
         """,
         (result_summary, run["id"], project_id),
     )
+    db.execute(
+        """
+        INSERT INTO review_drafts (
+            project_id, content_plan_id, generation_schedule_id, generation_run_id,
+            title, draft_summary, input_source_summary, hotspot_source_summary, review_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'pending_review')
+        """,
+        (
+            project_id,
+            content_plan_id,
+            generation_schedule["id"] if generation_schedule else None,
+            run["id"],
+            _build_review_draft_title(content_plan, run["id"]),
+            _build_review_draft_summary(content_plan, generation_schedule, result_summary),
+            input_summary,
+        ),
+    )
     db.commit()
     return _get_generation_run(db, project_id, run["id"])
 
@@ -191,4 +209,20 @@ def _build_result_summary(content_plan, generation_schedule) -> str:
         f"deterministic fake manual generation run succeeded for "
         f"content_plan_id={content_plan['id']}{schedule_part}; "
         "no topic candidates, script drafts, storyboards, render jobs, subtitles, media, uploads, or publications were created"
+    )
+
+
+def _build_review_draft_title(content_plan, generation_run_id: int) -> str:
+    return f"Fake review draft for {content_plan['name']} run {generation_run_id}"
+
+
+def _build_review_draft_summary(content_plan, generation_schedule, result_summary: str) -> str:
+    schedule_part = (
+        f"GenerationSchedule {generation_schedule['id']} at {generation_schedule['preferred_time']}"
+        if generation_schedule is not None
+        else "Manual run without GenerationSchedule"
+    )
+    return (
+        f"Backend-only fake draft placeholder for ContentPlan {content_plan['id']} "
+        f"({content_plan['content_type']}). {schedule_part}. {result_summary}"
     )

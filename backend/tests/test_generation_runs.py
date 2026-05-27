@@ -78,6 +78,10 @@ def test_create_manual_generation_run_success_without_schedule(client: TestClien
     assert body["error_message"] is None
     assert body["created_at"]
     assert body["updated_at"]
+    review_drafts = client.get(f"/api/projects/{project_id}/review-drafts").json()
+    assert len(review_drafts) == 1
+    assert review_drafts[0]["generation_run_id"] == body["id"]
+    assert review_drafts[0]["review_status"] == "pending_review"
 
 
 def test_create_manual_generation_run_success_with_schedule(client: TestClient):
@@ -98,6 +102,9 @@ def test_create_manual_generation_run_success_with_schedule(client: TestClient):
     assert "frequency_per_week=5" in body["input_summary"]
     assert f"generation_schedule_id={schedule['id']}" in body["input_summary"]
     assert f"using generation_schedule_id={schedule['id']}" in body["result_summary"]
+    review_draft = client.get(f"/api/projects/{project_id}/review-drafts").json()[0]
+    assert review_draft["generation_schedule_id"] == schedule["id"]
+    assert review_draft["hotspot_source_summary"] is None
 
 
 def test_create_manual_generation_run_rejects_scheduled_trigger(client: TestClient):
@@ -263,6 +270,7 @@ def test_generation_run_does_not_create_real_drafts_or_media_records(client: Tes
     with sqlite3.connect(get_settings().database_path) as connection:
         counts = {
             "generation_runs": connection.execute("SELECT COUNT(*) FROM generation_runs").fetchone()[0],
+            "review_drafts": connection.execute("SELECT COUNT(*) FROM review_drafts").fetchone()[0],
             "topic_generation_runs": connection.execute("SELECT COUNT(*) FROM topic_generation_runs").fetchone()[0],
             "topic_candidates": connection.execute("SELECT COUNT(*) FROM topic_candidates").fetchone()[0],
             "script_generation_runs": connection.execute("SELECT COUNT(*) FROM script_generation_runs").fetchone()[0],
@@ -274,6 +282,7 @@ def test_generation_run_does_not_create_real_drafts_or_media_records(client: Tes
         }
     assert counts == {
         "generation_runs": 1,
+        "review_drafts": 1,
         "topic_generation_runs": 0,
         "topic_candidates": 0,
         "script_generation_runs": 0,
