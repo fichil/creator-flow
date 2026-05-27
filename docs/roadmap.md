@@ -270,16 +270,29 @@
 
 ## v0.6 Metrics Feedback Loop
 
-目标：采集基础发布指标，帮助用户复盘并优化下一轮内容。
+目标：为发布后的内容记录指标反馈，帮助用户复盘内容表现，并为未来根据表现优化 `TopicCandidate`、`ScriptDraft` 和 `ContentPlan` 提供基础输入。指标来源未来可以来自抖音或其他平台 Provider，但核心模型不能写死抖音。
 
-状态：未开始。v0.5 Release Candidate 不实现 Metrics Feedback Loop，不采集真实平台指标，不接真实发布平台状态查询。
+状态：已开始。v0.6 Batch 1 已完成 Metrics Feedback Loop documentation foundation；本批只定义产品、领域模型和 Provider 边界，不实现功能。
+
+已完成 Batch 1：实现 Metrics Feedback Loop documentation foundation。该批次只更新产品规格、架构、路线图、README 和 ADR，明确指标反馈用于发布后复盘，不用于自动发布；未来指标快照应与 `PublicationRecord` 关联；平台指标能力通过 `MetricsProvider` 或等价 Provider 抽象隔离；fake/local metrics 与真实平台 metrics 必须显式区分；真实 Douyin API、OAuth、token 保存、定时同步、真实指标抓取和数据分析推荐算法均不在本批实现。
 
 范围：
 
-- `PublicationMetrics` 数据模型。
-- 基础播放、互动和发布时间指标采集。
+- `PublicationMetricSnapshot` 或等价指标快照模型。
+- `MetricSource` 或等价指标来源模型，用于区分 fake/local data 与真实平台数据。
+- `MetricsProvider` 或等价 Provider 抽象，用于隔离平台指标采集细节。
+- `PublicationRecord` 与指标快照的关联。
+- 指标采集时间点，例如 `captured_at`。
+- 基础播放、互动和观看质量指标方向，例如 `views`、`likes`、`comments`、`shares`、`favorites`、`watch_time` 和 `completion_rate`。
 - 内容复盘视图。
 - 指标辅助下一轮选题的接口方向。
+
+领域方向：
+
+- 每次指标回流应保存为快照，而不是覆盖唯一的“当前指标”。
+- 指标快照应记录来源、平台、采集时间、是否为 fake/local data，以及与 `PublicationRecord` 的关系。
+- 不同平台指标能力不同，指标字段必须允许部分为空。
+- 核心领域模型只保存平台无关的基础指标；平台专有字段应留在 Provider 适配层或附加 metadata 中。
 
 验收标准：
 
@@ -287,12 +300,21 @@
 - 用户可以查看内容表现摘要。
 - 指标可作为后续选题优化的辅助输入。
 - 指标采集不暴露不必要的个人隐私。
+- fake/local metrics 不会被展示或解释为真实平台表现。
 
 明确不做事项：
 
+- 不抓取真实指标。
+- 不接真实 Douyin API。
+- 不实现 OAuth。
+- 不保存 token、API key、secret 或平台账号凭据。
+- 不做定时同步。
 - 不承诺复杂增长预测。
 - 不自动根据指标发布内容。
 - 不采集超出用户授权范围的数据。
+- 不做数据分析推荐算法。
+- 不自动优化内容。
+- 不把 fake 指标当成真实表现。
 
 ## v1.0 Extensible Creator Workflow
 
