@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.db.database import get_db
+from app.publishers.fake_publisher import FakePublisherProvider
+from app.publishers.publisher import PublishExecutionInput
 from app.schemas.publishing import (
     PublicationRecordResponse,
     PublishIntentCreate,
@@ -126,6 +128,53 @@ def confirm_publish_intent(project_id: int, publish_intent_id: int, db=Depends(g
     return _get_publish_intent(db, project_id, publish_intent_id)
 
 
+@router.post(
+    "/{project_id}/publish-intents/{publish_intent_id}/fake-publish",
+    response_model=PublicationRecordResponse,
+)
+def fake_publish_intent(project_id: int, publish_intent_id: int, db=Depends(get_db)):
+    project = _get_project(db, project_id)
+    _ensure_project_mutable(project, "fake publish")
+    publish_intent = _get_publish_intent(db, project_id, publish_intent_id)
+    if publish_intent["publish_status"] != "confirmed":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="only confirmed publish intents can be fake published",
+        )
+
+    publication_record = _get_executable_publication_record(db, project_id, publish_intent_id)
+    provider = FakePublisherProvider()
+    result = provider.execute(
+        PublishExecutionInput(
+            project_id=project_id,
+            publish_intent_id=publish_intent_id,
+            publication_record_id=publication_record["id"],
+            target_platform=publish_intent["target_platform"],
+            title=publish_intent["title"],
+            caption=publish_intent["caption"],
+        )
+    )
+    db.execute(
+        """
+        UPDATE publication_records
+        SET provider_name = ?, external_publication_id = ?, publication_status = ?,
+            error_message = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND project_id = ? AND publish_intent_id = ?
+        """,
+        (
+            result.provider_name,
+            result.external_publication_id,
+            result.publication_status,
+            result.error_message,
+            publication_record["id"],
+            project_id,
+            publish_intent_id,
+        ),
+    )
+    db.commit()
+    return _get_publication_record(db, project_id, publication_record["id"])
+
+
 @router.get(
     "/{project_id}/publish-intents/{publish_intent_id}/publication-records",
     response_model=list[PublicationRecordResponse],
@@ -194,6 +243,57 @@ def _get_publish_intent(db, project_id: int, publish_intent_id: int) -> dict:
     ).fetchone()
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="publish intent not found")
+    return dict(row)
+
+
+def _get_executable_publication_record(db, project_id: int, publish_intent_id: int) -> dict:
+    row = db.execute(
+        """
+        SELECT id, project_id, publish_intent_id, target_platform, provider_name,
+               external_publication_id, publication_status, error_message, created_at, updated_at
+        FROM publication_records
+        WHERE project_id = ? AND publish_intent_id = ? AND publication_status = 'not_started'
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+        """,
+        (project_id, publish_intent_id),
+    ).fetchone()
+    if row is not None:
+        return dict(row)
+
+    existing = db.execute(
+        """
+        SELECT publication_status
+        FROM publication_records
+        WHERE project_id = ? AND publish_intent_id = ?
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+        """,
+        (project_id, publish_intent_id),
+    ).fetchone()
+    if existing is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="publication record not found; confirm publish intent first",
+        )
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail="publication record has already been executed",
+    )
+
+
+def _get_publication_record(db, project_id: int, publication_record_id: int) -> dict:
+    row = db.execute(
+        """
+        SELECT id, project_id, publish_intent_id, target_platform, provider_name,
+               external_publication_id, publication_status, error_message, created_at, updated_at
+        FROM publication_records
+        WHERE id = ? AND project_id = ?
+        """,
+        (publication_record_id, project_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="publication record not found")
     return dict(row)
 
 

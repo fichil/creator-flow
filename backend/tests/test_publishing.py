@@ -3,6 +3,8 @@ import sqlite3
 from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
+from app.publishers.fake_publisher import FakePublisherProvider
+from app.publishers.publisher import PublishExecutionInput
 
 
 def create_project(client: TestClient, title: str = "Publishing project") -> int:
@@ -53,6 +55,10 @@ def create_publish_intent(client: TestClient, project_id: int, review_draft_id: 
 
 def confirm_publish_intent(client: TestClient, project_id: int, publish_intent_id: int):
     return client.post(f"/api/projects/{project_id}/publish-intents/{publish_intent_id}/confirm")
+
+
+def fake_publish_intent(client: TestClient, project_id: int, publish_intent_id: int):
+    return client.post(f"/api/projects/{project_id}/publish-intents/{publish_intent_id}/fake-publish")
 
 
 def test_create_publish_intent_for_approved_review_draft(client: TestClient):
@@ -237,6 +243,171 @@ def test_confirm_missing_publish_intent_returns_404(client: TestClient):
     assert response.json()["detail"] == "publish intent not found"
 
 
+def test_fake_publish_confirmed_intent_succeeds_with_local_external_id(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+    confirm_publish_intent(client, project_id, publish_intent["id"])
+
+    response = fake_publish_intent(client, project_id, publish_intent["id"])
+
+    assert response.status_code == 200
+    record = response.json()
+    assert record["project_id"] == project_id
+    assert record["publish_intent_id"] == publish_intent["id"]
+    assert record["target_platform"] == "douyin"
+    assert record["provider_name"] == "fake_publisher"
+    assert record["external_publication_id"] == f"fake-publication-{record['id']}"
+    assert record["publication_status"] == "succeeded"
+    assert record["error_message"] is None
+    records = client.get(
+        f"/api/projects/{project_id}/publish-intents/{publish_intent['id']}/publication-records"
+    ).json()
+    assert len(records) == 1
+    assert records[0]["id"] == record["id"]
+    assert records[0]["publication_status"] == "succeeded"
+    assert_no_publication_side_effects(expected_publish_intents=1, expected_publication_records=1)
+
+
+def test_fake_publish_pending_confirmation_intent_is_rejected(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+
+    response = fake_publish_intent(client, project_id, publish_intent["id"])
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "only confirmed publish intents can be fake published"
+    assert_no_publication_side_effects(expected_publish_intents=1)
+
+
+def test_fake_publish_cancelled_intent_is_rejected(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+    client.post(f"/api/projects/{project_id}/publish-intents/{publish_intent['id']}/cancel")
+
+    response = fake_publish_intent(client, project_id, publish_intent["id"])
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "only confirmed publish intents can be fake published"
+    assert_no_publication_side_effects(expected_publish_intents=1)
+
+
+def test_fake_publish_succeeded_record_cannot_be_executed_again(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+    confirm_publish_intent(client, project_id, publish_intent["id"])
+    first_response = fake_publish_intent(client, project_id, publish_intent["id"])
+
+    response = fake_publish_intent(client, project_id, publish_intent["id"])
+
+    assert first_response.status_code == 200
+    assert response.status_code == 409
+    assert response.json()["detail"] == "publication record has already been executed"
+    records = client.get(
+        f"/api/projects/{project_id}/publish-intents/{publish_intent['id']}/publication-records"
+    ).json()
+    assert len(records) == 1
+    assert records[0]["publication_status"] == "succeeded"
+    assert_no_publication_side_effects(expected_publish_intents=1, expected_publication_records=1)
+
+
+def test_fake_publish_failed_record_cannot_be_executed_again(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+    confirm_publish_intent(client, project_id, publish_intent["id"])
+    with sqlite3.connect(get_settings().database_path) as connection:
+        connection.execute(
+            """
+            UPDATE publication_records
+            SET publication_status = 'failed', error_message = 'local fake failure'
+            WHERE publish_intent_id = ?
+            """,
+            (publish_intent["id"],),
+        )
+
+    response = fake_publish_intent(client, project_id, publish_intent["id"])
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "publication record has already been executed"
+    assert_no_publication_side_effects(expected_publish_intents=1, expected_publication_records=1)
+
+
+def test_archived_project_cannot_fake_publish(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+    confirm_publish_intent(client, project_id, publish_intent["id"])
+    client.post(f"/api/projects/{project_id}/archive")
+
+    response = fake_publish_intent(client, project_id, publish_intent["id"])
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "archived project cannot fake publish"
+    assert_no_publication_side_effects(expected_publish_intents=1, expected_publication_records=1)
+
+
+def test_fake_publish_missing_publish_intent_returns_404(client: TestClient):
+    project_id = create_project(client)
+
+    response = fake_publish_intent(client, project_id, 999)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "publish intent not found"
+
+
+def test_fake_publish_confirmed_intent_without_publication_record_is_rejected(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+    with sqlite3.connect(get_settings().database_path) as connection:
+        connection.execute(
+            """
+            UPDATE publish_intents
+            SET publish_status = 'confirmed'
+            WHERE id = ?
+            """,
+            (publish_intent["id"],),
+        )
+
+    response = fake_publish_intent(client, project_id, publish_intent["id"])
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "publication record not found; confirm publish intent first"
+    assert_no_publication_side_effects(expected_publish_intents=1)
+
+
+def test_fake_publish_does_not_change_review_draft_status(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+    confirm_publish_intent(client, project_id, publish_intent["id"])
+
+    response = fake_publish_intent(client, project_id, publish_intent["id"])
+    review_response = client.get(f"/api/projects/{project_id}/review-drafts/{review_draft['id']}")
+
+    assert response.status_code == 200
+    assert review_response.status_code == 200
+    assert review_response.json()["review_status"] == "approved"
+    assert_no_publication_side_effects(expected_publish_intents=1, expected_publication_records=1)
+
+
+def test_fake_publisher_provider_is_local_deterministic_and_needs_no_credentials():
+    provider = FakePublisherProvider()
+
+    result = provider.execute(
+        PublishExecutionInput(
+            project_id=1,
+            publish_intent_id=2,
+            publication_record_id=3,
+            target_platform="douyin",
+            title="Local fake title",
+            caption="Local fake caption",
+        )
+    )
+
+    assert provider.provider_name == "fake_publisher"
+    assert result.provider_name == "fake_publisher"
+    assert result.external_publication_id == "fake-publication-3"
+    assert result.publication_status == "succeeded"
+    assert result.error_message is None
+
+
 def test_cancel_publish_intent(client: TestClient):
     project_id, review_draft = prepare_review_draft(client)
     publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
@@ -312,9 +483,11 @@ def test_publish_intent_workflow_does_not_call_real_provider_upload_oauth_or_pub
     project_id, review_draft = prepare_review_draft(client)
     create_response = create_publish_intent(client, project_id, review_draft["id"])
     confirm_response = confirm_publish_intent(client, project_id, create_response.json()["id"])
+    fake_publish_response = fake_publish_intent(client, project_id, create_response.json()["id"])
 
     assert create_response.status_code == 201
     assert confirm_response.status_code == 200
+    assert fake_publish_response.status_code == 200
     assert not get_settings().uploads_dir.exists() or list(get_settings().uploads_dir.rglob("*")) == []
     assert_no_publication_side_effects(expected_publish_intents=1, expected_publication_records=1)
 

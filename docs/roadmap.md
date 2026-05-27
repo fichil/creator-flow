@@ -209,13 +209,15 @@
 
 目标：在人工确认前提下支持抖音发布准备与发布动作。
 
-状态：v0.5 Batch 3 已完成 Publish confirmation backend workflow foundation。当前已有 backend-only 的发布意图与发布记录数据表、Pydantic schemas、API，以及 `PublishIntent` confirm 状态流转；`Review Draft` approved 仍不等于发布，必须显式创建并确认 `PublishIntent` 才进入发布执行准备记录。本阶段仍不实现真实 OAuth、真实发布、真实上传、排期发布、自动发布、token 保存、前端功能或真实 PublisherProvider，也不修改 v0.4 local fake/manual workflow 或 v0.3 render/subtitle/preview workflow。
+状态：v0.5 Batch 4 已完成 PublisherProvider fake execution backend foundation。当前已有 backend-only 的发布意图与发布记录数据表、Pydantic schemas、API、`PublishIntent` confirm 状态流转，以及本地 deterministic `FakePublisherProvider` fake execution；`Review Draft` approved 仍不等于发布，`PublishIntent` confirmed 也不等于真实发布，fake succeeded 只表示本地 fake execution 成功。本阶段仍不实现真实 OAuth、真实发布、真实上传、排期发布、自动发布、token 保存、前端功能或真实 PublisherProvider，也不修改 v0.4 local fake/manual workflow 或 v0.3 render/subtitle/preview workflow。
 
 已完成 Batch 1：实现 Human-Confirmed Publishing Provider Boundary documentation foundation。该批次只更新产品规格、架构、路线图和 ADR，明确 v0.5 的目标是 Human-Confirmed Douyin Publishing；发布必须由用户明确确认后触发；`Review Draft` approved 不等于发布；系统不得静默发布、自动发布或绕过用户审核；`PublisherProvider` 必须隔离平台细节；抖音只是首个平台实现方向，不能写死到核心模型；凭据不得进入 Git；后续真实发布能力必须基于 `PublishIntent` / `PublicationRecord` 或等价模型并保留人工确认状态。
 
 已完成 Batch 2：实现 PublishIntent / PublicationRecord backend domain foundation。该批次新增 `publish_intents` 与 `publication_records` 数据表、backend schemas、backend API routes 和测试；只允许基于同一项目内已 `approved` 的 `Review Draft` 显式创建 `PublishIntent`，创建后状态为 `pending_confirmation`，并支持 list / read / cancel 与按 PublishIntent 查询 `PublicationRecord`。本批不提供 confirm / publish API，不自动创建发布记录，不执行真实平台动作，不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布。
 
 已完成 Batch 3：实现 Publish confirmation backend workflow foundation。该批次新增 `PublishIntent` confirm API，支持 `pending_confirmation` -> `confirmed` 状态流转，并创建 1 条本地 `publication_records` placeholder，`provider_name` 为 `placeholder`，`publication_status` 为 `not_started`，`external_publication_id` 和 `error_message` 为空。confirm 只表示用户已确认进入发布执行准备阶段，不执行真实平台动作，不改变 Review Draft 审核状态，不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布。
+
+已完成 Batch 4：实现 PublisherProvider fake execution backend foundation。该批次新增本地 `PublisherProvider` 协议与 deterministic `FakePublisherProvider`，并新增 fake publish API；只允许 confirmed PublishIntent 且存在 `not_started` PublicationRecord 时执行 fake publish。fake publish 会把 `PublicationRecord` 更新为 `succeeded`，将 `provider_name` 更新为 `fake_publisher`，写入稳定的 fake external publication id，并保持 `error_message` 为空。本批不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布；`succeeded` 只表示本地 fake execution 成功，不代表真实平台发布成功。
 
 范围：
 
@@ -237,7 +239,8 @@
 - `Review Draft` approved 只表示草稿通过审核，不会触发发布、上传或排期发布。
 - `PublishIntent` 表示等待用户确认的发布意图；当前必须由 API 显式创建，且只能基于同一项目内已 approved 的 Review Draft。
 - `PublishIntent` confirmed 只表示用户已确认进入发布执行准备阶段，不等于真实发布。
-- `PublicationRecord` 或等价模型记录确认后的执行结果；当前 confirm 只创建本地 `not_started` placeholder，不执行真实发布动作。
+- `PublicationRecord` 或等价模型记录确认后的执行结果；当前 confirm 只创建本地 `not_started` placeholder，fake publish 只更新本地 placeholder，不执行真实发布动作。
+- fake publish 的 `succeeded` 不等于真实平台发布成功。
 - `PublisherProvider` 只能在用户确认后执行平台动作，并必须把抖音等平台细节隔离在适配层。
 - OAuth、token 保存、真实发布、真实上传、发布状态查询和错误重试必须在后续独立批次中实现。
 - v0.4 local fake/manual workflow 保持不变。
