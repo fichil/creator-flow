@@ -6,13 +6,13 @@ creator-flow is an open-source AI short-video content pipeline for turning user-
 
 ## Status
 
-`v0.3 Rendering Workflow - Batch 7 Release Candidate`
+`v0.4 Scheduled Draft Generation - Batch 8 Release Candidate`
 
-This repository has completed the v0.1 local runnable skeleton, the v0.2 AI Planning Workflow, and v0.3 Batch 1 through Batch 7 of the fake rendering/subtitle/preview workflow. v0.3 Batch 7 completed fake workflow stabilization and Release Candidate closure. The current planning path uses a local deterministic `FakeLLMProvider` to generate and select Topic Candidates, Script Drafts, and Storyboards from explicitly imported materials, including storyboard scenes on the project detail page; the app can also create fake render jobs, show fake preview manifest metadata, create fake subtitle drafts, and show subtitle cues from a selected Storyboard.
+This repository has completed the v0.1 local runnable skeleton, the v0.2 AI Planning Workflow, the v0.3 fake rendering/subtitle/preview workflow, and v0.4 Batch 1 through Batch 8 of the local fake/manual Scheduled Draft Generation workflow. v0.4 Batch 8 completed Release Candidate stabilization and checklist closure. The current path supports the local deterministic `FakeLLMProvider` workflow for Topic Candidates, Script Drafts, Storyboards, fake render jobs, fake subtitle drafts, and fake preview manifest metadata; v0.4 also supports project-level `ContentPlan`, `GenerationSchedule` configuration, fake manual `GenerationRun` records, and `Review Draft` placeholders created from manual runs, all visible on the project detail page.
 
 Local development instructions are available in [`docs/development.md`](docs/development.md).
 
-Real OpenAI, Claude, Gemini, or other LLM integrations are still not implemented. The app does not store API keys, secrets, or tokens and does not call real AI services. v0.3 has completed Release Candidate closure for the fake rendering/subtitle/preview metadata workflow, but real MP4 rendering, real video playback, FFmpeg, TTS, real subtitle files, real audio, scheduled generation, platform publishing, production deployment, and user accounts are still not implemented.
+Real OpenAI, Claude, Gemini, or other LLM integrations are still not implemented. The app does not store API keys, secrets, or tokens and does not call real AI services. v0.4 is still a local fake/manual workflow: scheduled `GenerationRun`, Scheduler / Trigger Engine, a complete `Review Queue`, real MP4 rendering, real video playback, FFmpeg, TTS, real subtitle files, real audio, platform publishing, production deployment, and user accounts are still not implemented. Review Drafts remain placeholders; approve / reject only changes review status and does not publish, upload, render, or generate media.
 This version is not production ready.
 
 ## Local Quick Start
@@ -48,7 +48,7 @@ Common verification commands:
 - Feed post-publication metrics back into future content review and topic optimization.
 - Use Douyin as the first publishing platform while preserving a multi-platform architecture through Provider abstractions.
 
-Topic Candidate, Script Draft, and Storyboard generation and selection are implemented in v0.2 with a local fake provider. v0.3 has completed Release Candidate closure for fake render jobs, fake preview manifest metadata display, fake subtitle drafts, and subtitle cues. Real AI, real subtitle files, real audio, asset plans, real MP4 rendering and playback, publishing, scheduling, and metrics feedback remain future planned capabilities.
+Topic Candidate, Script Draft, and Storyboard generation and selection are implemented in v0.2 with a local fake provider. v0.3 has completed Release Candidate closure for fake render jobs, fake preview manifest metadata display, fake subtitle drafts, and subtitle cues. v0.4 has completed Release Candidate closure for ContentPlan, GenerationSchedule, fake manual GenerationRun, and Review Draft placeholders. Real AI, real subtitle files, real audio, asset plans, real MP4 rendering and playback, publishing, scheduled GenerationRun, Scheduler / Trigger Engine, a complete Review Queue, and metrics feedback remain future planned capabilities.
 
 ## Current Local Capabilities
 
@@ -61,6 +61,10 @@ Topic Candidate, Script Draft, and Storyboard generation and selection are imple
 - Generate Storyboards from a selected Topic Candidate, selected Script Draft, and explicit materials, then inspect ordered scenes.
 - Create fake render jobs from a selected Storyboard and persist deterministic fake preview manifest metadata; the project detail page shows that metadata, but it does not read runtime manifest files or play real video, and no real MP4 file is generated yet.
 - Create fake subtitle drafts from a selected Storyboard and persist deterministic subtitle cue metadata; no real `.srt` / `.vtt`, audio, or video file is generated yet.
+- Create and view `ContentPlan` records, including account positioning, content type, weekly target frequency, preferences, and enable / disable state.
+- Create and view `GenerationSchedule` configuration bound to a `ContentPlan`, including enable / disable state; scheduled triggers are not executed yet.
+- Manually create fake `GenerationRun` records and synchronously create review-ready `Review Draft` placeholders; the project detail page refreshes GenerationRuns and Review Drafts after a manual run.
+- View `Review Draft` placeholders and approve / reject their review status; these actions do not publish, upload, render, or generate media.
 - View existing materials and planning drafts on archived projects while preventing further generation or selection.
 - Store project and material metadata in local `SQLite`.
 - Store uploaded files under local `uploads/`, excluded from Git.
