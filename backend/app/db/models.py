@@ -57,6 +57,25 @@ CREATE TABLE IF NOT EXISTS generation_schedules (
     CHECK (is_enabled IN (0, 1))
 );
 
+CREATE TABLE IF NOT EXISTS generation_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    content_plan_id INTEGER NOT NULL,
+    generation_schedule_id INTEGER,
+    status TEXT NOT NULL DEFAULT 'queued',
+    trigger_type TEXT NOT NULL,
+    input_summary TEXT NOT NULL,
+    result_summary TEXT,
+    error_message TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (content_plan_id) REFERENCES content_plans(id) ON DELETE CASCADE,
+    FOREIGN KEY (generation_schedule_id) REFERENCES generation_schedules(id) ON DELETE SET NULL,
+    CHECK (status IN ('queued', 'running', 'succeeded', 'failed')),
+    CHECK (trigger_type IN ('manual', 'scheduled'))
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -302,6 +321,12 @@ ON generation_schedules (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_generation_schedules_content_plan_id
 ON generation_schedules (content_plan_id);
+
+CREATE INDEX IF NOT EXISTS idx_generation_runs_project_id_created_at
+ON generation_runs (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_generation_runs_content_plan_id
+ON generation_runs (content_plan_id);
 
 CREATE INDEX IF NOT EXISTS idx_topic_generation_runs_project_id_created_at
 ON topic_generation_runs (project_id, created_at DESC, id DESC);
