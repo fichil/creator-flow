@@ -273,6 +273,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。若扫描命中文档中的安全边界说明、UI 的“不保存 token / OAuth 未实现”文案、测试中的禁止字段名断言、既有忽略规则或依赖元数据，应逐项确认它们只是边界说明或测试断言，不是真实值。
 
+## v0.8 Batch 6 Provider Credential Reference & Secret Redaction backend foundation 验收
+
+v0.8 Batch 6 允许新增 backend-only provider credential reference metadata table、只读 provider credential reference metadata API 和 backend-only secret redaction helper。该批次只表达 `reference_status`、`storage_status`、`redaction_policy_status`、`safe_status_message` 和 boundary notes 等非敏感 metadata，并继续依赖 Provider Registry 区分 `fake_local`、`douyin_sandbox` 和 `douyin_real`。
+
+本批不新增前端 UI，不实现 OAuth，不新增 OAuth callback route，不新增 Credential storage，不新增 token storage，不新增真实 Provider，不新增 connect / authorize / refresh / revoke / disconnect 写 API，不接真实 Douyin API，不抓取真实指标，不上传、不发布、不排期发布，也不调用外部服务。本批新增的数据表只允许保存非敏感 metadata；redaction helper 只做安全脱敏，不代表真实 secret manager、KMS 或 encrypted credential storage。文档和测试中的 token / OAuth / credential / secret 只能作为“不保存、不实现、不暴露”的边界说明、redaction 测试输入或黑名单断言。
+
+本地质量门禁从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。若扫描命中文档中的安全边界说明、redaction helper 的敏感 key 列表、测试中的 fake/redacted input、禁止字段名断言、既有忽略规则或依赖元数据，应逐项确认它们只是边界说明或测试断言，不是真实值。
+
 ## 启动 Backend
 
 ```powershell

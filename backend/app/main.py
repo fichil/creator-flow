@@ -12,6 +12,7 @@ from app.api.routes import (
     metric_review_summaries,
     metrics,
     provider_connections,
+    provider_credential_references,
     provider_registry,
     projects,
     publishing,
@@ -49,6 +50,11 @@ app.include_router(
     provider_connections.router,
     prefix="/api/provider-connections",
     tags=["provider-connections"],
+)
+app.include_router(
+    provider_credential_references.router,
+    prefix="/api/provider-credential-references",
+    tags=["provider-credential-references"],
 )
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(materials.router, prefix="/api/projects", tags=["materials"])

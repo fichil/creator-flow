@@ -220,6 +220,50 @@ CREATE TABLE IF NOT EXISTS provider_connection_states (
     )
 );
 
+CREATE TABLE IF NOT EXISTS provider_credential_references (
+    reference_id TEXT PRIMARY KEY,
+    provider_id TEXT NOT NULL,
+    source_type TEXT NOT NULL,
+    reference_kind TEXT NOT NULL,
+    reference_status TEXT NOT NULL,
+    storage_status TEXT NOT NULL,
+    redaction_policy_status TEXT NOT NULL,
+    safe_display_name TEXT NOT NULL,
+    safe_status_message TEXT NOT NULL,
+    last_status_change_reason TEXT NOT NULL DEFAULT 'initial_metadata',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (
+        reference_kind IN (
+            'none_required',
+            'oauth_placeholder',
+            'provider_secret_placeholder',
+            'api_key_placeholder',
+            'credential_reference_placeholder'
+        )
+    ),
+    CHECK (
+        reference_status IN (
+            'not_required',
+            'not_configured',
+            'not_implemented',
+            'reference_only',
+            'unavailable'
+        )
+    ),
+    CHECK (
+        storage_status IN (
+            'none',
+            'not_configured',
+            'not_implemented',
+            'reference_only',
+            'encrypted_storage_planned'
+        )
+    ),
+    CHECK (redaction_policy_status IN ('active', 'planned', 'not_required'))
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
