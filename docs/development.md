@@ -443,7 +443,7 @@ Remove-Item .\uploads\* -Recurse -Force -ErrorAction SilentlyContinue
 
 ## v0.3 Fake Workflow Release Candidate 验证
 
-v0.3 当前只覆盖 fake rendering/subtitle/preview metadata workflow。合并或发布候选验收时应确认：
+v0.3 Batch 7 已完成 fake workflow stabilization 与 Release Candidate 收口。当前只覆盖 fake rendering/subtitle/preview metadata workflow。合并或发布候选验收时应确认：
 
 - Render Jobs 可以基于 selected Storyboard 创建 fake render job，并展示 fake preview manifest metadata。
 - Subtitle Drafts 可以基于 selected Storyboard 创建和选择 fake subtitle draft，并展示 subtitle cues。

@@ -6,13 +6,13 @@ creator-flow is an open-source AI short-video content pipeline for turning user-
 
 ## Status
 
-`v0.3 Rendering Workflow - Batch 6 Fake Render Preview Frontend UI`
+`v0.3 Rendering Workflow - Batch 7 Release Candidate`
 
-This repository has completed the v0.1 local runnable skeleton, the v0.2 AI Planning Workflow, and v0.3 Batch 1 through Batch 6 of the fake rendering/subtitle/preview foundation. The current planning path uses a local deterministic `FakeLLMProvider` to generate and select Topic Candidates, Script Drafts, and Storyboards from explicitly imported materials, including storyboard scenes on the project detail page; the app can also create fake render jobs, show fake preview manifest metadata, create fake subtitle drafts, and show subtitle cues from a selected Storyboard.
+This repository has completed the v0.1 local runnable skeleton, the v0.2 AI Planning Workflow, and v0.3 Batch 1 through Batch 7 of the fake rendering/subtitle/preview workflow. v0.3 Batch 7 completed fake workflow stabilization and Release Candidate closure. The current planning path uses a local deterministic `FakeLLMProvider` to generate and select Topic Candidates, Script Drafts, and Storyboards from explicitly imported materials, including storyboard scenes on the project detail page; the app can also create fake render jobs, show fake preview manifest metadata, create fake subtitle drafts, and show subtitle cues from a selected Storyboard.
 
 Local development instructions are available in [`docs/development.md`](docs/development.md).
 
-Real OpenAI, Claude, Gemini, or other LLM integrations are still not implemented. The app does not store API keys, secrets, or tokens and does not call real AI services. v0.3 has started with a fake rendering/subtitle/preview foundation, but real MP4 rendering, real video playback, FFmpeg, TTS, real subtitle files, real audio, scheduled generation, platform publishing, production deployment, and user accounts are still not implemented.
+Real OpenAI, Claude, Gemini, or other LLM integrations are still not implemented. The app does not store API keys, secrets, or tokens and does not call real AI services. v0.3 has completed Release Candidate closure for the fake rendering/subtitle/preview metadata workflow, but real MP4 rendering, real video playback, FFmpeg, TTS, real subtitle files, real audio, scheduled generation, platform publishing, production deployment, and user accounts are still not implemented.
 This version is not production ready.
 
 ## Local Quick Start
@@ -48,7 +48,7 @@ Common verification commands:
 - Feed post-publication metrics back into future content review and topic optimization.
 - Use Douyin as the first publishing platform while preserving a multi-platform architecture through Provider abstractions.
 
-Topic Candidate, Script Draft, and Storyboard generation and selection are implemented in v0.2 with a local fake provider. v0.3 has started with fake render jobs, fake preview manifest metadata display, fake subtitle drafts, and subtitle cues. Real AI, real subtitle files, real audio, asset plans, real MP4 rendering and playback, publishing, scheduling, and metrics feedback remain future planned capabilities.
+Topic Candidate, Script Draft, and Storyboard generation and selection are implemented in v0.2 with a local fake provider. v0.3 has completed Release Candidate closure for fake render jobs, fake preview manifest metadata display, fake subtitle drafts, and subtitle cues. Real AI, real subtitle files, real audio, asset plans, real MP4 rendering and playback, publishing, scheduling, and metrics feedback remain future planned capabilities.
 
 ## Current Local Capabilities
 
