@@ -382,7 +382,7 @@
 
 状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，仅完成文档与 ADR 边界，不代表 v0.8 release 已完成。
 
-Batch 1（本批）：
+Batch 1（已完成）：
 
 - Provider & Credential Security documentation foundation。
 - 只更新 README、产品规格、架构、路线图、本地开发说明和 ADR。
@@ -396,6 +396,25 @@ Batch 1（本批）：
 - 不接真实 Douyin API。
 - 不抓取真实指标。
 - 不上传、不发布、不排期发布。
+
+Batch 2（本批）：
+
+- Provider Registry & Capability Metadata backend foundation。
+- backend-only。
+- 新增只读 Provider Registry metadata。
+- 新增 capability metadata。
+- 明确 `fake_local`、`douyin_sandbox` 和 `douyin_real` source separation。
+- 明确未实现真实平台能力不得标记为 available。
+- API 只返回非敏感 metadata、`connection_status`、capability metadata 和 boundary notes。
+- 不实现 OAuth。
+- 不保存 token。
+- 不新增 Credential storage。
+- 不新增数据库表。
+- 不新增前端 UI。
+- 不接真实 Douyin API。
+- 不抓取真实指标。
+- 不上传、不发布、不排期发布。
+- 不调用外部服务。
 
 范围：
 

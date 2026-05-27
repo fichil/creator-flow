@@ -11,6 +11,7 @@ from app.api.routes import (
     materials,
     metric_review_summaries,
     metrics,
+    provider_registry,
     projects,
     publishing,
     render_jobs,
@@ -42,6 +43,7 @@ app.add_middleware(
 )
 
 app.include_router(health.router, prefix="/api", tags=["health"])
+app.include_router(provider_registry.router, prefix="/api/providers", tags=["providers"])
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(materials.router, prefix="/api/projects", tags=["materials"])
 app.include_router(content_plans.router, prefix="/api/projects", tags=["content-plans"])

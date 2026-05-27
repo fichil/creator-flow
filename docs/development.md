@@ -181,6 +181,29 @@ git status --short
 
 安全扫描应确认没有真实密钥、access token、refresh token、API key、secret、私钥、credential、authorization code、OAuth client secret、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体、运行时文件、真实平台返回数据、真实 Douyin 凭据或真实 OAuth 回调凭据进入 Git。文档可以出现 fake/local、placeholder、OAuth is not implemented、tokens are not stored、credential boundary、secret boundary 和 token lifecycle 等边界说明，但不能提交真实凭据或运行时产物。
 
+## v0.8 Batch 2 Provider Registry & Capability Metadata backend foundation 验收
+
+v0.8 Batch 2 允许新增 backend-only Provider Registry metadata 和只读 API，用于展示 provider metadata、source type、connection status、capability metadata 和 boundary notes。该 API 只返回非敏感 metadata，必须明确区分 `fake_local`、`douyin_sandbox` 和 `douyin_real`，且 planned / unavailable provider 不得被标记为可用真实集成。
+
+本批不新增前端 UI，不新增数据库表，不实现 OAuth，不新增 OAuth callback route，不新增 Credential storage，不新增 token storage，不新增真实 Provider adapter，不接真实 Douyin API，不抓取真实指标，不上传、不发布、不排期发布，也不调用外部服务。
+
+本地质量门禁从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。安全扫描如果命中文档边界说明、provider registry capability 字段名或测试中的敏感字段名黑名单，应逐项确认它们只是边界说明或测试断言，不是真实值。
+
 ## 启动 Backend
 
 ```powershell
