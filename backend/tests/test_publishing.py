@@ -51,6 +51,10 @@ def create_publish_intent(client: TestClient, project_id: int, review_draft_id: 
     return client.post(f"/api/projects/{project_id}/publish-intents", json=body)
 
 
+def confirm_publish_intent(client: TestClient, project_id: int, publish_intent_id: int):
+    return client.post(f"/api/projects/{project_id}/publish-intents/{publish_intent_id}/confirm")
+
+
 def test_create_publish_intent_for_approved_review_draft(client: TestClient):
     project_id, review_draft = prepare_review_draft(client)
 
@@ -132,6 +136,7 @@ def test_cross_project_publish_intent_access_returns_404(client: TestClient):
 
     read_response = client.get(f"/api/projects/{second_project_id}/publish-intents/{publish_intent['id']}")
     cancel_response = client.post(f"/api/projects/{second_project_id}/publish-intents/{publish_intent['id']}/cancel")
+    confirm_response = confirm_publish_intent(client, second_project_id, publish_intent["id"])
     records_response = client.get(
         f"/api/projects/{second_project_id}/publish-intents/{publish_intent['id']}/publication-records"
     )
@@ -139,7 +144,97 @@ def test_cross_project_publish_intent_access_returns_404(client: TestClient):
     assert read_response.status_code == 404
     assert read_response.json()["detail"] == "publish intent not found"
     assert cancel_response.status_code == 404
+    assert confirm_response.status_code == 404
     assert records_response.status_code == 404
+
+
+def test_confirm_pending_publish_intent_creates_placeholder_publication_record(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+
+    response = confirm_publish_intent(client, project_id, publish_intent["id"])
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == publish_intent["id"]
+    assert body["publish_status"] == "confirmed"
+    records_response = client.get(
+        f"/api/projects/{project_id}/publish-intents/{publish_intent['id']}/publication-records"
+    )
+    assert records_response.status_code == 200
+    records = records_response.json()
+    assert len(records) == 1
+    record = records[0]
+    assert record["project_id"] == project_id
+    assert record["publish_intent_id"] == publish_intent["id"]
+    assert record["target_platform"] == "douyin"
+    assert record["provider_name"] == "placeholder"
+    assert record["external_publication_id"] is None
+    assert record["publication_status"] == "not_started"
+    assert record["error_message"] is None
+    assert_no_publication_side_effects(expected_publish_intents=1, expected_publication_records=1)
+
+
+def test_confirm_publish_intent_does_not_change_review_draft_status(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+
+    response = confirm_publish_intent(client, project_id, publish_intent["id"])
+    review_response = client.get(f"/api/projects/{project_id}/review-drafts/{review_draft['id']}")
+
+    assert response.status_code == 200
+    assert review_response.status_code == 200
+    assert review_response.json()["review_status"] == "approved"
+    assert_no_publication_side_effects(expected_publish_intents=1, expected_publication_records=1)
+
+
+def test_confirmed_publish_intent_cannot_be_confirmed_again(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+    confirm_publish_intent(client, project_id, publish_intent["id"])
+
+    response = confirm_publish_intent(client, project_id, publish_intent["id"])
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "publish intent is already confirmed"
+    records = client.get(
+        f"/api/projects/{project_id}/publish-intents/{publish_intent['id']}/publication-records"
+    ).json()
+    assert len(records) == 1
+    assert_no_publication_side_effects(expected_publish_intents=1, expected_publication_records=1)
+
+
+def test_cancelled_publish_intent_cannot_be_confirmed(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+    client.post(f"/api/projects/{project_id}/publish-intents/{publish_intent['id']}/cancel")
+
+    response = confirm_publish_intent(client, project_id, publish_intent["id"])
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "cancelled publish intent cannot be confirmed"
+    assert_no_publication_side_effects(expected_publish_intents=1)
+
+
+def test_archived_project_cannot_confirm_publish_intent(client: TestClient):
+    project_id, review_draft = prepare_review_draft(client)
+    publish_intent = create_publish_intent(client, project_id, review_draft["id"]).json()
+    client.post(f"/api/projects/{project_id}/archive")
+
+    response = confirm_publish_intent(client, project_id, publish_intent["id"])
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "archived project cannot confirm publish intents"
+    assert_no_publication_side_effects(expected_publish_intents=1)
+
+
+def test_confirm_missing_publish_intent_returns_404(client: TestClient):
+    project_id = create_project(client)
+
+    response = confirm_publish_intent(client, project_id, 999)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "publish intent not found"
 
 
 def test_cancel_publish_intent(client: TestClient):
@@ -216,15 +311,18 @@ def test_review_draft_approve_does_not_auto_create_publish_intent(client: TestCl
 def test_publish_intent_workflow_does_not_call_real_provider_upload_oauth_or_publish(client: TestClient):
     project_id, review_draft = prepare_review_draft(client)
     create_response = create_publish_intent(client, project_id, review_draft["id"])
-    cancel_response = client.post(f"/api/projects/{project_id}/publish-intents/{create_response.json()['id']}/cancel")
+    confirm_response = confirm_publish_intent(client, project_id, create_response.json()["id"])
 
     assert create_response.status_code == 201
-    assert cancel_response.status_code == 200
+    assert confirm_response.status_code == 200
     assert not get_settings().uploads_dir.exists() or list(get_settings().uploads_dir.rglob("*")) == []
-    assert_no_publication_side_effects(expected_publish_intents=1)
+    assert_no_publication_side_effects(expected_publish_intents=1, expected_publication_records=1)
 
 
-def assert_no_publication_side_effects(expected_publish_intents: int = 0) -> None:
+def assert_no_publication_side_effects(
+    expected_publish_intents: int = 0,
+    expected_publication_records: int = 0,
+) -> None:
     with sqlite3.connect(get_settings().database_path) as connection:
         counts = {
             "publish_intents": connection.execute("SELECT COUNT(*) FROM publish_intents").fetchone()[0],
@@ -236,7 +334,7 @@ def assert_no_publication_side_effects(expected_publish_intents: int = 0) -> Non
         }
     assert counts == {
         "publish_intents": expected_publish_intents,
-        "publication_records": 0,
+        "publication_records": expected_publication_records,
         "render_jobs": 0,
         "render_artifacts": 0,
         "subtitle_drafts": 0,

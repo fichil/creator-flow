@@ -6,13 +6,13 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 
 ## 当前状态
 
-`v0.5 Human-Confirmed Douyin Publishing - Batch 2 backend domain foundation`
+`v0.5 Human-Confirmed Douyin Publishing - Batch 3 confirm workflow foundation`
 
-当前仓库已完成 v0.1 本地可运行骨架、v0.2 AI Planning Workflow、v0.3 fake rendering/subtitle/preview workflow、v0.4 local fake/manual Scheduled Draft Generation workflow，以及 v0.5 Batch 1 到 Batch 2 的发布边界与 backend domain foundation。当前主链路支持本地 deterministic `FakeLLMProvider` 的 Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata workflow；v0.4 支持项目级 `ContentPlan`、`GenerationSchedule` 配置、fake manual `GenerationRun` 记录，以及由 manual run 同步创建的 `Review Draft` placeholder。v0.5 当前新增 backend-only 的 `PublishIntent` / `PublicationRecord` 基础：只能基于同一项目内已 approved 的 Review Draft 显式创建发布意图，并可查询或取消该意图。
+当前仓库已完成 v0.1 本地可运行骨架、v0.2 AI Planning Workflow、v0.3 fake rendering/subtitle/preview workflow、v0.4 local fake/manual Scheduled Draft Generation workflow，以及 v0.5 Batch 1 到 Batch 3 的发布边界、backend domain foundation 和确认工作流基础。当前主链路支持本地 deterministic `FakeLLMProvider` 的 Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata workflow；v0.4 支持项目级 `ContentPlan`、`GenerationSchedule` 配置、fake manual `GenerationRun` 记录，以及由 manual run 同步创建的 `Review Draft` placeholder。v0.5 当前支持 backend-only 的 `PublishIntent` / `PublicationRecord` 基础：只能基于同一项目内已 approved 的 Review Draft 显式创建发布意图，可查询、取消或确认该意图；confirm 只创建本地 `not_started` 的 `PublicationRecord` placeholder。
 
 本地开发说明见 [`docs/development.md`](docs/development.md)。
 
-当前仍不接真实 OpenAI / Claude / Gemini / 其他 LLM，不保存 API key、secret 或 token，不联网调用真实 AI。v0.4 当前仍是 local fake/manual workflow：scheduled `GenerationRun`、Scheduler / Trigger Engine、完整 `Review Queue`、真实 MP4 渲染、真实视频播放、FFmpeg、TTS、真实字幕文件、真实音频、平台发布、生产部署和账号体系仍未实现。Review Draft 仍是 placeholder；approve / reject 只改变审核状态，不发布、不上传、不渲染、不生成媒体。v0.5 发布领域当前也只是后端基础：不接 Douyin API，不实现 OAuth，不保存凭据，不上传、不发布、不排期、不自动发布。
+当前仍不接真实 OpenAI / Claude / Gemini / 其他 LLM，不保存 API key、secret 或 token，不联网调用真实 AI。v0.4 当前仍是 local fake/manual workflow：scheduled `GenerationRun`、Scheduler / Trigger Engine、完整 `Review Queue`、真实 MP4 渲染、真实视频播放、FFmpeg、TTS、真实字幕文件、真实音频、平台发布、生产部署和账号体系仍未实现。Review Draft 仍是 placeholder；approve / reject 只改变审核状态，不发布、不上传、不渲染、不生成媒体。v0.5 发布领域当前也只是后端基础：confirm 表示用户确认进入发布执行准备阶段，但不接 Douyin API，不实现 OAuth，不保存凭据，不上传、不发布、不排期、不自动发布。
 当前版本不适合作为生产部署使用。
 
 ## 本地启动快捷入口
@@ -48,7 +48,7 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 - 发布后指标回流，用于后续内容复盘和选题优化。
 - 以抖音作为首个发布平台，同时通过 Provider 抽象保留多平台扩展能力。
 
-其中 Topic Candidate、Script Draft 和 Storyboard 的生成与选择已在 v0.2 中以本地 fake provider 形式实现；v0.3 已完成 fake render job、fake preview manifest metadata 展示、fake subtitle draft 和 subtitle cues 的 RC 收口；v0.4 已完成 ContentPlan、GenerationSchedule、fake manual GenerationRun 和 Review Draft placeholder 的 RC 收口；v0.5 已开始建立 PublishIntent / PublicationRecord 后端基础。真实 AI、真实字幕文件、真实音频、素材方案、真实 MP4 渲染与播放、真实发布、scheduled GenerationRun、Scheduler / Trigger Engine、完整 Review Queue 和指标回流仍属于后续计划方向。
+其中 Topic Candidate、Script Draft 和 Storyboard 的生成与选择已在 v0.2 中以本地 fake provider 形式实现；v0.3 已完成 fake render job、fake preview manifest metadata 展示、fake subtitle draft 和 subtitle cues 的 RC 收口；v0.4 已完成 ContentPlan、GenerationSchedule、fake manual GenerationRun 和 Review Draft placeholder 的 RC 收口；v0.5 已开始建立 PublishIntent / PublicationRecord 后端基础和 confirm workflow foundation。真实 AI、真实字幕文件、真实音频、素材方案、真实 MP4 渲染与播放、真实发布、scheduled GenerationRun、Scheduler / Trigger Engine、完整 Review Queue 和指标回流仍属于后续计划方向。
 
 ## 当前本地能力
 
@@ -65,8 +65,9 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 - 创建和查看绑定到 `ContentPlan` 的 `GenerationSchedule` 配置，并启用或停用计划；当前不会执行 scheduled trigger。
 - 手动创建 fake `GenerationRun`，并同步创建待审核的 `Review Draft` placeholder；项目详情页会刷新 GenerationRuns 与 Review Drafts。
 - 查看 `Review Draft` placeholder，并执行 approve / reject 状态变更；该操作不会发布、上传、渲染或生成媒体。
-- 基于同一项目内已 approved 的 `Review Draft` 显式创建 `PublishIntent`，查看发布意图列表与详情，并取消待确认发布意图；当前不会创建发布记录或执行真实平台动作。
-- 查询指定 `PublishIntent` 下的 `PublicationRecord` 列表；当前只提供后端领域基础，默认不会产生真实发布记录。
+- 基于同一项目内已 approved 的 `Review Draft` 显式创建 `PublishIntent`，查看发布意图列表与详情，并取消待确认发布意图。
+- 确认待确认的 `PublishIntent`，将其状态改为 `confirmed`，并创建 1 条本地 `not_started` 的 `PublicationRecord` placeholder；当前不会执行真实平台动作。
+- 查询指定 `PublishIntent` 下的 `PublicationRecord` 列表。
 - 归档项目仍可查看已有素材和规划草稿，但不能继续生成或选择。
 - 将项目与素材元数据保存到本地 `SQLite`。
 - 将用户上传文件保存到本地 `uploads/`，且不提交到 Git。

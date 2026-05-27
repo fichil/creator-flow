@@ -89,6 +89,43 @@ def cancel_publish_intent(project_id: int, publish_intent_id: int, db=Depends(ge
     return _get_publish_intent(db, project_id, publish_intent_id)
 
 
+@router.post("/{project_id}/publish-intents/{publish_intent_id}/confirm", response_model=PublishIntentResponse)
+def confirm_publish_intent(project_id: int, publish_intent_id: int, db=Depends(get_db)):
+    project = _get_project(db, project_id)
+    _ensure_project_mutable(project, "confirm publish intents")
+    publish_intent = _get_publish_intent(db, project_id, publish_intent_id)
+    if publish_intent["publish_status"] == "cancelled":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="cancelled publish intent cannot be confirmed")
+    if publish_intent["publish_status"] == "confirmed":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="publish intent is already confirmed")
+    if publish_intent["publish_status"] != "pending_confirmation":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="only pending publish intents can be confirmed",
+        )
+
+    db.execute(
+        """
+        UPDATE publish_intents
+        SET publish_status = 'confirmed', updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND project_id = ?
+        """,
+        (publish_intent_id, project_id),
+    )
+    db.execute(
+        """
+        INSERT INTO publication_records (
+            project_id, publish_intent_id, target_platform, provider_name,
+            external_publication_id, publication_status, error_message
+        )
+        VALUES (?, ?, ?, 'placeholder', NULL, 'not_started', NULL)
+        """,
+        (project_id, publish_intent_id, publish_intent["target_platform"]),
+    )
+    db.commit()
+    return _get_publish_intent(db, project_id, publish_intent_id)
+
+
 @router.get(
     "/{project_id}/publish-intents/{publish_intent_id}/publication-records",
     response_model=list[PublicationRecordResponse],
