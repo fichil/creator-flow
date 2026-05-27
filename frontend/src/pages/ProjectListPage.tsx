@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { listProjects, Project } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
+import { ProviderConnectionStatePanel } from "../components/ProviderConnectionStatePanel";
 import { ProviderRegistryPanel } from "../components/ProviderRegistryPanel";
 import { StatusBadge } from "../components/StatusBadge";
 
@@ -43,6 +44,7 @@ export function ProjectListPage({ onCreate, onOpen }: ProjectListPageProps) {
         </button>
       </div>
       <ProviderRegistryPanel />
+      <ProviderConnectionStatePanel />
       <label className="mt-5 inline-flex items-center gap-2 text-sm text-stone-700">
         <input
           checked={includeArchived}

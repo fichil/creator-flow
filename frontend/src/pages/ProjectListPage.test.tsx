@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectListPage } from "./ProjectListPage";
-import type { PlatformProvider, Project } from "../api/client";
+import type { PlatformProvider, Project, ProviderConnectionState } from "../api/client";
 
 const providers: PlatformProvider[] = [
   {
@@ -83,6 +83,65 @@ const project: Project = {
   material_count: 2,
 };
 
+const connections: ProviderConnectionState[] = [
+  {
+    provider_id: "fake_local",
+    provider_name: "Local Fake Provider",
+    source_type: "fake_local",
+    implementation_status: "available_local_fake",
+    connection_status: "not_required",
+    authorization_status: "not_required",
+    sensitive_storage_status: "none",
+    is_available: true,
+    is_real_provider: false,
+    requires_user_authorization: false,
+    can_connect: false,
+    can_refresh: false,
+    can_revoke: false,
+    can_disconnect: false,
+    safe_status_message: "Local fake provider does not require authorization and stores no tokens.",
+    boundary_notes: ["local fake/demo/test data only", "not real Douyin data", "no OAuth required", "no tokens stored"],
+  },
+  {
+    provider_id: "douyin_sandbox",
+    provider_name: "Douyin Sandbox Placeholder",
+    source_type: "sandbox",
+    implementation_status: "planned",
+    connection_status: "not_connected",
+    authorization_status: "not_implemented",
+    sensitive_storage_status: "not_implemented",
+    is_available: false,
+    is_real_provider: false,
+    requires_user_authorization: true,
+    can_connect: false,
+    can_refresh: false,
+    can_revoke: false,
+    can_disconnect: false,
+    safe_status_message:
+      "Douyin sandbox is placeholder metadata only; OAuth is not implemented and tokens are not stored.",
+    boundary_notes: ["placeholder only", "OAuth is not implemented", "tokens are not stored", "no real Douyin API call"],
+  },
+  {
+    provider_id: "douyin_real",
+    provider_name: "Douyin Real Placeholder",
+    source_type: "real",
+    implementation_status: "planned",
+    connection_status: "not_connected",
+    authorization_status: "not_implemented",
+    sensitive_storage_status: "not_implemented",
+    is_available: false,
+    is_real_provider: true,
+    requires_user_authorization: true,
+    can_connect: false,
+    can_refresh: false,
+    can_revoke: false,
+    can_disconnect: false,
+    safe_status_message:
+      "Douyin real provider is a future placeholder only; no OAuth, token storage, metrics fetching, upload, publish, or scheduling is implemented.",
+    boundary_notes: ["future real provider placeholder only", "not real Douyin integration", "no real metrics fetching"],
+  },
+];
+
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(
     new Response(JSON.stringify(body), {
@@ -99,6 +158,9 @@ function installListPageFetchMock(projects: Project[] = [project]) {
     calls.push(`GET ${url.pathname}${url.search}`);
     if (url.pathname === "/api/providers") {
       return jsonResponse({ providers });
+    }
+    if (url.pathname === "/api/provider-connections") {
+      return jsonResponse({ connections });
     }
     if (url.pathname === "/api/projects") {
       return jsonResponse(projects);
@@ -119,7 +181,7 @@ describe("ProjectListPage", () => {
     vi.unstubAllGlobals();
   });
 
-  it("keeps the project list workflow visible while mounting Provider Registry metadata", async () => {
+  it("keeps the project list workflow visible while mounting Provider metadata panels", async () => {
     const server = installListPageFetchMock();
 
     render(<ProjectListPage onCreate={vi.fn()} onOpen={vi.fn()} />);
@@ -130,7 +192,11 @@ describe("ProjectListPage", () => {
     expect(await screen.findByLabelText("Provider fake_local")).toBeTruthy();
     expect(screen.getByLabelText("Provider douyin_sandbox")).toBeTruthy();
     expect(screen.getByLabelText("Provider douyin_real")).toBeTruthy();
+    expect(await screen.findByLabelText("Provider connection fake_local")).toBeTruthy();
+    expect(screen.getByLabelText("Provider connection douyin_sandbox")).toBeTruthy();
+    expect(screen.getByLabelText("Provider connection douyin_real")).toBeTruthy();
     await waitFor(() => expect(server.calls).toContain("GET /api/providers"));
+    await waitFor(() => expect(server.calls).toContain("GET /api/provider-connections"));
     await waitFor(() => expect(server.calls).toContain("GET /api/projects"));
   });
 

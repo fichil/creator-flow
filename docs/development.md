@@ -250,6 +250,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。文档和测试中的 token / OAuth / credential 只能作为“不保存、不实现、不暴露”的边界说明或黑名单断言；若扫描命中这些词，应逐项确认它们不是实际值。
 
+## v0.8 Batch 5 Provider Connection State frontend read-only UI foundation 验收
+
+v0.8 Batch 5 允许新增 frontend read-only Provider Connection State UI 和 frontend API client 类型，用于消费 Batch 4 的只读 `/api/provider-connections` metadata API，并展示 provider connection state、source type、implementation status、`connection_status`、`authorization_status`、`sensitive_storage_status`、`safe_status_message` 和 boundary notes。
+
+本批不新增 backend API，不修改数据库表，不实现 OAuth，不新增 OAuth callback route，不新增 Credential storage，不新增 token storage，不新增真实 Provider，不新增 connect / authorize / refresh / revoke / disconnect 操作入口，不接真实 Douyin API，不抓取真实指标，不上传、不发布、不排期发布，也不调用外部服务。本批 UI 只能展示非敏感 metadata，UI 文案中的 token / OAuth / credential 只能作为“不保存、不实现、不暴露”的边界说明。
+
+本地质量门禁从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。若扫描命中文档中的安全边界说明、UI 的“不保存 token / OAuth 未实现”文案、测试中的禁止字段名断言、既有忽略规则或依赖元数据，应逐项确认它们只是边界说明或测试断言，不是真实值。
+
 ## 启动 Backend
 
 ```powershell

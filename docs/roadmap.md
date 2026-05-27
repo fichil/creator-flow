@@ -380,7 +380,7 @@
 
 目标：为真实平台接入建立 Provider、OAuth、Credential 和 Secret 管理边界，先解决安全基础和架构基础，再进入抖音 POC。
 
-状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation，Batch 4 为 Provider Connection State & Sensitive Storage Status backend foundation；这些批次不代表 v0.8 release 已完成。
+状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation，Batch 4 为 Provider Connection State & Sensitive Storage Status backend foundation，Batch 5 为 Provider Connection State frontend read-only UI foundation；这些批次不代表 v0.8 release 已完成。
 
 Batch 1（已完成）：
 
@@ -436,7 +436,7 @@ Batch 3（已完成）：
 - 不调用外部服务。
 - 不修改 v0.7.0 release scope。
 
-Batch 4（本批）：
+Batch 4（已完成）：
 
 - Provider Connection State & Sensitive Storage Status backend foundation。
 - backend-only。
@@ -455,6 +455,30 @@ Batch 4（本批）：
 - 不保存 credential material。
 - 不新增真实 Credential storage。
 - 不新增 connect / authorize / refresh / revoke / disconnect 写 API。
+- 不接真实 Douyin API。
+- 不抓取真实指标。
+- 不上传、不发布、不排期发布。
+- 不调用外部服务。
+- 不修改 v0.7.0 release scope。
+
+Batch 5（本批）：
+
+- Provider Connection State frontend read-only UI foundation。
+- frontend-only 或 frontend + docs only。
+- 基于 Batch 4 的只读 `/api/provider-connections` metadata API。
+- 在前端展示 provider connection state、source type、implementation status、`connection_status`、`authorization_status`、`sensitive_storage_status`、`safe_status_message` 和 boundary notes。
+- 明确区分 `fake_local`、`douyin_sandbox` 和 `douyin_real`。
+- 明确 planned / unavailable provider 不得显示为可用真实集成。
+- 明确 `can_connect` / `can_refresh` / `can_revoke` / `can_disconnect` 当前均不可执行。
+- 不新增 backend API。
+- 不修改数据库表。
+- 不实现 OAuth。
+- 不保存 token。
+- 不保存 secret。
+- 不保存 API key。
+- 不保存 credential material。
+- 不新增 Credential storage。
+- 不新增 connect / authorize / refresh / revoke / disconnect 操作。
 - 不接真实 Douyin API。
 - 不抓取真实指标。
 - 不上传、不发布、不排期发布。

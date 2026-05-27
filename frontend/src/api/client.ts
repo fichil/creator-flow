@@ -350,6 +350,32 @@ export type ProviderRegistryListResponse = {
   providers: PlatformProvider[];
 };
 
+export type ProviderConnectionState = {
+  provider_id: string;
+  provider_name: string;
+  source_type: string;
+  implementation_status: string;
+  connection_status: string;
+  authorization_status: string;
+  sensitive_storage_status: string;
+  is_available: boolean;
+  is_real_provider: boolean;
+  requires_user_authorization: boolean;
+  can_connect: boolean;
+  can_refresh: boolean;
+  can_revoke: boolean;
+  can_disconnect: boolean;
+  safe_status_message: string;
+  boundary_notes: string[];
+  last_status_change_reason?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type ProviderConnectionStateListResponse = {
+  connections: ProviderConnectionState[];
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -385,6 +411,11 @@ export function listProjects(options: { includeArchived?: boolean } = {}): Promi
 export async function listPlatformProviders(): Promise<PlatformProvider[]> {
   const response = await request<ProviderRegistryListResponse>("/api/providers");
   return response.providers;
+}
+
+export async function listProviderConnectionStates(): Promise<ProviderConnectionState[]> {
+  const response = await request<ProviderConnectionStateListResponse>("/api/provider-connections");
+  return response.connections;
 }
 
 export function createProject(payload: { title: string; description?: string }): Promise<Project> {
