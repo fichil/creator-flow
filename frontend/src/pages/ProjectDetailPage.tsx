@@ -49,6 +49,25 @@ const materialLabels: Record<string, string> = {
   screenshot: "截图",
 };
 
+const statusLabels: Record<string, string> = {
+  candidate: "候选",
+  draft: "草稿",
+  selected: "已选择",
+  dismissed: "已忽略",
+  queued: "排队中",
+  running: "运行中",
+  succeeded: "成功",
+  failed: "失败",
+};
+
+function formatStatus(status: string) {
+  return statusLabels[status] ?? status;
+}
+
+function formatSourceMaterialIds(ids: number[]) {
+  return ids.length > 0 ? ids.join(", ") : "无";
+}
+
 export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps) {
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -206,8 +225,8 @@ function TopicCandidatesPanel({ isArchived, projectId }: { isArchived: boolean; 
     <section className="mt-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-stone-950">Topic Candidates</h2>
-          <p className="mt-1 text-sm text-stone-600">基于已显式导入素材生成的 fake provider 候选选题。</p>
+          <h2 className="text-lg font-semibold text-stone-950">选题候选</h2>
+          <p className="mt-1 text-sm text-stone-600">基于已显式导入素材生成的模拟选题候选。</p>
         </div>
         <button
           className="rounded bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
@@ -215,20 +234,20 @@ function TopicCandidatesPanel({ isArchived, projectId }: { isArchived: boolean; 
           type="button"
           onClick={handleGenerate}
         >
-          {generating ? "Generating..." : "Generate Topic Candidates"}
+          {generating ? "生成中..." : "生成选题候选"}
         </button>
       </div>
 
       {isArchived && (
         <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
-          Archived projects are read-only.
+          当前项目已归档，只能查看，不能继续修改。
         </p>
       )}
       {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {loading && <p className="mt-4 text-sm text-stone-600">正在加载候选选题...</p>}
       {!loading && candidates.length === 0 && (
         <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
-          No topic candidates yet.
+          暂无选题候选。
         </p>
       )}
       {!loading && candidates.length > 0 && (
@@ -262,7 +281,7 @@ function TopicCandidateCard({
   const isSelected = candidate.status === "selected";
   return (
     <article
-      aria-label={`Topic candidate: ${candidate.title}`}
+      aria-label={`选题候选：${candidate.title}`}
       className={`rounded border bg-white p-4 ${
         isSelected ? "border-teal-300 bg-teal-50 ring-1 ring-teal-200" : "border-stone-200"
       }`}
@@ -271,11 +290,11 @@ function TopicCandidateCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold text-stone-950">{candidate.title}</h3>
-          <p className="mt-1 text-xs text-stone-500">Created {new Date(candidate.created_at).toLocaleString()}</p>
+          <p className="mt-1 text-xs text-stone-500">创建于 {new Date(candidate.created_at).toLocaleString()}</p>
         </div>
         {isSelected ? (
           <span className="rounded border border-teal-300 bg-white px-3 py-1 text-xs font-semibold text-teal-800">
-            Selected
+            已选择
           </span>
         ) : (
           <button
@@ -284,35 +303,35 @@ function TopicCandidateCard({
             type="button"
             onClick={() => onSelect(candidate.id)}
           >
-            {selecting ? "Selecting..." : "Select"}
+            {selecting ? "选择中..." : "选择"}
           </button>
         )}
       </div>
       <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Angle</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">角度</dt>
           <dd className="mt-1 text-stone-800">{candidate.angle}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Audience</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">目标受众</dt>
           <dd className="mt-1 text-stone-800">{candidate.audience}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Hook</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">开场钩子</dt>
           <dd className="mt-1 text-stone-800">{candidate.hook}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Status</dt>
-          <dd className="mt-1 text-stone-800">{candidate.status}</dd>
+          <dt className="text-xs font-semibold uppercase text-stone-500">状态</dt>
+          <dd className="mt-1 text-stone-800">{formatStatus(candidate.status)}</dd>
         </div>
       </dl>
       <div className="mt-3 text-sm">
-        <p className="text-xs font-semibold uppercase text-stone-500">Rationale</p>
+        <p className="text-xs font-semibold uppercase text-stone-500">生成理由</p>
         <p className="mt-1 text-stone-800">{candidate.rationale}</p>
       </div>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
-        <span>Source materials: {candidate.source_material_ids.join(", ") || "none"}</span>
-        {candidate.selected_at && <span>Selected {new Date(candidate.selected_at).toLocaleString()}</span>}
+        <span>来源素材：{formatSourceMaterialIds(candidate.source_material_ids)}</span>
+        {candidate.selected_at && <span>选择于 {new Date(candidate.selected_at).toLocaleString()}</span>}
       </div>
     </article>
   );
@@ -321,10 +340,10 @@ function TopicCandidateCard({
 function formatTopicCandidateError(err: unknown, fallback: string) {
   const message = err instanceof Error ? err.message : fallback;
   if (message === "project has no materials") {
-    return "Add at least one material before generating topic candidates.";
+    return "请先添加至少一个素材，再生成选题候选。";
   }
   if (message.startsWith("archived project")) {
-    return "Archived projects are read-only.";
+    return "当前项目已归档，只能查看，不能继续修改。";
   }
   if (message.includes("(404)") || message.includes("not found")) {
     return message;
@@ -346,7 +365,7 @@ function ScriptDraftsPanel({ isArchived, projectId }: { isArchived: boolean; pro
       setScriptDrafts(items);
       setError(null);
     } catch (err) {
-      setError(formatScriptDraftError(err, "Failed to load script drafts."));
+      setError(formatScriptDraftError(err, "加载脚本草稿失败"));
     } finally {
       setLoading(false);
     }
@@ -366,7 +385,7 @@ function ScriptDraftsPanel({ isArchived, projectId }: { isArchived: boolean; pro
       await generateScriptDrafts(projectId);
       await reloadScriptDrafts();
     } catch (err) {
-      setError(formatScriptDraftError(err, "Failed to generate script drafts."));
+      setError(formatScriptDraftError(err, "生成脚本草稿失败"));
     } finally {
       setGenerating(false);
     }
@@ -382,7 +401,7 @@ function ScriptDraftsPanel({ isArchived, projectId }: { isArchived: boolean; pro
       await selectScriptDraft(projectId, scriptDraftId);
       await reloadScriptDrafts();
     } catch (err) {
-      setError(formatScriptDraftError(err, "Failed to select script draft."));
+      setError(formatScriptDraftError(err, "选择脚本草稿失败"));
     } finally {
       setSelectingId(null);
     }
@@ -392,8 +411,8 @@ function ScriptDraftsPanel({ isArchived, projectId }: { isArchived: boolean; pro
     <section className="mt-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-stone-950">Script Drafts</h2>
-          <p className="mt-1 text-sm text-stone-600">Fake provider drafts based on the selected topic and explicit materials.</p>
+          <h2 className="text-lg font-semibold text-stone-950">脚本草稿</h2>
+          <p className="mt-1 text-sm text-stone-600">基于已选选题和显式导入素材生成的模拟脚本草稿。</p>
         </div>
         <button
           className="rounded bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
@@ -401,20 +420,20 @@ function ScriptDraftsPanel({ isArchived, projectId }: { isArchived: boolean; pro
           type="button"
           onClick={handleGenerate}
         >
-          {generating ? "Generating..." : "Generate Script Drafts"}
+          {generating ? "生成中..." : "生成脚本草稿"}
         </button>
       </div>
 
       {isArchived && (
         <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
-          Archived projects are read-only.
+          当前项目已归档，只能查看，不能继续修改。
         </p>
       )}
       {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {loading && <p className="mt-4 text-sm text-stone-600">Loading script drafts...</p>}
+      {loading && <p className="mt-4 text-sm text-stone-600">正在加载脚本草稿...</p>}
       {!loading && scriptDrafts.length === 0 && (
         <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
-          No script drafts yet.
+          暂无脚本草稿。
         </p>
       )}
       {!loading && scriptDrafts.length > 0 && (
@@ -448,7 +467,7 @@ function ScriptDraftCard({
   const isSelected = scriptDraft.status === "selected";
   return (
     <article
-      aria-label={`Script draft: ${scriptDraft.title}`}
+      aria-label={`脚本草稿：${scriptDraft.title}`}
       className={`rounded border bg-white p-4 ${
         isSelected ? "border-indigo-300 bg-indigo-50 ring-1 ring-indigo-200" : "border-stone-200"
       }`}
@@ -457,11 +476,11 @@ function ScriptDraftCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold text-stone-950">{scriptDraft.title}</h3>
-          <p className="mt-1 text-xs text-stone-500">Created {new Date(scriptDraft.created_at).toLocaleString()}</p>
+          <p className="mt-1 text-xs text-stone-500">创建于 {new Date(scriptDraft.created_at).toLocaleString()}</p>
         </div>
         {isSelected ? (
           <span className="rounded border border-indigo-300 bg-white px-3 py-1 text-xs font-semibold text-indigo-800">
-            Selected
+            已选择
           </span>
         ) : scriptDraft.status === "draft" ? (
           <button
@@ -470,39 +489,39 @@ function ScriptDraftCard({
             type="button"
             onClick={() => onSelect(scriptDraft.id)}
           >
-            {selecting ? "Selecting..." : "Select"}
+            {selecting ? "选择中..." : "选择"}
           </button>
         ) : null}
       </div>
       <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Opening hook</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">开场钩子</dt>
           <dd className="mt-1 text-stone-800">{scriptDraft.opening_hook}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Call to action</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">行动引导</dt>
           <dd className="mt-1 text-stone-800">{scriptDraft.call_to_action}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Estimated duration</dt>
-          <dd className="mt-1 text-stone-800">{scriptDraft.estimated_duration_seconds} seconds</dd>
+          <dt className="text-xs font-semibold uppercase text-stone-500">预计时长</dt>
+          <dd className="mt-1 text-stone-800">{scriptDraft.estimated_duration_seconds} 秒</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Status</dt>
-          <dd className="mt-1 text-stone-800">{scriptDraft.status}</dd>
+          <dt className="text-xs font-semibold uppercase text-stone-500">状态</dt>
+          <dd className="mt-1 text-stone-800">{formatStatus(scriptDraft.status)}</dd>
         </div>
       </dl>
       <div className="mt-3 text-sm">
-        <p className="text-xs font-semibold uppercase text-stone-500">Body</p>
+        <p className="text-xs font-semibold uppercase text-stone-500">正文</p>
         <p className="mt-1 whitespace-pre-wrap text-stone-800">{scriptDraft.body}</p>
       </div>
       <div className="mt-3 text-sm">
-        <p className="text-xs font-semibold uppercase text-stone-500">Rationale</p>
+        <p className="text-xs font-semibold uppercase text-stone-500">生成理由</p>
         <p className="mt-1 text-stone-800">{scriptDraft.rationale}</p>
       </div>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
-        <span>Source materials: {scriptDraft.source_material_ids.join(", ") || "none"}</span>
-        {scriptDraft.selected_at && <span>Selected {new Date(scriptDraft.selected_at).toLocaleString()}</span>}
+        <span>来源素材：{formatSourceMaterialIds(scriptDraft.source_material_ids)}</span>
+        {scriptDraft.selected_at && <span>选择于 {new Date(scriptDraft.selected_at).toLocaleString()}</span>}
       </div>
     </article>
   );
@@ -511,13 +530,13 @@ function ScriptDraftCard({
 function formatScriptDraftError(err: unknown, fallback: string) {
   const message = err instanceof Error ? err.message : fallback;
   if (message === "project has no materials") {
-    return "Add at least one material before generating script drafts.";
+    return "请先添加至少一个素材，再生成脚本草稿。";
   }
   if (message === "project has no selected topic candidate") {
-    return "Select a topic candidate before generating script drafts.";
+    return "请先选择一个选题候选，再生成脚本草稿。";
   }
   if (message.startsWith("archived project")) {
-    return "Archived projects are read-only.";
+    return "当前项目已归档，只能查看，不能继续修改。";
   }
   if (message.includes("(404)") || message.includes("not found")) {
     return message;
@@ -548,7 +567,7 @@ function StoryboardsPanel({
       onSelectionStateChange(items.some((storyboard) => storyboard.status === "selected"));
       setError(null);
     } catch (err) {
-      setError(formatStoryboardError(err, "Failed to load storyboards."));
+      setError(formatStoryboardError(err, "加载分镜脚本失败"));
     } finally {
       setLoading(false);
     }
@@ -568,7 +587,7 @@ function StoryboardsPanel({
       await generateStoryboards(projectId);
       await reloadStoryboards();
     } catch (err) {
-      setError(formatStoryboardError(err, "Failed to generate storyboards."));
+      setError(formatStoryboardError(err, "生成分镜脚本失败"));
     } finally {
       setGenerating(false);
     }
@@ -584,7 +603,7 @@ function StoryboardsPanel({
       await selectStoryboard(projectId, storyboardId);
       await reloadStoryboards();
     } catch (err) {
-      setError(formatStoryboardError(err, "Failed to select storyboard."));
+      setError(formatStoryboardError(err, "选择分镜脚本失败"));
     } finally {
       setSelectingId(null);
     }
@@ -594,9 +613,9 @@ function StoryboardsPanel({
     <section className="mt-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-stone-950">Storyboards</h2>
+          <h2 className="text-lg font-semibold text-stone-950">分镜脚本</h2>
           <p className="mt-1 text-sm text-stone-600">
-            Fake provider storyboard drafts based on the selected topic, selected script, and explicit materials.
+            基于已选选题、已选脚本和显式导入素材生成的模拟分镜脚本。
           </p>
         </div>
         <button
@@ -605,20 +624,20 @@ function StoryboardsPanel({
           type="button"
           onClick={handleGenerate}
         >
-          {generating ? "Generating..." : "Generate Storyboards"}
+          {generating ? "生成中..." : "生成分镜脚本"}
         </button>
       </div>
 
       {isArchived && (
         <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
-          Archived projects are read-only.
+          当前项目已归档，只能查看，不能继续修改。
         </p>
       )}
       {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {loading && <p className="mt-4 text-sm text-stone-600">Loading storyboards...</p>}
+      {loading && <p className="mt-4 text-sm text-stone-600">正在加载分镜脚本...</p>}
       {!loading && storyboards.length === 0 && (
         <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
-          No storyboards yet.
+          暂无分镜脚本。
         </p>
       )}
       {!loading && storyboards.length > 0 && (
@@ -654,7 +673,7 @@ function StoryboardCard({
 
   return (
     <article
-      aria-label={`Storyboard: ${storyboard.title}`}
+      aria-label={`分镜脚本：${storyboard.title}`}
       className={`rounded border bg-white p-4 ${
         isSelected ? "border-sky-300 bg-sky-50 ring-1 ring-sky-200" : "border-stone-200"
       }`}
@@ -663,11 +682,11 @@ function StoryboardCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold text-stone-950">{storyboard.title}</h3>
-          <p className="mt-1 text-xs text-stone-500">Created {new Date(storyboard.created_at).toLocaleString()}</p>
+          <p className="mt-1 text-xs text-stone-500">创建于 {new Date(storyboard.created_at).toLocaleString()}</p>
         </div>
         {isSelected ? (
           <span className="rounded border border-sky-300 bg-white px-3 py-1 text-xs font-semibold text-sky-800">
-            Selected
+            已选择
           </span>
         ) : storyboard.status === "draft" ? (
           <button
@@ -676,38 +695,38 @@ function StoryboardCard({
             type="button"
             onClick={() => onSelect(storyboard.id)}
           >
-            {selecting ? "Selecting..." : "Select"}
+            {selecting ? "选择中..." : "选择"}
           </button>
         ) : null}
       </div>
       <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Summary</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">摘要</dt>
           <dd className="mt-1 text-stone-800">{storyboard.summary}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Visual style</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">视觉风格</dt>
           <dd className="mt-1 text-stone-800">{storyboard.visual_style}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Status</dt>
-          <dd className="mt-1 text-stone-800">{storyboard.status}</dd>
+          <dt className="text-xs font-semibold uppercase text-stone-500">状态</dt>
+          <dd className="mt-1 text-stone-800">{formatStatus(storyboard.status)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Source materials</dt>
-          <dd className="mt-1 text-stone-800">{storyboard.source_material_ids.join(", ") || "none"}</dd>
+          <dt className="text-xs font-semibold uppercase text-stone-500">来源素材</dt>
+          <dd className="mt-1 text-stone-800">{formatSourceMaterialIds(storyboard.source_material_ids)}</dd>
         </div>
       </dl>
       {storyboard.selected_at && (
-        <p className="mt-3 text-xs text-stone-500">Selected {new Date(storyboard.selected_at).toLocaleString()}</p>
+        <p className="mt-3 text-xs text-stone-500">选择于 {new Date(storyboard.selected_at).toLocaleString()}</p>
       )}
 
       <div className="mt-4">
-        <h4 className="text-xs font-semibold uppercase text-stone-500">Scenes</h4>
+        <h4 className="text-xs font-semibold uppercase text-stone-500">场景</h4>
         <ol className="mt-3 divide-y divide-stone-200 border-y border-stone-200">
           {scenes.map((scene) => (
             <li
-              aria-label={`Scene ${scene.scene_order}: ${scene.scene_title}`}
+              aria-label={`场景 ${scene.scene_order}：${scene.scene_title}`}
               className="py-3"
               data-scene-order={scene.scene_order}
               data-testid="storyboard-scene"
@@ -715,26 +734,26 @@ function StoryboardCard({
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h5 className="text-sm font-semibold text-stone-950">
-                  Scene {scene.scene_order}: {scene.scene_title}
+                  场景 {scene.scene_order}：{scene.scene_title}
                 </h5>
-                <span className="text-xs text-stone-500">{scene.estimated_duration_seconds} seconds</span>
+                <span className="text-xs text-stone-500">{scene.estimated_duration_seconds} 秒</span>
               </div>
               <dl className="mt-2 grid gap-2 text-sm md:grid-cols-2">
                 <div>
-                  <dt className="text-xs font-semibold uppercase text-stone-500">Narration</dt>
+                  <dt className="text-xs font-semibold uppercase text-stone-500">旁白</dt>
                   <dd className="mt-1 text-stone-800">{scene.narration}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold uppercase text-stone-500">Visual description</dt>
+                  <dt className="text-xs font-semibold uppercase text-stone-500">画面描述</dt>
                   <dd className="mt-1 text-stone-800">{scene.visual_description}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold uppercase text-stone-500">On-screen text</dt>
+                  <dt className="text-xs font-semibold uppercase text-stone-500">屏幕文字</dt>
                   <dd className="mt-1 text-stone-800">{scene.on_screen_text}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold uppercase text-stone-500">Source material</dt>
-                  <dd className="mt-1 text-stone-800">{scene.source_material_id ?? "none"}</dd>
+                  <dt className="text-xs font-semibold uppercase text-stone-500">来源素材</dt>
+                  <dd className="mt-1 text-stone-800">{scene.source_material_id ?? "无"}</dd>
                 </div>
               </dl>
             </li>
@@ -748,16 +767,16 @@ function StoryboardCard({
 function formatStoryboardError(err: unknown, fallback: string) {
   const message = err instanceof Error ? err.message : fallback;
   if (message === "project has no materials") {
-    return "Add at least one material before generating storyboards.";
+    return "请先添加至少一个素材，再生成分镜脚本。";
   }
   if (message === "project has no selected topic candidate") {
-    return "Select a topic candidate before generating storyboards.";
+    return "请先选择一个选题候选，再生成分镜脚本。";
   }
   if (message === "project has no selected script draft") {
-    return "Select a script draft before generating storyboards.";
+    return "请先选择一个脚本草稿，再生成分镜脚本。";
   }
   if (message.startsWith("archived project")) {
-    return "Archived projects are read-only.";
+    return "当前项目已归档，只能查看，不能继续修改。";
   }
   if (message.includes("(404)") || message.includes("not found")) {
     return message;
@@ -787,7 +806,7 @@ function SubtitleDraftsPanel({
       setSubtitleDrafts(items);
       setError(null);
     } catch (err) {
-      setError(formatSubtitleDraftError(err, "Failed to load subtitle drafts."));
+      setError(formatSubtitleDraftError(err, "加载字幕草稿失败"));
     } finally {
       setLoading(false);
     }
@@ -807,7 +826,7 @@ function SubtitleDraftsPanel({
       await createSubtitleDraft(projectId);
       await reloadSubtitleDrafts();
     } catch (err) {
-      setError(formatSubtitleDraftError(err, "Failed to create fake subtitle draft."));
+      setError(formatSubtitleDraftError(err, "创建模拟字幕草稿失败"));
     } finally {
       setCreating(false);
     }
@@ -823,7 +842,7 @@ function SubtitleDraftsPanel({
       await selectSubtitleDraft(projectId, subtitleDraftId);
       await reloadSubtitleDrafts();
     } catch (err) {
-      setError(formatSubtitleDraftError(err, "Failed to select subtitle draft."));
+      setError(formatSubtitleDraftError(err, "选择字幕草稿失败"));
     } finally {
       setSelectingId(null);
     }
@@ -835,9 +854,9 @@ function SubtitleDraftsPanel({
     <section className="mt-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-stone-950">Subtitle Drafts</h2>
+          <h2 className="text-lg font-semibold text-stone-950">字幕草稿</h2>
           <p className="mt-1 text-sm text-stone-600">
-            FakeSubtitle drafts and deterministic subtitle cue metadata for the selected storyboard.
+            基于已选分镜脚本生成的模拟字幕草稿和字幕 cue 元数据。
           </p>
         </div>
         <button
@@ -846,30 +865,30 @@ function SubtitleDraftsPanel({
           type="button"
           onClick={handleCreate}
         >
-          {creating ? "Creating..." : "Create fake subtitle draft"}
+          {creating ? "创建中..." : "创建模拟字幕草稿"}
         </button>
       </div>
 
       {isArchived && (
         <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
-          Archived projects are read-only.
+          当前项目已归档，只能查看，不能继续修改。
         </p>
       )}
       {hasSelectedStoryboard === false && !isArchived && (
         <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          Select a storyboard before creating fake subtitle drafts.
+          请先选择一个分镜脚本，再创建模拟字幕草稿。
         </p>
       )}
       {hasSelectedStoryboard === null && !isArchived && (
         <p className="mt-3 rounded border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
-          Checking storyboard selection before enabling fake subtitles.
+          正在检查分镜脚本选择状态，确认后才能创建模拟字幕。
         </p>
       )}
       {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {loading && <p className="mt-4 text-sm text-stone-600">Loading subtitle drafts...</p>}
+      {loading && <p className="mt-4 text-sm text-stone-600">正在加载字幕草稿...</p>}
       {!loading && subtitleDrafts.length === 0 && (
         <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
-          No subtitle drafts yet.
+          暂无字幕草稿。
         </p>
       )}
       {!loading && subtitleDrafts.length > 0 && (
@@ -907,7 +926,7 @@ function SubtitleDraftCard({
 
   return (
     <article
-      aria-label={`Subtitle draft ${subtitleDraft.id}`}
+      aria-label={`字幕草稿 ${subtitleDraft.id}`}
       className={`rounded border bg-white p-4 ${
         isSelected ? "border-violet-300 bg-violet-50 ring-1 ring-violet-200" : "border-stone-200"
       }`}
@@ -915,12 +934,12 @@ function SubtitleDraftCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-stone-950">Subtitle draft #{subtitleDraft.id}</h3>
-          <p className="mt-1 text-xs text-stone-500">Created {new Date(subtitleDraft.created_at).toLocaleString()}</p>
+          <h3 className="text-base font-semibold text-stone-950">字幕草稿 #{subtitleDraft.id}</h3>
+          <p className="mt-1 text-xs text-stone-500">创建于 {new Date(subtitleDraft.created_at).toLocaleString()}</p>
         </div>
         {isSelected ? (
           <span className="rounded border border-violet-300 bg-white px-3 py-1 text-xs font-semibold text-violet-800">
-            Selected
+            已选择
           </span>
         ) : subtitleDraft.status === "draft" ? (
           <button
@@ -929,55 +948,55 @@ function SubtitleDraftCard({
             type="button"
             onClick={() => onSelect(subtitleDraft.id)}
           >
-            {selecting ? "Selecting..." : "Select"}
+            {selecting ? "选择中..." : "选择"}
           </button>
         ) : null}
       </div>
 
       <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Generator</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">生成器</dt>
           <dd className="mt-1 text-stone-800">
             {subtitleDraft.generator_name} {subtitleDraft.generator_version}
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Status</dt>
-          <dd className="mt-1 text-stone-800">{subtitleDraft.status}</dd>
+          <dt className="text-xs font-semibold uppercase text-stone-500">状态</dt>
+          <dd className="mt-1 text-stone-800">{formatStatus(subtitleDraft.status)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Storyboard</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">分镜脚本</dt>
           <dd className="mt-1 text-stone-800">#{subtitleDraft.storyboard_draft_id}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Updated</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">更新时间</dt>
           <dd className="mt-1 text-stone-800">{new Date(subtitleDraft.updated_at).toLocaleString()}</dd>
         </div>
       </dl>
       {subtitleDraft.selected_at && (
-        <p className="mt-3 text-xs text-stone-500">Selected {new Date(subtitleDraft.selected_at).toLocaleString()}</p>
+        <p className="mt-3 text-xs text-stone-500">选择于 {new Date(subtitleDraft.selected_at).toLocaleString()}</p>
       )}
 
       <div className="mt-4 rounded border border-stone-200 bg-stone-50 p-3">
-        <h4 className="text-xs font-semibold uppercase text-stone-500">Subtitle cues</h4>
+        <h4 className="text-xs font-semibold uppercase text-stone-500">字幕 cue</h4>
         {cues.length === 0 ? (
           <p className="mt-3 rounded border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
-            No subtitle cues yet.
+            暂无字幕 cue。
           </p>
         ) : (
           <ol className="mt-3 divide-y divide-stone-200 border-y border-stone-200">
             {cues.map((cue) => (
               <li
-                aria-label={`Subtitle cue ${cue.cue_order}`}
+                aria-label={`字幕 cue ${cue.cue_order}`}
                 className="py-3"
                 data-cue-order={cue.cue_order}
                 data-testid="subtitle-cue"
                 key={cue.id}
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h5 className="text-sm font-semibold text-stone-950">Cue {cue.cue_order}</h5>
+                  <h5 className="text-sm font-semibold text-stone-950">字幕 {cue.cue_order}</h5>
                   <span className="text-xs text-stone-500">
-                    {cue.start_time_seconds}s - {cue.end_time_seconds}s
+                    {cue.start_time_seconds} 秒 - {cue.end_time_seconds} 秒
                   </span>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap text-sm text-stone-800">{cue.text}</p>
@@ -993,13 +1012,13 @@ function SubtitleDraftCard({
 function formatSubtitleDraftError(err: unknown, fallback: string) {
   const message = err instanceof Error ? err.message : fallback;
   if (message === "project has no selected storyboard") {
-    return "Select a storyboard before creating fake subtitle drafts.";
+    return "请先选择一个分镜脚本，再创建模拟字幕草稿。";
   }
   if (message === "selected storyboard has no scenes") {
-    return "The selected storyboard has no scenes for fake subtitles.";
+    return "已选择的分镜脚本没有可用于模拟字幕的场景。";
   }
   if (message.startsWith("archived project")) {
-    return "Archived projects are read-only.";
+    return "当前项目已归档，只能查看，不能继续修改。";
   }
   if (message.includes("(404)") || message.includes("not found")) {
     return message;
@@ -1028,7 +1047,7 @@ function RenderJobsPanel({
       setRenderJobs(items);
       setError(null);
     } catch (err) {
-      setError(formatRenderJobError(err, "Failed to load render jobs."));
+      setError(formatRenderJobError(err, "加载渲染任务失败"));
     } finally {
       setLoading(false);
     }
@@ -1048,7 +1067,7 @@ function RenderJobsPanel({
       await createRenderJob(projectId);
       await reloadRenderJobs();
     } catch (err) {
-      setError(formatRenderJobError(err, "Failed to create fake render job."));
+      setError(formatRenderJobError(err, "创建模拟渲染任务失败"));
     } finally {
       setCreating(false);
     }
@@ -1060,9 +1079,9 @@ function RenderJobsPanel({
     <section className="mt-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-stone-950">Render Jobs</h2>
+          <h2 className="text-lg font-semibold text-stone-950">渲染任务</h2>
           <p className="mt-1 text-sm text-stone-600">
-            FakeRenderer jobs and deterministic fake preview manifest metadata for the selected storyboard.
+            基于已选分镜脚本创建的模拟渲染任务和预览 manifest 元数据。
           </p>
         </div>
         <button
@@ -1071,30 +1090,30 @@ function RenderJobsPanel({
           type="button"
           onClick={handleCreate}
         >
-          {creating ? "Creating..." : "Create fake render job"}
+          {creating ? "创建中..." : "创建模拟渲染任务"}
         </button>
       </div>
 
       {isArchived && (
         <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
-          Archived projects are read-only.
+          当前项目已归档，只能查看，不能继续修改。
         </p>
       )}
       {hasSelectedStoryboard === false && !isArchived && (
         <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          Select a storyboard before creating fake render jobs.
+          请先选择一个分镜脚本，再创建模拟渲染任务。
         </p>
       )}
       {hasSelectedStoryboard === null && !isArchived && (
         <p className="mt-3 rounded border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
-          Checking storyboard selection before enabling fake rendering.
+          正在检查分镜脚本选择状态，确认后才能创建模拟渲染。
         </p>
       )}
       {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {loading && <p className="mt-4 text-sm text-stone-600">Loading render jobs...</p>}
+      {loading && <p className="mt-4 text-sm text-stone-600">正在加载渲染任务...</p>}
       {!loading && renderJobs.length === 0 && (
         <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
-          No render jobs yet.
+          暂无渲染任务。
         </p>
       )}
       {!loading && renderJobs.length > 0 && (
@@ -1110,36 +1129,36 @@ function RenderJobsPanel({
 
 function RenderJobCard({ renderJob }: { renderJob: RenderJob }) {
   return (
-    <article aria-label={`Render job ${renderJob.id}`} className="rounded border border-stone-200 bg-white p-4">
+    <article aria-label={`渲染任务 ${renderJob.id}`} className="rounded border border-stone-200 bg-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-semibold text-stone-950">Render job #{renderJob.id}</h3>
-          <p className="mt-1 text-xs text-stone-500">Created {new Date(renderJob.created_at).toLocaleString()}</p>
+          <h3 className="text-base font-semibold text-stone-950">渲染任务 #{renderJob.id}</h3>
+          <p className="mt-1 text-xs text-stone-500">创建于 {new Date(renderJob.created_at).toLocaleString()}</p>
         </div>
         <span className="rounded border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
-          {renderJob.status}
+          {formatStatus(renderJob.status)}
         </span>
       </div>
 
       <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Renderer</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">渲染器</dt>
           <dd className="mt-1 text-stone-800">
             {renderJob.renderer_name} {renderJob.renderer_version}
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Storyboard</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">分镜脚本</dt>
           <dd className="mt-1 text-stone-800">#{renderJob.storyboard_draft_id}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Requested output</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">请求输出</dt>
           <dd className="mt-1 text-stone-800">
             {renderJob.requested_format} / {renderJob.requested_aspect_ratio} / {renderJob.requested_resolution}
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Updated</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">更新时间</dt>
           <dd className="mt-1 text-stone-800">{new Date(renderJob.updated_at).toLocaleString()}</dd>
         </div>
       </dl>
@@ -1149,7 +1168,7 @@ function RenderJobCard({ renderJob }: { renderJob: RenderJob }) {
         <PreviewArtifactMetadata artifact={renderJob.artifact} />
       ) : (
         <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
-          Preview pending / unavailable.
+          预览待生成 / 不可用。
         </p>
       )}
     </article>
@@ -1160,51 +1179,51 @@ function PreviewArtifactMetadata({ artifact }: { artifact: RenderJob["artifact"]
   if (!artifact) {
     return (
       <p className="mt-4 rounded border border-dashed border-stone-300 bg-white p-3 text-sm text-stone-600">
-        No preview artifact metadata available.
+        暂无预览元数据。
       </p>
     );
   }
 
   return (
     <div className="mt-4 rounded border border-stone-200 bg-stone-50 p-3">
-      <h4 className="text-xs font-semibold uppercase text-stone-500">Preview manifest metadata</h4>
+      <h4 className="text-xs font-semibold uppercase text-stone-500">预览 manifest 元数据</h4>
       <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Artifact type</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">产物类型</dt>
           <dd className="mt-1 text-stone-800">{artifact.artifact_type}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">MIME type</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">MIME 类型</dt>
           <dd className="mt-1 text-stone-800">{artifact.mime_type}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">File size</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">文件大小</dt>
           <dd className="mt-1 text-stone-800">{artifact.file_size_bytes} bytes</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Checksum</dt>
-          <dd className="mt-1 break-all text-stone-800">{artifact.checksum_sha256 ?? "Not available"}</dd>
+          <dt className="text-xs font-semibold uppercase text-stone-500">校验值</dt>
+          <dd className="mt-1 break-all text-stone-800">{artifact.checksum_sha256 ?? "暂无"}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Duration</dt>
-          <dd className="mt-1 text-stone-800">{artifact.duration_seconds} seconds</dd>
+          <dt className="text-xs font-semibold uppercase text-stone-500">时长</dt>
+          <dd className="mt-1 text-stone-800">{artifact.duration_seconds} 秒</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Dimensions</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">尺寸</dt>
           <dd className="mt-1 text-stone-800">
             {artifact.width} x {artifact.height}
           </dd>
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase text-stone-500">FPS</dt>
-          <dd className="mt-1 text-stone-800">Not available</dd>
+          <dd className="mt-1 text-stone-800">暂无</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Subtitle draft</dt>
-          <dd className="mt-1 text-stone-800">{artifact.subtitle_draft_id ? `#${artifact.subtitle_draft_id}` : "None"}</dd>
+          <dt className="text-xs font-semibold uppercase text-stone-500">字幕草稿</dt>
+          <dd className="mt-1 text-stone-800">{artifact.subtitle_draft_id ? `#${artifact.subtitle_draft_id}` : "无"}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-stone-500">Manifest file</dt>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Manifest 文件</dt>
           <dd className="mt-1 break-all text-stone-800">{artifact.file_name}</dd>
         </div>
       </dl>
@@ -1216,13 +1235,13 @@ function PreviewArtifactMetadata({ artifact }: { artifact: RenderJob["artifact"]
 function formatRenderJobError(err: unknown, fallback: string) {
   const message = err instanceof Error ? err.message : fallback;
   if (message === "project has no selected storyboard") {
-    return "Select a storyboard before creating fake render jobs.";
+    return "请先选择一个分镜脚本，再创建模拟渲染任务。";
   }
   if (message === "selected storyboard has no scenes") {
-    return "The selected storyboard has no scenes to render.";
+    return "已选择的分镜脚本没有可用于渲染的场景。";
   }
   if (message.startsWith("archived project")) {
-    return "Archived projects are read-only.";
+    return "当前项目已归档，只能查看，不能继续修改。";
   }
   if (message.includes("(404)") || message.includes("not found")) {
     return message;
