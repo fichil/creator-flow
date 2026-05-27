@@ -246,6 +246,24 @@ export type PublicationRecord = {
   updated_at: string;
 };
 
+export type PublicationMetricSnapshot = {
+  id: number;
+  project_id: number;
+  publication_record_id: number;
+  source: string;
+  captured_at: string;
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+  favorites: number | null;
+  average_watch_time_seconds: number | null;
+  completion_rate: number | null;
+  provider_payload_summary: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ContentPlan = {
   id: number;
   project_id: number;
@@ -460,6 +478,37 @@ export function fakePublishIntent(projectId: number, publishIntentId: number): P
   return request<PublicationRecord>(`/api/projects/${projectId}/publish-intents/${publishIntentId}/fake-publish`, {
     method: "POST",
   });
+}
+
+export function listPublicationMetrics(
+  projectId: number,
+  publicationRecordId: number,
+): Promise<PublicationMetricSnapshot[]> {
+  return request<PublicationMetricSnapshot[]>(
+    `/api/projects/${projectId}/publication-records/${publicationRecordId}/metrics`,
+  );
+}
+
+export function createFakePublicationMetric(
+  projectId: number,
+  publicationRecordId: number,
+): Promise<PublicationMetricSnapshot> {
+  return request<PublicationMetricSnapshot>(
+    `/api/projects/${projectId}/publication-records/${publicationRecordId}/metrics/fake`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function getPublicationMetric(
+  projectId: number,
+  publicationRecordId: number,
+  metricSnapshotId: number,
+): Promise<PublicationMetricSnapshot> {
+  return request<PublicationMetricSnapshot>(
+    `/api/projects/${projectId}/publication-records/${publicationRecordId}/metrics/${metricSnapshotId}`,
+  );
 }
 
 export function getContentPlans(projectId: number): Promise<ContentPlan[]> {
