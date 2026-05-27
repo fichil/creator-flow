@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectListPage } from "./ProjectListPage";
-import type { PlatformProvider, Project, ProviderConnectionState } from "../api/client";
+import type { PlatformProvider, Project, ProviderConnectionState, ProviderCredentialReference } from "../api/client";
 
 const providers: PlatformProvider[] = [
   {
@@ -142,6 +142,79 @@ const connections: ProviderConnectionState[] = [
   },
 ];
 
+const credentialReferences: ProviderCredentialReference[] = [
+  {
+    provider_id: "fake_local",
+    provider_name: "Local Fake Provider",
+    source_type: "fake_local",
+    implementation_status: "available_local_fake",
+    reference_kind: "none_required",
+    reference_status: "not_required",
+    storage_status: "none",
+    redaction_policy_status: "active",
+    is_available: true,
+    is_real_provider: false,
+    requires_user_authorization: false,
+    safe_display_name: "Local fake provider credential reference metadata",
+    safe_status_message: "Local fake provider does not require credentials, OAuth, tokens, or secrets.",
+    boundary_notes: [
+      "local fake/demo/test data only",
+      "not real Douyin data",
+      "no OAuth required",
+      "no token stored",
+      "no secret stored",
+      "no credential material stored",
+    ],
+  },
+  {
+    provider_id: "douyin_sandbox",
+    provider_name: "Douyin Sandbox Placeholder",
+    source_type: "sandbox",
+    implementation_status: "planned",
+    reference_kind: "oauth_placeholder",
+    reference_status: "not_implemented",
+    storage_status: "not_implemented",
+    redaction_policy_status: "active",
+    is_available: false,
+    is_real_provider: false,
+    requires_user_authorization: true,
+    safe_display_name: "Douyin sandbox credential reference placeholder",
+    safe_status_message:
+      "Douyin sandbox credential reference is placeholder metadata only; OAuth is not implemented and tokens are not stored.",
+    boundary_notes: [
+      "placeholder only",
+      "OAuth is not implemented",
+      "tokens are not stored",
+      "secrets are not stored",
+      "credential material is not stored",
+      "no real Douyin API call",
+    ],
+  },
+  {
+    provider_id: "douyin_real",
+    provider_name: "Douyin Real Placeholder",
+    source_type: "real",
+    implementation_status: "planned",
+    reference_kind: "oauth_placeholder",
+    reference_status: "not_implemented",
+    storage_status: "not_implemented",
+    redaction_policy_status: "active",
+    is_available: false,
+    is_real_provider: true,
+    requires_user_authorization: true,
+    safe_display_name: "Douyin real credential reference placeholder",
+    safe_status_message:
+      "Douyin real credential reference is a future placeholder only; no OAuth, token storage, metrics fetching, upload, publish, or scheduling is implemented.",
+    boundary_notes: [
+      "future real provider placeholder only",
+      "not real Douyin integration",
+      "no access token or refresh token storage",
+      "no real metrics fetching",
+      "no upload / publish / scheduling",
+    ],
+  },
+];
+
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(
     new Response(JSON.stringify(body), {
@@ -161,6 +234,9 @@ function installListPageFetchMock(projects: Project[] = [project]) {
     }
     if (url.pathname === "/api/provider-connections") {
       return jsonResponse({ connections });
+    }
+    if (url.pathname === "/api/provider-credential-references") {
+      return jsonResponse({ credential_references: credentialReferences });
     }
     if (url.pathname === "/api/projects") {
       return jsonResponse(projects);
@@ -195,8 +271,12 @@ describe("ProjectListPage", () => {
     expect(await screen.findByLabelText("Provider connection fake_local")).toBeTruthy();
     expect(screen.getByLabelText("Provider connection douyin_sandbox")).toBeTruthy();
     expect(screen.getByLabelText("Provider connection douyin_real")).toBeTruthy();
+    expect(await screen.findByLabelText("Provider credential reference fake_local")).toBeTruthy();
+    expect(screen.getByLabelText("Provider credential reference douyin_sandbox")).toBeTruthy();
+    expect(screen.getByLabelText("Provider credential reference douyin_real")).toBeTruthy();
     await waitFor(() => expect(server.calls).toContain("GET /api/providers"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-connections"));
+    await waitFor(() => expect(server.calls).toContain("GET /api/provider-credential-references"));
     await waitFor(() => expect(server.calls).toContain("GET /api/projects"));
   });
 

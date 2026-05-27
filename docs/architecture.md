@@ -164,6 +164,16 @@ v0.8 Batch 6 增加 backend-only secret redaction helper，用于统一屏蔽敏
 
 redaction helper 还会处理明显的 `access_token=...`、`refresh_token=...`、`api_key=...`、`client_secret=...`、`authorization_code=...` 和 `Bearer ...` 文本模式。它用于减少日志、错误消息和测试断言中的泄密风险，但不代表真实 secret manager、生产级 KMS、Credential storage 或 encrypted token storage。helper 不读取环境变量，不读取本地 secret 文件，不连接数据库，也不调用外部服务。
 
+### Provider Credential Reference Frontend Read-only Boundary
+
+v0.8 Batch 7 在前端增加只读 Provider Credential Reference UI，但 frontend 只能消费 backend Provider Credential Reference 的只读 metadata。该 UI 可以展示 `reference_kind`、`reference_status`、`storage_status`、`redaction_policy_status`、`safe_display_name`、`safe_status_message` 和 `boundary_notes`，帮助用户和审查者理解 credential reference readiness、storage readiness 和 redaction policy boundary。
+
+Frontend 不保存、不缓存、不展示 token、secret、API key、authorization code、OAuth client secret、credential material 或 private key，也不能从 reference metadata 推断真实平台已经可用。UI 必须显式区分 `fake_local`、`douyin_sandbox` 和 `douyin_real`；planned / unavailable provider 只能展示为 placeholder / not available / not_implemented。
+
+该 UI 不提供 connect / authorize / refresh / revoke / disconnect / upload / publish / schedule 操作，也不新增写 API。该 UI 不提供 secret input、token viewer、credential viewer 或 credential 管理入口。`redaction_policy_status` 只能作为安全边界 metadata 展示，不能暗示生产级 KMS、secret manager 或 encrypted token storage 已实现。
+
+Future real provider planning 只能通过 `implementation_status`、`reference_status`、`storage_status`、`redaction_policy_status` 和 `boundary_notes` 展示，不能通过按钮、configured 状态、stored 状态或 connected 状态暗示已可用。Provider Credential Reference UI 不等于真实 provider adapter，不等于 OAuth、Credential 管理界面、Secret Manager，也不等于平台账号设置页。
+
 ### Credential Boundary
 
 - token、secret、refresh token、API key 和平台账号凭据不得进入 Git。

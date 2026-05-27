@@ -376,6 +376,30 @@ export type ProviderConnectionStateListResponse = {
   connections: ProviderConnectionState[];
 };
 
+export type ProviderCredentialReference = {
+  provider_id: string;
+  provider_name: string;
+  source_type: string;
+  implementation_status: string;
+  reference_kind: string;
+  reference_status: string;
+  storage_status: string;
+  redaction_policy_status: string;
+  is_available: boolean;
+  is_real_provider: boolean;
+  requires_user_authorization: boolean;
+  safe_display_name: string;
+  safe_status_message: string;
+  boundary_notes: string[];
+  last_status_change_reason?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type ProviderCredentialReferenceListResponse = {
+  credential_references: ProviderCredentialReference[];
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -416,6 +440,11 @@ export async function listPlatformProviders(): Promise<PlatformProvider[]> {
 export async function listProviderConnectionStates(): Promise<ProviderConnectionState[]> {
   const response = await request<ProviderConnectionStateListResponse>("/api/provider-connections");
   return response.connections;
+}
+
+export async function listProviderCredentialReferences(): Promise<ProviderCredentialReference[]> {
+  const response = await request<ProviderCredentialReferenceListResponse>("/api/provider-credential-references");
+  return response.credential_references;
 }
 
 export function createProject(payload: { title: string; description?: string }): Promise<Project> {
