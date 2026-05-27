@@ -51,6 +51,10 @@ data/local/
 !data/local/
 !data/local/.gitkeep
 
+# Runtime-generated fake preview artifacts
+data/local/render_previews/
+data/local/render_previews/**
+
 # User uploads, generated data, and temporary files
 data/generated/
 uploads/
