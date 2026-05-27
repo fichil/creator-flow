@@ -127,6 +127,34 @@ CREATE TABLE IF NOT EXISTS publication_records (
     CHECK (publication_status IN ('not_started', 'succeeded', 'failed'))
 );
 
+CREATE TABLE IF NOT EXISTS publication_metric_snapshots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    publication_record_id INTEGER NOT NULL,
+    source TEXT NOT NULL,
+    captured_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    views INTEGER,
+    likes INTEGER,
+    comments INTEGER,
+    shares INTEGER,
+    favorites INTEGER,
+    average_watch_time_seconds REAL,
+    completion_rate REAL,
+    provider_payload_summary TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (publication_record_id) REFERENCES publication_records(id) ON DELETE CASCADE,
+    CHECK (source IN ('fake_local', 'platform_provider')),
+    CHECK (views IS NULL OR views >= 0),
+    CHECK (likes IS NULL OR likes >= 0),
+    CHECK (comments IS NULL OR comments >= 0),
+    CHECK (shares IS NULL OR shares >= 0),
+    CHECK (favorites IS NULL OR favorites >= 0),
+    CHECK (average_watch_time_seconds IS NULL OR average_watch_time_seconds >= 0),
+    CHECK (completion_rate IS NULL OR (completion_rate >= 0 AND completion_rate <= 1))
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -396,6 +424,12 @@ ON publication_records (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_publication_records_publish_intent_id
 ON publication_records (publish_intent_id);
+
+CREATE INDEX IF NOT EXISTS idx_publication_metric_snapshots_record_captured_at
+ON publication_metric_snapshots (publication_record_id, captured_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_publication_metric_snapshots_project_id_created_at
+ON publication_metric_snapshots (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_topic_generation_runs_project_id_created_at
 ON topic_generation_runs (project_id, created_at DESC, id DESC);

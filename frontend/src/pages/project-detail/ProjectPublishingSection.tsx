@@ -3,16 +3,20 @@ import { useEffect, useState } from "react";
 import {
   cancelPublishIntent,
   confirmPublishIntent,
+  createFakePublicationMetric,
   createPublishIntent,
   fakePublishIntent,
   getPublicationRecords,
   getPublishIntents,
   getReviewDrafts,
+  listPublicationMetrics,
+  PublicationMetricSnapshot,
   PublicationRecord,
   PublishIntent,
   ReviewDraft,
 } from "../../api/client";
 import { formatStatus } from "./formatting";
+import { PublicationMetricsList } from "./PublicationMetricsList";
 
 type ProjectPublishingSectionProps = {
   isArchived: boolean;
@@ -24,12 +28,14 @@ type PublishingAction =
   | { type: "create"; id: number }
   | { type: "confirm"; id: number }
   | { type: "cancel"; id: number }
-  | { type: "fake-publish"; id: number };
+  | { type: "fake-publish"; id: number }
+  | { type: "fake-metrics"; id: number };
 
 export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: ProjectPublishingSectionProps) {
   const [reviewDrafts, setReviewDrafts] = useState<ReviewDraft[]>([]);
   const [publishIntents, setPublishIntents] = useState<PublishIntent[]>([]);
   const [recordsByIntentId, setRecordsByIntentId] = useState<Record<number, PublicationRecord[]>>({});
+  const [metricsByRecordId, setMetricsByRecordId] = useState<Record<number, PublicationMetricSnapshot[]>>({});
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState<PublishingAction | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,9 +47,14 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
       const recordEntries = await Promise.all(
         intents.map(async (intent) => [intent.id, await getPublicationRecords(projectId, intent.id)] as const),
       );
+      const records = recordEntries.flatMap(([, publicationRecords]) => publicationRecords);
+      const metricEntries = await Promise.all(
+        records.map(async (record) => [record.id, await listPublicationMetrics(projectId, record.id)] as const),
+      );
       setReviewDrafts(drafts);
       setPublishIntents(intents);
       setRecordsByIntentId(Object.fromEntries(recordEntries));
+      setMetricsByRecordId(Object.fromEntries(metricEntries));
       setError(null);
     } catch (err) {
       setError(formatPublishingError(err, "加载本地 fake publishing workflow 失败"));
@@ -125,6 +136,27 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
     }
   }
 
+  async function reloadMetricsForRecord(publicationRecordId: number) {
+    const metrics = await listPublicationMetrics(projectId, publicationRecordId);
+    setMetricsByRecordId((current) => ({ ...current, [publicationRecordId]: metrics }));
+  }
+
+  async function handleCreateFakeMetrics(publicationRecordId: number) {
+    if (isArchived) {
+      return;
+    }
+    setAction({ type: "fake-metrics", id: publicationRecordId });
+    setError(null);
+    try {
+      await createFakePublicationMetric(projectId, publicationRecordId);
+      await reloadMetricsForRecord(publicationRecordId);
+    } catch (err) {
+      setError(formatPublishingError(err, "创建 fake metrics snapshot 失败"));
+    } finally {
+      setAction(null);
+    }
+  }
+
   const approvedDrafts = reviewDrafts.filter((draft) => draft.review_status === "approved");
 
   return (
@@ -198,10 +230,12 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
                     isArchived={isArchived}
                     key={intent.id}
                     publishIntent={intent}
+                    metricsByRecordId={metricsByRecordId}
                     records={recordsByIntentId[intent.id] ?? []}
                     onCancel={handleCancel}
                     onConfirm={handleConfirm}
                     onFakePublish={handleFakePublish}
+                    onGenerateFakeMetrics={handleCreateFakeMetrics}
                   />
                 ))}
               </div>
@@ -219,14 +253,18 @@ function PublishIntentCard({
   onCancel,
   onConfirm,
   onFakePublish,
+  onGenerateFakeMetrics,
+  metricsByRecordId,
   publishIntent,
   records,
 }: {
   action: PublishingAction | null;
   isArchived: boolean;
+  metricsByRecordId: Record<number, PublicationMetricSnapshot[]>;
   onCancel: (publishIntentId: number) => void;
   onConfirm: (publishIntentId: number) => void;
   onFakePublish: (publishIntentId: number) => void;
+  onGenerateFakeMetrics: (publicationRecordId: number) => void;
   publishIntent: PublishIntent;
   records: PublicationRecord[];
 }) {
@@ -322,7 +360,14 @@ function PublishIntentCard({
         ) : (
           <div className="mt-3 space-y-2">
             {records.map((record) => (
-              <PublicationRecordItem key={record.id} record={record} />
+              <PublicationRecordItem
+                action={action}
+                isArchived={isArchived}
+                key={record.id}
+                metrics={metricsByRecordId[record.id] ?? []}
+                record={record}
+                onGenerateFakeMetrics={onGenerateFakeMetrics}
+              />
             ))}
           </div>
         )}
@@ -331,7 +376,21 @@ function PublishIntentCard({
   );
 }
 
-function PublicationRecordItem({ record }: { record: PublicationRecord }) {
+function PublicationRecordItem({
+  action,
+  isArchived,
+  metrics,
+  onGenerateFakeMetrics,
+  record,
+}: {
+  action: PublishingAction | null;
+  isArchived: boolean;
+  metrics: PublicationMetricSnapshot[];
+  onGenerateFakeMetrics: (publicationRecordId: number) => void;
+  record: PublicationRecord;
+}) {
+  const generatingMetrics = action?.type === "fake-metrics" && action.id === record.id;
+
   return (
     <div
       aria-label={`PublicationRecord ${record.id}`}
@@ -368,6 +427,13 @@ function PublicationRecordItem({ record }: { record: PublicationRecord }) {
           Fake execution succeeded. Not a real platform publication.
         </p>
       )}
+      <PublicationMetricsList
+        isArchived={isArchived}
+        isDisabled={action !== null}
+        isGenerating={generatingMetrics}
+        metrics={metrics}
+        onGenerateFakeMetrics={() => onGenerateFakeMetrics(record.id)}
+      />
     </div>
   );
 }
