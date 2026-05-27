@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.6 Metrics Feedback Loop local fake/manual metrics workflow RC candidate 本地开发状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、PublicationMetricSnapshot backend foundation、FakeMetricsProvider backend workflow、项目详情页本地 fake publishing workflow 与 fake metrics UI、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.6 当前只支持项目详情页查看和手动生成 fake/local metrics snapshots；仍不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布，不做定时指标同步，不抓取真实平台指标，也不接真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.6.0 Metrics Feedback Loop local fake/manual metrics workflow release 状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、PublicationMetricSnapshot backend foundation、FakeMetricsProvider backend workflow、项目详情页本地 fake publishing workflow 与 fake metrics UI、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.6.0 当前只支持项目详情页查看和手动生成 fake/local metrics snapshots；仍不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布，不做定时指标同步，不抓取真实平台指标，也不接真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -56,9 +56,9 @@ git status --short
 
 同时执行安全扫描，确认没有真实密钥、token、API key、secret、私钥、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体或运行时 preview artifacts 进入 Git。若扫描命中文档中的运行时路径说明，例如 `data/local/creator_flow.sqlite3`、`uploads/` 或 `data/local/render_previews/`，应确认它们只是文档说明或测试中的 fake metadata 字符串，而不是实际运行时文件。
 
-## v0.6 Metrics Workflow RC 验收
+## v0.6.0 Metrics Workflow Release 验收
 
-v0.6 RC 只面向 local fake/manual metrics workflow。RC checklist 见 [`docs/checklists/v0.6-metrics-feedback-loop-rc.md`](checklists/v0.6-metrics-feedback-loop-rc.md)。本地验收时建议从仓库根目录执行：
+v0.6.0 release 只面向 local fake/manual metrics workflow。release checklist 见 [`docs/checklists/v0.6-metrics-feedback-loop-rc.md`](checklists/v0.6-metrics-feedback-loop-rc.md)。本地验收命令包括 backend full tests、frontend tests 和 frontend build；建议从仓库根目录执行：
 
 ```powershell
 cd .\backend
@@ -75,7 +75,7 @@ git status --short
 
 功能验收应覆盖：完成 v0.5 local fake publishing workflow 后得到 `PublicationRecord`，在项目详情页查看 metrics snapshots，手动点击 `Generate fake metrics` 创建 `fake_local` snapshot，确认创建后只刷新对应 `PublicationRecord` 的 metrics list，确认 `Fake/local metrics` 与 `Not real platform performance` 文案可见，并确认 archived project 只读。fake metrics 只用于本地开发和验收，不代表真实平台表现。
 
-同时执行安全扫描，确认没有真实密钥、token、API key、secret、私钥、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体或运行时文件进入 Git。v0.6 RC 不接真实 Douyin API、不实现 OAuth、不保存凭据、不抓取真实指标、不做定时指标同步、不做数据分析推荐算法、不新增真实平台 dashboard，也不自动优化内容。
+同时执行安全扫描，确认没有真实密钥、token、API key、secret、私钥、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体或运行时文件进入 Git。v0.6.0 不接真实 Douyin API、不实现 OAuth、不保存凭据、不抓取真实指标、不做定时指标同步、不做数据分析推荐算法、不新增真实平台 dashboard，也不自动优化内容。fake metrics 只用于本地开发、测试和验收。
 
 ## 启动 Backend
 

@@ -272,7 +272,7 @@
 
 目标：为发布后的内容记录指标反馈，帮助用户复盘内容表现，并为未来根据表现优化 `TopicCandidate`、`ScriptDraft` 和 `ContentPlan` 提供基础输入。指标来源未来可以来自抖音或其他平台 Provider，但核心模型不能写死抖音。
 
-状态：Release Candidate。v0.6 Batch 1 已完成 Metrics Feedback Loop documentation foundation；v0.6 Batch 2 已完成 backend-only fake metrics domain foundation；v0.6 Batch 3 已完成 Fake Metrics Frontend UI foundation；v0.6 Batch 4 已完成 Metrics Workflow Stabilization / RC checklist。当前只支持项目详情页查看和手动生成本地 deterministic fake/local metrics snapshots，不实现真实指标抓取、真实平台 API、OAuth、token 保存、定时同步、数据分析推荐算法、独立 analytics 页面或真实平台 dashboard。
+状态：v0.6.0 released。v0.6 Batch 1 已完成 Metrics Feedback Loop documentation foundation；v0.6 Batch 2 已完成 backend-only fake metrics domain foundation；v0.6 Batch 3 已完成 Fake Metrics Frontend UI foundation；v0.6 Batch 4 已完成 Metrics Workflow Stabilization / RC checklist；v0.6.0 release finalization 已完成。v0.6.0 release scope 仅限 local fake/manual metrics feedback loop：项目详情页查看和手动生成本地 deterministic fake/local metrics snapshots，不实现真实指标抓取、真实平台 API、OAuth、token 保存、定时同步、数据分析推荐算法、独立 analytics 页面或真实平台 dashboard。
 
 已完成 Batch 1：实现 Metrics Feedback Loop documentation foundation。该批次只更新产品规格、架构、路线图、README 和 ADR，明确指标反馈用于发布后复盘，不用于自动发布；未来指标快照应与 `PublicationRecord` 关联；平台指标能力通过 `MetricsProvider` 或等价 Provider 抽象隔离；fake/local metrics 与真实平台 metrics 必须显式区分；真实 Douyin API、OAuth、token 保存、定时同步、真实指标抓取和数据分析推荐算法均不在本批实现。
 
@@ -280,7 +280,9 @@
 
 已完成 Batch 3：实现 Fake Metrics Frontend UI foundation。该批次在项目详情页 Publishing / Fake Publishing 区块附近展示每条 `PublicationRecord` 关联的 metrics snapshots，并支持用户手动点击 `Generate fake metrics` 创建新的 `fake_local` metrics snapshot；创建成功后刷新对应 PublicationRecord 的 metrics list。UI 明确显示 `Fake/local metrics` 和 `Not real platform performance`，archived project 保持只读，不允许创建 fake metrics。该批次不新增复杂 dashboard、不新增图表库、不新增独立 analytics 页面，不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不调用外部服务，不做定时同步，不抓取真实平台指标，不做数据分析推荐算法或自动内容优化，也不修改 backend metrics 业务语义。
 
-已完成 Batch 4：实现 Metrics Workflow Stabilization / Release Candidate checklist。该批次补强 fake metrics backend/frontend workflow 的边界测试，新增 [`docs/checklists/v0.6-metrics-feedback-loop-rc.md`](checklists/v0.6-metrics-feedback-loop-rc.md)，并统一路线图、README 和本地开发说明中的 v0.6 RC 状态。当前 v0.6 只作为 local fake/manual metrics workflow 的 RC candidate；仍不实现真实指标抓取、真实 Douyin API、OAuth、token 保存、定时同步、数据分析推荐算法、真实平台 dashboard 或自动内容优化。
+已完成 Batch 4：实现 Metrics Workflow Stabilization / Release Candidate checklist。该批次补强 fake metrics backend/frontend workflow 的边界测试，新增 [`docs/checklists/v0.6-metrics-feedback-loop-rc.md`](checklists/v0.6-metrics-feedback-loop-rc.md)，并统一路线图、README 和本地开发说明中的 v0.6 RC 状态。该批次完成后 v0.6 进入 local fake/manual metrics workflow RC candidate；仍不实现真实指标抓取、真实 Douyin API、OAuth、token 保存、定时同步、数据分析推荐算法、真实平台 dashboard 或自动内容优化。
+
+已完成 Release finalization：实现 v0.6.0 release 文档收口。该批次只将 README、README.en.md、路线图、v0.6 RC checklist 和本地开发说明从 RC candidate 更新为 v0.6.0 release 状态，并保留真实平台指标作为未来独立方向；不新增业务功能、不新增 backend API、不新增数据库表、不新增前端功能，也不修改后端、前端、测试、依赖或锁文件。
 
 范围：
 
