@@ -129,7 +129,15 @@
 - 渲染任务状态跟踪。
 - MP4 预览与审核状态。
 
-验收标准：
+当前 RC 验收边界：
+
+- 用户可以基于 selected Storyboard 创建 fake render job。
+- 前后端可以展示 fake preview manifest metadata、subtitle draft metadata 和 subtitle cues。
+- fake preview manifest 只能作为 Git 忽略路径下的 runtime metadata 存在。
+- 当前不会生成真实 MP4、音频或字幕文件。
+- 当前不接 `FFmpeg`、TTS、发布能力或真实 AI Provider。
+
+后续真实渲染方向：
 
 - 用户可以从已审核脚本和素材生成 9:16 MP4。
 - 渲染结果进入 `Review Queue`。
