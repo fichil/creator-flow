@@ -154,7 +154,7 @@
 
 目标：支持用户配置内容计划和生成频率，并自动生成待审核草稿。
 
-状态：v0.4 Batch 6 已开始并完成 ContentPlan / GenerationSchedule / Manual GenerationRun frontend UI foundation；当前支持项目级 `ContentPlan`、其关联 `GenerationSchedule` 配置、backend-only fake manual `GenerationRun` 记录、由 manual run 同步创建的 `review_drafts` pending_review placeholder，以及项目详情页中的 ContentPlan / GenerationSchedule / GenerationRun / Review Draft 展示、配置创建、启停和 manual trigger 操作。本阶段只允许 manual trigger，不执行 scheduled trigger，不实现 Scheduler / Trigger Engine，不自动生成真实草稿，不创建真实 Topic Candidate、Script Draft、Storyboard、Render Job、Subtitle Draft 或媒体文件，不实现完整 `Review Queue` 页面、`Notification Service`、热点源或真实 AI Provider。
+状态：v0.4 Batch 7 已开始并完成 frontend component extraction / stabilization；当前支持项目级 `ContentPlan`、其关联 `GenerationSchedule` 配置、backend-only fake manual `GenerationRun` 记录、由 manual run 同步创建的 `review_drafts` pending_review placeholder，以及项目详情页中的 ContentPlan / GenerationSchedule / GenerationRun / Review Draft 展示、配置创建、启停和 manual trigger 操作。本阶段只允许 manual trigger，不执行 scheduled trigger，不实现 Scheduler / Trigger Engine，不自动生成真实草稿，不创建真实 Topic Candidate、Script Draft、Storyboard、Render Job、Subtitle Draft 或媒体文件，不实现完整 `Review Queue` 页面、`Notification Service`、热点源或真实 AI Provider。
 
 已完成 Batch 1：实现 ContentPlan backend-only domain foundation。该批次新增项目级 `content_plans` 数据表、Pydantic schemas、API routes 和 backend tests，支持账号定位、内容类型、每周目标频率、偏好文本和启用状态配置；`target_frequency_per_week` 限制为 1 到 14。ContentPlan 只是本地配置，不触发任何自动生成行为，不接调度、发布、热点源或真实 AI Provider。
 
@@ -167,6 +167,8 @@
 已完成 Batch 5：实现 Review Draft frontend UI foundation。该批次在项目详情页新增待审核草稿区块，展示 backend 返回的 `review_drafts` list、审核状态、草稿摘要、输入来源、热点来源 fallback、GenerationRun / GenerationSchedule 信息和创建/更新时间；支持调用已有 approve / reject API 并在成功后刷新列表，archived 项目保持只读。本批不新增后端业务能力，不实现完整 `Review Queue` 页面，不实现 Scheduler / scheduled `GenerationRun`，不创建真实媒体，不接真实 Provider，不发布不上传。
 
 已完成 Batch 6：实现 ContentPlan / GenerationSchedule / Manual GenerationRun frontend UI foundation。该批次在项目详情页新增 Content Plans 区块，调用已有后端 API 展示和创建 `ContentPlan`，启停 `ContentPlan`，展示并创建关联 `GenerationSchedule`，启停 `GenerationSchedule`，并支持基于 ContentPlan 或 ContentPlan + GenerationSchedule 手动创建 fake manual `GenerationRun`；manual run 成功后刷新 GenerationRuns 与 Review Drafts。archived 项目保持只读。本批不新增后端业务能力，不实现 Scheduler / scheduled `GenerationRun`，不接热点源、通知、真实 Provider、`FFmpeg`、TTS、发布或上传能力。
+
+已完成 Batch 7：实现 frontend component extraction / stabilization。该批次将项目详情页中的 ContentPlan / GenerationSchedule / Manual GenerationRun 和 Review Draft v0.4 UI 组件拆分到 `frontend/src/pages/project-detail/`，保持现有 UI 行为、API 调用和测试语义不变；本批不新增后端能力，不新增业务能力，不实现 Scheduler / scheduled `GenerationRun`，不创建真实媒体，不接真实 Provider，不发布不上传。
 
 范围：
 
