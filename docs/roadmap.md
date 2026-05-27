@@ -328,7 +328,9 @@
 
 目标：基于 v0.6.0 已有的 local fake/manual metrics snapshots，为每条 `PublicationRecord` 形成内容复盘摘要，把指标变化转化为用户可读的 review insight，并为下一轮 `TopicCandidate`、`ScriptDraft` 和 `ContentPlan` 提供人工参考输入。
 
-状态：Planned。
+状态：Batch 1 backend-only foundation 已完成；尚未形成完整 v0.7 release。
+
+已完成 Batch 1：实现 Metrics Review Summary backend-only domain foundation。该批次新增 `publication_metric_review_summaries` 数据表、backend schemas、API routes、deterministic `FakeMetricsReviewSummaryGenerator` 和 backend tests；支持基于同一项目下现有 `PublicationRecord` 的 `PublicationMetricSnapshot` 列表创建 `fake_local` review summary，查询某个 `PublicationRecord` 下的 summaries，并读取单个 summary。指标字段允许部分为空；没有 metrics snapshots 时生成明确的 no-metrics fake/local summary。archived project 允许读取已有 summary，但禁止创建新的 summary。该批次不新增前端 UI，不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不调用外部服务，不抓取真实指标，不做定时同步，不做自动推荐算法，也不会自动修改 `TopicCandidate`、`ScriptDraft` 或 `ContentPlan`。
 
 范围：
 

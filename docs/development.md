@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.6.0 Metrics Feedback Loop local fake/manual metrics workflow release 状态，说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、PublicationMetricSnapshot backend foundation、FakeMetricsProvider backend workflow、项目详情页本地 fake publishing workflow 与 fake metrics UI、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.6.0 当前只支持项目详情页查看和手动生成 fake/local metrics snapshots；仍不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布，不做定时指标同步，不抓取真实平台指标，也不接真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.6.0 Metrics Feedback Loop local fake/manual metrics workflow release 状态，并补充 v0.7 Batch 1 Metrics Review Summary backend-only foundation 验收说明。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、PublicationMetricSnapshot backend foundation、FakeMetricsProvider backend workflow、PublicationMetricReviewSummary backend foundation、项目详情页本地 fake publishing workflow 与 fake metrics UI、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.6.0 当前只支持项目详情页查看和手动生成 fake/local metrics snapshots；v0.7 Batch 1 当前只支持 backend API 创建、查询和读取 fake/local metrics review summary；仍不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布，不做定时指标同步，不抓取真实平台指标，也不接真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -76,6 +76,29 @@ git status --short
 功能验收应覆盖：完成 v0.5 local fake publishing workflow 后得到 `PublicationRecord`，在项目详情页查看 metrics snapshots，手动点击 `Generate fake metrics` 创建 `fake_local` snapshot，确认创建后只刷新对应 `PublicationRecord` 的 metrics list，确认 `Fake/local metrics` 与 `Not real platform performance` 文案可见，并确认 archived project 只读。fake metrics 只用于本地开发和验收，不代表真实平台表现。
 
 同时执行安全扫描，确认没有真实密钥、token、API key、secret、私钥、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体或运行时文件进入 Git。v0.6.0 不接真实 Douyin API、不实现 OAuth、不保存凭据、不抓取真实指标、不做定时指标同步、不做数据分析推荐算法、不新增真实平台 dashboard，也不自动优化内容。fake metrics 只用于本地开发、测试和验收。
+
+## v0.7 Batch 1 Metrics Review Summary backend-only 验收
+
+v0.7 Batch 1 只面向 backend-only local fake/manual metrics review summary foundation。该批基于 v0.6.0 已有的 `PublicationRecord` 和 `PublicationMetricSnapshot`，为指定 `PublicationRecord` 创建 deterministic `fake_local` review summary；summary 只作为人工复盘参考，不是真实平台分析，不是自动推荐算法，也不会自动修改 `TopicCandidate`、`ScriptDraft` 或 `ContentPlan`。
+
+本地验收命令包括 backend full tests、frontend tests 和 frontend build；建议从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+功能验收应覆盖：完成 v0.5 local fake publishing workflow 后得到 `PublicationRecord`，为该记录生成一条或多条 `fake_local` metrics snapshots，然后调用 backend metrics review summary API 创建 summary、查询该记录下的 summaries、读取单个 summary。summary 必须关联同一项目下的 `PublicationRecord`，保留 `source=fake_local` 和 `is_fake_local=true`，记录 `snapshot_count`、指标窗口、summary text、highlights、low performance signals 和 next observations。指标字段允许部分为空；没有 metrics snapshots 时固定语义为创建明确的 no-metrics fake/local summary。archived project 允许读取已有 summary，但禁止创建新的 summary。
+
+同时执行安全扫描，确认没有真实密钥、token、API key、secret、私钥、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体或运行时文件进入 Git。v0.7 Batch 1 不接真实 Douyin API、不实现 OAuth、不保存凭据、不抓取真实指标、不调用外部服务、不做定时指标同步、不做数据分析推荐算法、不新增真实平台 dashboard，也不自动优化内容。
 
 ## 启动 Backend
 
@@ -161,6 +184,7 @@ uv run --extra test pytest
 - Review Draft list / read / approve / reject，以及 pending_review placeholder、archived project、cross-project 访问和 approve / reject 无副作用边界。
 - PublishIntent create / list / read / cancel / confirm / fake publish，以及必须基于同项目 approved Review Draft、archived project 只读、cross-project 访问 404、confirm 创建 `not_started` PublicationRecord placeholder、fake publish 更新为本地 `succeeded`、Review Draft 状态不变和无真实发布 / 上传 / OAuth / 真实 Provider 副作用边界。
 - PublicationMetricSnapshot create fake / list / read，以及必须关联同项目 PublicationRecord、archived project 只读、cross-project 访问 404、`fake_local` source 和无真实指标抓取 / OAuth / token / 外部服务副作用边界。
+- PublicationMetricReviewSummary create fake / list / read，以及必须关联同项目 PublicationRecord、archived project 只读、cross-project 访问 404、缺失指标字段容忍、无 metrics snapshots 时生成 no-metrics fake/local summary、`fake_local` source 和无真实平台分析 / 自动推荐 / 自动内容优化副作用边界。
 - 项目详情页 Publishing / Fake Publishing UI，覆盖 approved Review Draft 创建 PublishIntent、pending 确认与取消、confirmed 后查看 PublicationRecord、执行本地 Fake Publish、查看和手动生成 fake/local metrics snapshots、fake succeeded 提示，以及 archived 项目只读。
 - ContentPlan / GenerationSchedule / Manual GenerationRun frontend UI list/create/enable/disable/manual trigger，以及 trigger 成功后刷新 GenerationRuns 和 Review Drafts。
 - Review Draft frontend UI list/status 展示、热点来源 fallback、approve / reject 成功后刷新，以及 archived 项目只读。

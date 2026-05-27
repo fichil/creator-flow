@@ -155,6 +155,28 @@ CREATE TABLE IF NOT EXISTS publication_metric_snapshots (
     CHECK (completion_rate IS NULL OR (completion_rate >= 0 AND completion_rate <= 1))
 );
 
+CREATE TABLE IF NOT EXISTS publication_metric_review_summaries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    publication_record_id INTEGER NOT NULL,
+    source TEXT NOT NULL,
+    is_fake_local INTEGER NOT NULL DEFAULT 1,
+    summary_text TEXT NOT NULL,
+    highlights TEXT NOT NULL,
+    low_performance_signals TEXT NOT NULL,
+    next_observations TEXT NOT NULL,
+    snapshot_count INTEGER NOT NULL,
+    metric_window_start TEXT,
+    metric_window_end TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (publication_record_id) REFERENCES publication_records(id) ON DELETE CASCADE,
+    CHECK (source IN ('fake_local')),
+    CHECK (is_fake_local IN (0, 1)),
+    CHECK (snapshot_count >= 0)
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -430,6 +452,12 @@ ON publication_metric_snapshots (publication_record_id, captured_at DESC, id DES
 
 CREATE INDEX IF NOT EXISTS idx_publication_metric_snapshots_project_id_created_at
 ON publication_metric_snapshots (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_publication_metric_review_summaries_record_created_at
+ON publication_metric_review_summaries (publication_record_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_publication_metric_review_summaries_project_id_created_at
+ON publication_metric_review_summaries (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_topic_generation_runs_project_id_created_at
 ON topic_generation_runs (project_id, created_at DESC, id DESC);
