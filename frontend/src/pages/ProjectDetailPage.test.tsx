@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectDetailPage } from "./ProjectDetailPage";
 import type {
+  ContentPlan,
+  GenerationRun,
+  GenerationSchedule,
   ProjectDetail,
   RenderJob,
   ReviewDraft,
@@ -272,6 +275,60 @@ const reviewDraftRejected: ReviewDraft = {
   updated_at: "2026-05-26T08:21:00Z",
 };
 
+const contentPlanOne: ContentPlan = {
+  id: 401,
+  project_id: 1,
+  name: "Weekly AI dev log",
+  account_positioning: "Chinese developer sharing practical AI workflow notes",
+  content_type: "programmer_real_problem",
+  target_frequency_per_week: 3,
+  preferences: '{"tone":"practical"}',
+  is_enabled: true,
+  created_at: "2026-05-26T08:22:00Z",
+  updated_at: "2026-05-26T08:22:00Z",
+};
+
+const disabledContentPlan: ContentPlan = {
+  ...contentPlanOne,
+  id: 402,
+  name: "Disabled launch notes",
+  is_enabled: false,
+};
+
+const generationScheduleOne: GenerationSchedule = {
+  id: 701,
+  project_id: 1,
+  content_plan_id: 401,
+  frequency_per_week: 3,
+  timezone: "Asia/Shanghai",
+  preferred_days: "Mon,Wed,Fri",
+  preferred_time: "09:30",
+  is_enabled: true,
+  created_at: "2026-05-26T08:23:00Z",
+  updated_at: "2026-05-26T08:23:00Z",
+};
+
+const disabledGenerationSchedule: GenerationSchedule = {
+  ...generationScheduleOne,
+  id: 702,
+  preferred_time: "18:00",
+  is_enabled: false,
+};
+
+const generationRunOne: GenerationRun = {
+  id: 1601,
+  project_id: 1,
+  content_plan_id: 401,
+  generation_schedule_id: null,
+  status: "succeeded",
+  trigger_type: "manual",
+  input_summary: "manual trigger for project_id=1; content_plan_id=401",
+  result_summary: "deterministic fake manual generation run succeeded",
+  error_message: null,
+  created_at: "2026-05-26T08:24:00Z",
+  updated_at: "2026-05-26T08:24:00Z",
+};
+
 type ServerOptions = {
   project?: ProjectDetail;
   candidates?: TopicCandidate[];
@@ -280,6 +337,9 @@ type ServerOptions = {
   renderJobs?: RenderJob[];
   subtitleDrafts?: SubtitleDraft[];
   reviewDrafts?: ReviewDraft[];
+  contentPlans?: ContentPlan[];
+  generationSchedules?: GenerationSchedule[];
+  generationRuns?: GenerationRun[];
   generateError?: string;
   generateScriptDraftsError?: string;
   generateStoryboardsError?: string;
@@ -308,6 +368,9 @@ function installFetchMock(options: ServerOptions = {}) {
   let renderJobs = [...(options.renderJobs ?? [])];
   let subtitleDrafts = [...(options.subtitleDrafts ?? [])];
   let reviewDrafts = [...(options.reviewDrafts ?? [])];
+  let contentPlans = [...(options.contentPlans ?? [])];
+  let generationSchedules = [...(options.generationSchedules ?? [])];
+  let generationRuns = [...(options.generationRuns ?? [])];
   const calls: string[] = [];
   const bodies: Record<string, string | undefined> = {};
 
@@ -338,6 +401,15 @@ function installFetchMock(options: ServerOptions = {}) {
     }
     if (method === "GET" && url.pathname === "/api/projects/1/review-drafts") {
       return jsonResponse(reviewDrafts);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/content-plans") {
+      return jsonResponse(contentPlans);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/generation-schedules") {
+      return jsonResponse(generationSchedules);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/generation-runs") {
+      return jsonResponse(generationRuns);
     }
     if (method === "POST" && url.pathname === "/api/projects/1/topic-candidates/generate") {
       if (options.generateError) {
@@ -467,6 +539,125 @@ function installFetchMock(options: ServerOptions = {}) {
       }));
       return jsonResponse(subtitleDrafts.find((subtitleDraft) => subtitleDraft.id === 1301));
     }
+    if (method === "POST" && url.pathname === "/api/projects/1/content-plans") {
+      const payload = JSON.parse(String(init?.body)) as {
+        name: string;
+        account_positioning: string;
+        content_type: string;
+        target_frequency_per_week: number;
+        preferences?: string | null;
+      };
+      const createdPlan: ContentPlan = {
+        id: 499,
+        project_id: 1,
+        name: payload.name,
+        account_positioning: payload.account_positioning,
+        content_type: payload.content_type,
+        target_frequency_per_week: payload.target_frequency_per_week,
+        preferences: payload.preferences ?? null,
+        is_enabled: true,
+        created_at: "2026-05-26T08:25:00Z",
+        updated_at: "2026-05-26T08:25:00Z",
+      };
+      contentPlans = [createdPlan, ...contentPlans];
+      return jsonResponse(createdPlan, 201);
+    }
+    const enableContentPlanMatch = url.pathname.match(/^\/api\/projects\/1\/content-plans\/(\d+)\/enable$/);
+    if (method === "POST" && enableContentPlanMatch) {
+      const contentPlanId = Number(enableContentPlanMatch[1]);
+      contentPlans = contentPlans.map((contentPlan) => ({
+        ...contentPlan,
+        is_enabled: contentPlan.id === contentPlanId ? true : contentPlan.is_enabled,
+      }));
+      return jsonResponse(contentPlans.find((contentPlan) => contentPlan.id === contentPlanId));
+    }
+    const disableContentPlanMatch = url.pathname.match(/^\/api\/projects\/1\/content-plans\/(\d+)\/disable$/);
+    if (method === "POST" && disableContentPlanMatch) {
+      const contentPlanId = Number(disableContentPlanMatch[1]);
+      contentPlans = contentPlans.map((contentPlan) => ({
+        ...contentPlan,
+        is_enabled: contentPlan.id === contentPlanId ? false : contentPlan.is_enabled,
+      }));
+      return jsonResponse(contentPlans.find((contentPlan) => contentPlan.id === contentPlanId));
+    }
+    const createGenerationScheduleMatch = url.pathname.match(
+      /^\/api\/projects\/1\/content-plans\/(\d+)\/generation-schedules$/,
+    );
+    if (method === "POST" && createGenerationScheduleMatch) {
+      const contentPlanId = Number(createGenerationScheduleMatch[1]);
+      const contentPlan = contentPlans.find((item) => item.id === contentPlanId) ?? contentPlanOne;
+      const payload = JSON.parse(String(init?.body)) as {
+        frequency_per_week?: number | null;
+        timezone: string;
+        preferred_days?: string | null;
+        preferred_time: string;
+      };
+      const createdSchedule: GenerationSchedule = {
+        id: 799,
+        project_id: 1,
+        content_plan_id: contentPlanId,
+        frequency_per_week: payload.frequency_per_week ?? contentPlan.target_frequency_per_week,
+        timezone: payload.timezone,
+        preferred_days: payload.preferred_days ?? null,
+        preferred_time: payload.preferred_time,
+        is_enabled: true,
+        created_at: "2026-05-26T08:26:00Z",
+        updated_at: "2026-05-26T08:26:00Z",
+      };
+      generationSchedules = [createdSchedule, ...generationSchedules];
+      return jsonResponse(createdSchedule, 201);
+    }
+    const enableGenerationScheduleMatch = url.pathname.match(/^\/api\/projects\/1\/generation-schedules\/(\d+)\/enable$/);
+    if (method === "POST" && enableGenerationScheduleMatch) {
+      const generationScheduleId = Number(enableGenerationScheduleMatch[1]);
+      generationSchedules = generationSchedules.map((generationSchedule) => ({
+        ...generationSchedule,
+        is_enabled: generationSchedule.id === generationScheduleId ? true : generationSchedule.is_enabled,
+      }));
+      return jsonResponse(generationSchedules.find((generationSchedule) => generationSchedule.id === generationScheduleId));
+    }
+    const disableGenerationScheduleMatch = url.pathname.match(/^\/api\/projects\/1\/generation-schedules\/(\d+)\/disable$/);
+    if (method === "POST" && disableGenerationScheduleMatch) {
+      const generationScheduleId = Number(disableGenerationScheduleMatch[1]);
+      generationSchedules = generationSchedules.map((generationSchedule) => ({
+        ...generationSchedule,
+        is_enabled: generationSchedule.id === generationScheduleId ? false : generationSchedule.is_enabled,
+      }));
+      return jsonResponse(generationSchedules.find((generationSchedule) => generationSchedule.id === generationScheduleId));
+    }
+    const createGenerationRunMatch = url.pathname.match(/^\/api\/projects\/1\/content-plans\/(\d+)\/generation-runs$/);
+    if (method === "POST" && createGenerationRunMatch) {
+      const contentPlanId = Number(createGenerationRunMatch[1]);
+      const payload = JSON.parse(String(init?.body)) as { generation_schedule_id?: number };
+      const createdRun: GenerationRun = {
+        id: 1699,
+        project_id: 1,
+        content_plan_id: contentPlanId,
+        generation_schedule_id: payload.generation_schedule_id ?? null,
+        status: "succeeded",
+        trigger_type: "manual",
+        input_summary: `manual trigger for content_plan_id=${contentPlanId}`,
+        result_summary: "deterministic fake manual generation run succeeded",
+        error_message: null,
+        created_at: "2026-05-26T08:27:00Z",
+        updated_at: "2026-05-26T08:27:00Z",
+      };
+      generationRuns = [createdRun, ...generationRuns];
+      reviewDrafts = [
+        {
+          ...reviewDraftPending,
+          id: 1599,
+          content_plan_id: contentPlanId,
+          generation_schedule_id: payload.generation_schedule_id ?? null,
+          generation_run_id: createdRun.id,
+          title: "Review draft from new manual run",
+          created_at: "2026-05-26T08:27:00Z",
+          updated_at: "2026-05-26T08:27:00Z",
+        },
+        ...reviewDrafts,
+      ];
+      return jsonResponse(createdRun, 201);
+    }
     const approveReviewDraftMatch = url.pathname.match(/^\/api\/projects\/1\/review-drafts\/(\d+)\/approve$/);
     if (method === "POST" && approveReviewDraftMatch) {
       const reviewDraftId = Number(approveReviewDraftMatch[1]);
@@ -504,8 +695,164 @@ async function renderProject(options?: ServerOptions) {
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/renders"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/subtitle-drafts"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/review-drafts"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/content-plans"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/generation-schedules"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/generation-runs"));
   return server;
 }
+
+describe("ProjectDetailPage content plans", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("shows content plan, generation schedule, and generation run lists", async () => {
+    await renderProject({
+      contentPlans: [contentPlanOne],
+      generationRuns: [generationRunOne],
+      generationSchedules: [generationScheduleOne],
+    });
+
+    const contentPlanCard = screen.getByLabelText("内容计划：Weekly AI dev log");
+    expect(within(contentPlanCard).getByText("Chinese developer sharing practical AI workflow notes")).toBeTruthy();
+    expect(within(contentPlanCard).getByText("programmer_real_problem")).toBeTruthy();
+    expect(within(contentPlanCard).getAllByText("每周 3 次")[0]).toBeTruthy();
+    expect(within(contentPlanCard).getByText('{"tone":"practical"}')).toBeTruthy();
+    expect(within(contentPlanCard).getAllByText("已启用")[0]).toBeTruthy();
+
+    const generationScheduleItem = within(contentPlanCard).getByLabelText("生成计划 701");
+    expect(within(generationScheduleItem).getByText("Asia/Shanghai")).toBeTruthy();
+    expect(within(generationScheduleItem).getByText("Mon,Wed,Fri")).toBeTruthy();
+    expect(within(generationScheduleItem).getByText("09:30")).toBeTruthy();
+
+    const generationRunItem = within(contentPlanCard).getByLabelText("GenerationRun 1601");
+    expect(within(generationRunItem).getByText("成功")).toBeTruthy();
+    expect(within(generationRunItem).getByText("手动运行 / 无计划")).toBeTruthy();
+  });
+
+  it("creates a content plan", async () => {
+    const server = await renderProject();
+
+    fireEvent.change(screen.getByLabelText("计划名称"), { target: { value: "Launch notes plan" } });
+    fireEvent.change(screen.getByLabelText("内容类型"), { target: { value: "open_source_build_log" } });
+    fireEvent.change(screen.getByLabelText("每周目标频率"), { target: { value: "4" } });
+    fireEvent.change(screen.getByLabelText("账号定位"), { target: { value: "AI builder shipping notes" } });
+    fireEvent.change(screen.getByLabelText("内容偏好"), { target: { value: '{"tone":"concise"}' } });
+    fireEvent.click(screen.getByRole("button", { name: "创建内容计划" }));
+
+    await screen.findByText("Launch notes plan");
+    expect(server.calls).toContain("POST /api/projects/1/content-plans");
+    expect(server.bodies["POST /api/projects/1/content-plans"]).toBe(
+      '{"name":"Launch notes plan","account_positioning":"AI builder shipping notes","content_type":"open_source_build_log","target_frequency_per_week":4,"preferences":"{\\"tone\\":\\"concise\\"}"}',
+    );
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/content-plans")).toHaveLength(2);
+  });
+
+  it("enables and disables content plans", async () => {
+    const server = await renderProject({ contentPlans: [contentPlanOne, disabledContentPlan] });
+
+    const enabledPlanCard = screen.getByLabelText("内容计划：Weekly AI dev log");
+    fireEvent.click(within(enabledPlanCard).getByRole("button", { name: "停用计划" }));
+    await waitFor(() => expect(screen.getByLabelText("内容计划：Weekly AI dev log").getAttribute("data-enabled")).toBe("false"));
+    expect(server.calls).toContain("POST /api/projects/1/content-plans/401/disable");
+
+    const disabledPlanCard = screen.getByLabelText("内容计划：Disabled launch notes");
+    fireEvent.click(within(disabledPlanCard).getByRole("button", { name: "启用计划" }));
+    await waitFor(() => expect(screen.getByLabelText("内容计划：Disabled launch notes").getAttribute("data-enabled")).toBe("true"));
+    expect(server.calls).toContain("POST /api/projects/1/content-plans/402/enable");
+  });
+
+  it("creates a generation schedule under a content plan", async () => {
+    const server = await renderProject({ contentPlans: [contentPlanOne] });
+
+    const contentPlanCard = screen.getByLabelText("内容计划：Weekly AI dev log");
+    fireEvent.change(within(contentPlanCard).getByLabelText("计划频率"), { target: { value: "5" } });
+    fireEvent.change(within(contentPlanCard).getByLabelText("时区"), { target: { value: "Asia/Shanghai" } });
+    fireEvent.change(within(contentPlanCard).getByLabelText("偏好日期"), { target: { value: "Tue,Thu" } });
+    fireEvent.change(within(contentPlanCard).getByLabelText("偏好时间"), { target: { value: "10:15" } });
+    fireEvent.click(within(contentPlanCard).getByRole("button", { name: "创建生成计划" }));
+
+    await within(contentPlanCard).findByText("10:15");
+    expect(server.calls).toContain("POST /api/projects/1/content-plans/401/generation-schedules");
+    expect(server.bodies["POST /api/projects/1/content-plans/401/generation-schedules"]).toBe(
+      '{"frequency_per_week":5,"timezone":"Asia/Shanghai","preferred_days":"Tue,Thu","preferred_time":"10:15"}',
+    );
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/generation-schedules")).toHaveLength(2);
+  });
+
+  it("enables and disables generation schedules", async () => {
+    const server = await renderProject({
+      contentPlans: [contentPlanOne],
+      generationSchedules: [generationScheduleOne, disabledGenerationSchedule],
+    });
+
+    const enabledSchedule = screen.getByLabelText("生成计划 701");
+    fireEvent.click(within(enabledSchedule).getByRole("button", { name: "停用生成计划" }));
+    await waitFor(() => expect(screen.getByLabelText("生成计划 701").getAttribute("data-enabled")).toBe("false"));
+    expect(server.calls).toContain("POST /api/projects/1/generation-schedules/701/disable");
+
+    const disabledSchedule = screen.getByLabelText("生成计划 702");
+    fireEvent.click(within(disabledSchedule).getByRole("button", { name: "启用生成计划" }));
+    await waitFor(() => expect(screen.getByLabelText("生成计划 702").getAttribute("data-enabled")).toBe("true"));
+    expect(server.calls).toContain("POST /api/projects/1/generation-schedules/702/enable");
+  });
+
+  it("creates a manual generation run without a schedule and refreshes review drafts", async () => {
+    const server = await renderProject({ contentPlans: [contentPlanOne] });
+
+    const contentPlanCard = screen.getByLabelText("内容计划：Weekly AI dev log");
+    fireEvent.click(within(contentPlanCard).getByRole("button", { name: "手动生成" }));
+
+    await within(contentPlanCard).findByText("GenerationRun #1699");
+    expect(await screen.findByText("Review draft from new manual run")).toBeTruthy();
+    expect(server.calls).toContain("POST /api/projects/1/content-plans/401/generation-runs");
+    expect(server.bodies["POST /api/projects/1/content-plans/401/generation-runs"]).toBe("{}");
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/generation-runs")).toHaveLength(2);
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(2);
+  });
+
+  it("creates a manual generation run with a generation schedule", async () => {
+    const server = await renderProject({
+      contentPlans: [contentPlanOne],
+      generationSchedules: [generationScheduleOne],
+    });
+
+    const generationScheduleItem = screen.getByLabelText("生成计划 701");
+    fireEvent.click(within(generationScheduleItem).getByRole("button", { name: "按此计划手动生成" }));
+
+    await screen.findByText("GenerationRun #1699");
+    expect(server.calls).toContain("POST /api/projects/1/content-plans/401/generation-runs");
+    expect(server.bodies["POST /api/projects/1/content-plans/401/generation-runs"]).toBe('{"generation_schedule_id":701}');
+    expect(screen.getAllByText("#701")[0]).toBeTruthy();
+  });
+
+  it("keeps planning controls read-only for archived projects", async () => {
+    await renderProject({
+      project: { ...baseProject, status: "archived" },
+      contentPlans: [contentPlanOne],
+      generationRuns: [generationRunOne],
+      generationSchedules: [generationScheduleOne],
+      reviewDrafts: [reviewDraftPending],
+    });
+
+    const contentPlanCard = screen.getByLabelText("内容计划：Weekly AI dev log");
+    const generationScheduleItem = within(contentPlanCard).getByLabelText("生成计划 701");
+    expect(screen.getByText("当前项目已归档，只能查看内容计划、生成计划和生成运行，不能继续修改或触发。")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "创建内容计划" })).toBeNull();
+    expect(within(contentPlanCard).queryByRole("button", { name: "停用计划" })).toBeNull();
+    expect(within(contentPlanCard).queryByRole("button", { name: "手动生成" })).toBeNull();
+    expect(within(contentPlanCard).queryByRole("button", { name: "创建生成计划" })).toBeNull();
+    expect(within(generationScheduleItem).queryByRole("button", { name: "停用生成计划" })).toBeNull();
+    expect(within(generationScheduleItem).queryByRole("button", { name: "按此计划手动生成" })).toBeNull();
+    expect(within(contentPlanCard).getByLabelText("GenerationRun 1601")).toBeTruthy();
+    expect(screen.getByLabelText("待审核草稿：Manual run review draft")).toBeTruthy();
+  });
+});
 
 describe("ProjectDetailPage topic candidates", () => {
   beforeEach(() => {
