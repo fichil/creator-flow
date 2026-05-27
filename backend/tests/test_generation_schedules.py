@@ -323,7 +323,5 @@ def test_generation_schedule_does_not_create_generation_run_or_change_project_st
     detail = client.get(f"/api/projects/{project_id}").json()
     assert detail["status"] == "draft"
     with sqlite3.connect(get_settings().database_path) as connection:
-        generation_run_table = connection.execute(
-            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'generation_runs'"
-        ).fetchone()
-    assert generation_run_table is None
+        generation_run_count = connection.execute("SELECT COUNT(*) FROM generation_runs").fetchone()[0]
+    assert generation_run_count == 0

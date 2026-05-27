@@ -154,11 +154,13 @@
 
 目标：支持用户配置内容计划和生成频率，并自动生成待审核草稿。
 
-状态：v0.4 Batch 2 已开始并完成 GenerationSchedule backend-only domain foundation；当前只支持项目级 `ContentPlan` 与其关联 `GenerationSchedule` 配置的 create / list / read / update / enable / disable，不执行定时任务，不创建 `GenerationRun`，不自动生成草稿，不实现 Scheduler / Trigger Engine、`Review Queue`、`Notification Service`、热点源或真实 AI Provider。
+状态：v0.4 Batch 3 已开始并完成 GenerationRun backend-only manual trigger foundation；当前支持项目级 `ContentPlan`、其关联 `GenerationSchedule` 配置，以及 backend-only fake manual `GenerationRun` 记录创建与查询。本阶段只允许 manual trigger，不执行 scheduled trigger，不实现 Scheduler / Trigger Engine，不自动生成真实草稿，不创建真实 Topic Candidate、Script Draft、Storyboard、Render Job、Subtitle Draft 或媒体文件，不实现 `Review Queue`、`Notification Service`、热点源或真实 AI Provider。
 
 已完成 Batch 1：实现 ContentPlan backend-only domain foundation。该批次新增项目级 `content_plans` 数据表、Pydantic schemas、API routes 和 backend tests，支持账号定位、内容类型、每周目标频率、偏好文本和启用状态配置；`target_frequency_per_week` 限制为 1 到 14。ContentPlan 只是本地配置，不触发任何自动生成行为，不接调度、发布、热点源或真实 AI Provider。
 
 已完成 Batch 2：实现 GenerationSchedule backend-only domain foundation。该批次新增项目级且绑定现有 `ContentPlan` 的 `generation_schedules` 数据表、Pydantic schemas、API routes 和 backend tests，支持 frequency、timezone、preferred days、preferred time 与启用状态配置；schedule 只是本地配置，不注册后台任务，不创建 `GenerationRun`，不自动生成草稿，不接 Scheduler、热点源、通知、发布或真实 AI Provider。
+
+已完成 Batch 3：实现 GenerationRun backend-only manual trigger foundation。该批次新增 `generation_runs` 数据表、Pydantic schemas、API routes 和 backend tests，支持基于项目级 `ContentPlan` 与可选 `GenerationSchedule` 创建 fake manual run，并同步标记为 `succeeded`，记录 deterministic input/result summary；本批不执行 schedule，不创建真实草稿或媒体，不接 Scheduler、后台 worker、热点源、发布或真实 AI Provider。
 
 范围：
 
