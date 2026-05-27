@@ -92,15 +92,51 @@ v0.7.0 release 之后的架构路线必须从 fake/local metrics review summary 
 
 核心领域模型不能依赖 Douyin 专有字段。`PublicationRecord`、`PublicationMetricSnapshot`、`MetricSource`、`ContentPlan`、`TopicCandidate`、`ScriptDraft` 和其他核心模型只能保存平台无关的必要字段；Douyin 原始响应、平台专有字段、scope 细节和接口差异应留在 provider adapter、provider metadata 或受控附加 metadata 中。
 
-Credential 与 secret 安全边界：
+### Provider Registry
+
+v0.8 的 Provider registry 或等价注册表方向用于描述平台能力，而不是直接实现真实平台接入。注册表至少应能表达：
+
+- `provider_id`：稳定 provider 标识，例如 `fake_local`、`douyin_sandbox` 或 `douyin_real`。
+- `provider_name`：面向用户或审查者可读的 provider 名称。
+- `provider_type`：能力类型，例如 `llm`、`renderer`、`publisher`、`metrics` 或 `platform`。
+- `source_type`：数据来源类型，例如 `fake_local`、`sandbox` 或 `real`。
+- capability metadata：例如 `supports_oauth`、`supports_metrics_read`、`supports_publish_prepare`、`supports_real_publish` 和 `supports_sandbox`。
+
+Provider adapter 负责隔离平台 API、OAuth scope、错误码、字段差异和原始响应。adapter 不能把 Douyin 或其他平台细节泄漏到核心领域模型中，也不能让 UI 或 API response 暗示未完成能力已经可用。
+
+### Credential Boundary
 
 - token、secret、refresh token、API key 和平台账号凭据不得进入 Git。
-- token、secret 和 refresh token 不得写入日志、测试 fixtures、示例数据、错误提示或运行时 artifact。
+- token、secret、authorization code、refresh token 和 API key 不得写入日志、测试 fixtures、测试快照、示例数据、错误响应或运行时 artifact。
 - 前端不得接收、缓存或展示 token、secret、refresh token 或平台原始凭据。
-- OAuth callback 必须校验 state，并在授权失败、权限不足、token 过期和 provider 接口失败时返回可审查的错误状态。
-- token 加密保存、刷新、撤销、过期和断开连接策略必须作为 v0.8 之后的独立安全边界处理。
+- 前端只能看到 connection status、provider display name、source type、capability metadata 和非敏感账号 metadata。
+- 后端只允许保存加密或引用化后的 credential material；生产级保存策略仍需后续独立实现和审查。
+- 本地开发可以使用 fake/local placeholder，但 placeholder 必须明确不是真实 token，也不能被文档、UI 或测试描述成真实凭据。
+- 本地安全存储策略方向可以包括环境变量、操作系统 secret store、开发专用 ignored config 或后续加密存储，但所有策略都必须排除 Git、日志、前端和测试快照。
+
+### OAuth Boundary
+
+- OAuth `state` 参数必须用于 CSRF 防护。
+- OAuth callback 必须校验 `state`，并拒绝缺失、过期或不匹配的回调。
+- callback 错误必须对用户和日志排查可见，但不能泄漏 token、secret、authorization code、refresh token、API key 或平台原始凭据。
+- redirect URI 必须有明确配置边界，不能由不可信输入任意覆盖。
+- token exchange 只能在后端完成。
+- access token / refresh token 不得暴露给前端。
+- access token / refresh token 加密保存策略必须在真实 OAuth 前完成设计；v0.8 Batch 1 只定义方向，不保存真实 token。
+- token refresh、expiry、revoke 和 disconnect 必须有生命周期策略，并能表达未连接、授权失败、token 过期、权限不足和 provider 接口失败等状态。
+
+### Audit / Logging
+
+- 后续 audit log 应记录 connection status 变化方向，例如未连接、已连接、断开连接和重新授权。
+- 后续 audit log 应记录授权失败、断开连接、token 过期、权限不足和 provider 接口失败等事件方向。
+- 日志不得包含 token、secret、authorization code、refresh token、API key、OAuth client secret 或真实平台凭据。
+- 错误消息必须可排查但不泄密；面向用户的错误应描述状态和下一步，而不是暴露平台原始响应或 credential material。
+
+### Fake / Real Isolation
 
 Provider 返回的数据必须明确 source 和授权状态。指标或连接状态至少需要能区分 `fake_local`、`douyin_sandbox`、`douyin_real`、未授权、授权失败、权限不足、token 过期和 provider 错误等情况。fake/local provider 必须继续可用，作为没有平台授权、平台权限不可用或用户只想本地演示时的 fallback。
+
+`fake_local` 不能伪装成真实平台来源，`douyin_sandbox` 不能伪装成 `douyin_real`。所有 UI、API response 和文档都必须能区分 fake/local、sandbox/mock 和 real data。v0.7 fake/local metrics review summary workflow 在没有授权时仍应可用，并且仍然只代表本地开发、演示或测试数据。
 
 Douyin 接入不得绕过平台开放能力、应用审核、OAuth、API 权限或用户授权。如果 v0.9 / v1.0 期间真实 API 权限不可用，架构应允许 manual import 或 mock/sandbox provider contract test 作为 fallback，而不是把 fake 或 sandbox 数据伪装成真实平台表现。
 

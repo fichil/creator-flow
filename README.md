@@ -17,13 +17,13 @@ creator-flow 是一个可开源的 AI 短视频内容流水线，帮助用户将
 
 ## 后续路线
 
-当前稳定版本是 `v0.7.0 - local fake/manual metrics review summary workflow`。后续路线继续保持渐进式抖音用户测试路径：
+当前稳定版本仍是 `v0.7.0 - local fake/manual metrics review summary workflow`。下一阶段是 v0.8 Provider & Credential Security Foundation，后续路线继续保持渐进式抖音用户测试路径：
 
-- v0.8 Provider & Credential Security Foundation：建立 Provider、OAuth、Credential、Secret 和 token 生命周期安全边界。
-- v0.9 Douyin Provider POC / Sandbox Integration：进行抖音 Provider POC、sandbox/mock callback、账号连接状态和最小指标读取预研。
-- v1.0 Douyin Integration User Test Release：面向用户测试的抖音接入版本，不是生产级自动化发布版本。
+- v0.8 Provider & Credential Security Foundation：第一批只做 Provider、Credential、OAuth、Secret 和 token lifecycle 的文档边界，明确 credential boundary、secret boundary、OAuth state/callback security、provider capability metadata 和连接状态方向；本阶段不接真实 Douyin、不实现 OAuth、不保存 token、不抓取真实指标、不上传、不发布、不排期发布。
+- v0.9 Douyin Provider POC / Sandbox Integration：才进入 Douyin Provider POC / Sandbox Integration，验证 sandbox/mock callback、账号连接状态和最小指标读取预研。
+- v1.0 Douyin Integration User Test Release：才进入面向用户测试的抖音接入版本，不是生产级自动化发布版本。
 
-真实 Douyin 接入仍取决于平台开放能力、应用审核、OAuth、API 权限与用户授权。README 中的后续路线不表示当前已经接入真实抖音，也不表示已经具备真实发布、自动发布、批量发布、定时发布或生产级平台 dashboard。
+真实 Douyin 接入仍取决于平台开放能力、应用审核、OAuth、API 权限与用户授权。README 中的后续路线不表示当前已经接入真实抖音，也不表示已经具备真实 OAuth、token storage、真实指标抓取、真实发布、自动发布、批量发布、定时发布或生产级平台 dashboard。
 
 ## 本地启动快捷入口
 

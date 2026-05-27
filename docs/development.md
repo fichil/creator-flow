@@ -160,6 +160,27 @@ approved ReviewDraft
 
 同时执行安全扫描，确认没有真实密钥、token、API key、secret、私钥、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体、运行时文件、真实平台返回数据、真实 Douyin 凭据或真实 OAuth 回调凭据进入 Git。v0.7.0 不接真实 Douyin API、不实现 OAuth、不保存 access token / refresh token / API key / secret / credential、不抓取真实指标、不做定时同步、不做自动推荐算法、不自动优化内容、不新增真实平台 dashboard、不新增图表库、不新增独立 analytics 页面，也不触发真实上传、发布、排期发布或外部服务调用。真实平台接入、安全凭据、OAuth、真实指标读取仍属于 v0.8 / v0.9 / v1.0 后续方向。
 
+## v0.8 Batch 1 Provider & Credential Security documentation foundation 验收
+
+v0.8 Batch 1 只做文档和 ADR，用于建立 Provider registry、provider capability metadata、Credential boundary、secret boundary、OAuth state/callback security、token lifecycle、audit log、connection status 和 fake/sandbox/real source separation 的安全边界。本批不新增业务代码、不新增 API、不新增数据库表、不新增后端代码、不新增前端 UI、不实现真实 OAuth、不保存 token、不接真实 Douyin API、不抓取真实指标、不上传、不发布、不排期发布，也不调用外部服务。
+
+虽然本批只修改文档，仍建议运行完整测试，确保文档变更没有破坏现有项目和质量门禁。验收命令与之前保持一致，从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描应确认没有真实密钥、access token、refresh token、API key、secret、私钥、credential、authorization code、OAuth client secret、本机绝对路径、SQLite DB、`uploads/`、`node_modules/`、`.venv/`、`dist/`、生成媒体、运行时文件、真实平台返回数据、真实 Douyin 凭据或真实 OAuth 回调凭据进入 Git。文档可以出现 fake/local、placeholder、OAuth is not implemented、tokens are not stored、credential boundary、secret boundary 和 token lifecycle 等边界说明，但不能提交真实凭据或运行时产物。
+
 ## 启动 Backend
 
 ```powershell

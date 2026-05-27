@@ -380,31 +380,60 @@
 
 目标：为真实平台接入建立 Provider、OAuth、Credential 和 Secret 管理边界，先解决安全基础和架构基础，再进入抖音 POC。
 
-状态：Planned。
+状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，仅完成文档与 ADR 边界，不代表 v0.8 release 已完成。
+
+Batch 1（本批）：
+
+- Provider & Credential Security documentation foundation。
+- 只更新 README、产品规格、架构、路线图、本地开发说明和 ADR。
+- 不新增业务功能。
+- 不新增 API。
+- 不新增数据库表。
+- 不新增后端代码。
+- 不新增前端 UI。
+- 不实现真实 OAuth。
+- 不保存 token。
+- 不接真实 Douyin API。
+- 不抓取真实指标。
+- 不上传、不发布、不排期发布。
 
 范围：
 
 - `PlatformProvider` registry 或等价 Provider registry 抽象方向。
-- Credential model、secret boundary 和本地安全存储策略设计。
+- Provider capability metadata，例如 `supports_oauth`、`supports_metrics_read`、`supports_publish_prepare`、`supports_real_publish` 和 `supports_sandbox`。
+- Credential model、secret boundary 和本地安全存储策略方向。
 - OAuth state、callback、CSRF 防护、错误回跳和授权状态边界设计。
-- access token / refresh token 加密保存策略与 refresh token 生命周期策略。
-- provider capability metadata，例如是否支持 OAuth、指标读取、发布准备、真实发布或 sandbox。
+- access token / refresh token 加密保存策略方向。
+- token refresh、expiry、revoke 和 disconnect 生命周期策略方向。
 - audit log、connection status、授权失败状态和断开连接方向。
-- fake/local provider 与 future real provider 的隔离，确保 `fake_local` 不会伪装成真实平台来源。
+- fake/local provider 与 future real provider 的隔离，确保 `fake_local`、`douyin_sandbox` 和 `douyin_real` 等 source 不会互相伪装。
+- 错误状态方向：未连接、授权失败、token 过期、权限不足和 provider 接口失败。
 
 验收标准：
 
 - Provider registry 和 capability metadata 的边界可审查。
-- Credential 与 secret 不进入 Git、不进入日志、不暴露给前端。
+- Credential 与 secret 不进入 Git、不进入日志、不暴露给前端、不进入测试快照或错误响应。
 - OAuth state / callback 安全边界有明确设计。
 - token 保存、刷新、过期、撤销和断开连接的生命周期有明确策略。
-- fake/local provider 与 future real provider 的 source、授权状态和错误语义清晰隔离。
+- fake/local、sandbox/mock 和 future real provider 的 source、授权状态和错误语义清晰隔离。
 
 明确不做事项：
 
+- 不新增业务代码。
+- 不新增 API。
+- 不新增数据库表。
+- 不新增后端代码。
+- 不新增前端 UI。
+- 不实现真实 OAuth。
+- 不保存 token、API key、secret、refresh token 或 credential。
+- 不接真实 Douyin API。
 - 不抓取真实指标。
+- 不定时同步指标。
+- 不调用外部服务。
 - 不真实发布。
 - 不上传真实视频。
+- 不排期发布。
+- 不自动发布。
 - 不绕过平台授权。
 - 不把 token、API key、secret 或 refresh token 写入 Git。
 - 不把真实平台能力伪装成已完成。

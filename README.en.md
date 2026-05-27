@@ -17,13 +17,13 @@ This version is not production ready.
 
 ## Roadmap To Douyin User Testing
 
-The current stable version is `v0.7.0 - local fake/manual metrics review summary workflow`. The next roadmap continues a gradual path toward Douyin user testing:
+The current stable version remains `v0.7.0 - local fake/manual metrics review summary workflow`. The next stage is v0.8 Provider & Credential Security Foundation, and the roadmap continues a gradual path toward Douyin user testing:
 
-- v0.8 Provider & Credential Security Foundation: define Provider, OAuth, credential, secret, and token lifecycle boundaries.
-- v0.9 Douyin Provider POC / Sandbox Integration: validate a Douyin provider POC, sandbox/mock callbacks, account connection status, and minimal metrics-reading paths.
-- v1.0 Douyin Integration User Test Release: a Douyin integration user test release, not a production-grade automated publishing release.
+- v0.8 Provider & Credential Security Foundation: Batch 1 only documents the Provider, credential boundary, secret boundary, OAuth state/callback security, token lifecycle, provider capability metadata, and connection status boundaries. It is not real Douyin integration, has no OAuth implementation, no token storage, no real metrics fetching, and no upload / publish / scheduling.
+- v0.9 Douyin Provider POC / Sandbox Integration: the stage for a Douyin Provider POC / Sandbox Integration, sandbox/mock callbacks, account connection status, and minimal metrics-reading validation.
+- v1.0 Douyin Integration User Test Release: the stage for a Douyin integration user test release, not a production-grade automated publishing release.
 
-Real Douyin integration still depends on platform availability, app review, OAuth, API permissions, and explicit user authorization. This roadmap does not mean the current app already connects to real Douyin, publishes real content, auto-publishes, batch-publishes, schedules publishing, or provides a production platform dashboard.
+Real Douyin integration still depends on platform availability, app review, OAuth, API permissions, and explicit user authorization. This roadmap does not mean the current app already connects to real Douyin, implements OAuth, stores tokens, fetches real metrics, publishes real content, auto-publishes, batch-publishes, schedules publishing, or provides a production platform dashboard.
 
 ## Local Quick Start
 

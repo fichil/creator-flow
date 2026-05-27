@@ -122,6 +122,28 @@ v0.6 的目标是为发布后的内容记录指标反馈，帮助用户复盘内
 
 如果未来接入真实平台指标，必须经过用户授权，并且只能在授权范围内读取必要数据。系统不得未经授权抓取、推断、保存或展示平台账号数据，也不得保存 token、API key、secret 或其他凭据到 Git、示例数据、测试 fixtures、日志样例或运行时 artifact 中。
 
+## v0.8 Provider & Credential Security Foundation 产品边界
+
+v0.8 的产品目标是建立真实平台接入前的安全和架构基础，而不是承诺真实 Douyin 已可用。用户未来可以连接平台账号，但必须经过显式授权；在未授权时，fake/local workflow 仍应可用，且不要求授权。
+
+面向用户的连接能力方向包括：
+
+- 用户可以看到平台账号连接状态，例如未连接、已连接、授权失败、token 过期、权限不足和接口失败。
+- 用户可以看到授权失败、权限不足、token 过期等错误状态，但错误信息不得泄漏 secret、authorization code、access token 或 refresh token。
+- 用户可以断开连接，并使后续真实 provider 停止使用对应授权。
+- 平台能力必须通过 Provider capability metadata 展示，例如是否支持 OAuth、指标读取、发布准备、真实发布或 sandbox。
+- UI 不允许暗示尚未实现或未授权的能力已经可用。
+
+v0.8 不承诺：
+
+- 不承诺真实 Douyin 可用。
+- 不承诺真实 OAuth 可用。
+- 不承诺真实指标读取。
+- 不承诺真实发布、上传或排期发布。
+- 不承诺生产级 credential storage 已实现。
+
+v0.8 Batch 1 只建立 Provider、Credential、OAuth、Secret 和 token lifecycle 的安全与架构边界；不新增业务功能、不新增 API、不新增数据库表、不保存 token，也不调用真实 Douyin 或其他外部服务。
+
 ## Road to Douyin user testing
 
 v0.7.0 已完成 local fake/manual metrics review summary workflow。v0.7.0 之后的路线不再从 local fake/manual workflow 直接跳到生产级真实平台能力，而是继续进入 v0.8、v0.9 和 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。
