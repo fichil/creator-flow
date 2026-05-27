@@ -326,6 +326,29 @@ v0.8 Batch 11 产品边界：
 - v0.8 Batch 11 不承诺真实发布。
 - v0.8 Batch 11 只建立 frontend read-only OAuth boundary metadata display foundation。
 
+v0.8 Batch 12 产品边界：
+
+- 用户未来可以看到 provider token lifecycle boundary readiness。
+- 用户未来可以区分 `token_lifecycle_policy_status`、`token_storage_policy_status`、`refresh_policy_status`、`expiry_policy_status`、`revoke_policy_status`、`disconnect_policy_status`、`rotation_policy_status`、`error_redaction_policy_status` 和 `audit_event_policy_status`。
+- `fake_local` 显示为不需要 token、不需要 refresh、不需要 revoke、不需要 disconnect。
+- `douyin_sandbox` 和 `douyin_real` 当前只是 token lifecycle boundary placeholder metadata，`not_implemented` / `required_planned`。
+- 当前不会保存 access token 或 refresh token。
+- 当前不会执行 token refresh。
+- 当前不会执行 token revoke。
+- 当前不会执行 disconnect。
+- 当前不会执行 token rotation。
+- 当前不会显示真实 token lifecycle event。
+- 当前不会提供连接、授权、刷新、撤销、断开、上传、发布或排期发布入口。
+- 当前不会新增 secret input、token viewer 或 credential 管理界面。
+- v0.8 Batch 12 不承诺真实 Douyin 可用。
+- v0.8 Batch 12 不承诺真实 OAuth 可用。
+- v0.8 Batch 12 不承诺真实 token storage 可用。
+- v0.8 Batch 12 不承诺真实 token refresh / revoke / disconnect 可用。
+- v0.8 Batch 12 不承诺真实 Credential storage。
+- v0.8 Batch 12 不承诺真实指标读取。
+- v0.8 Batch 12 不承诺真实发布。
+- v0.8 Batch 12 只建立 backend token lifecycle boundary metadata foundation。
+
 ## Road to Douyin user testing
 
 v0.7.0 已完成 local fake/manual metrics review summary workflow。v0.7.0 之后的路线不再从 local fake/manual workflow 直接跳到生产级真实平台能力，而是继续进入 v0.8、v0.9 和 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。

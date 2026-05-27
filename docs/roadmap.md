@@ -380,7 +380,7 @@
 
 目标：为真实平台接入建立 Provider、OAuth、Credential 和 Secret 管理边界，先解决安全基础和架构基础，再进入抖音 POC。
 
-状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation，Batch 4 为 Provider Connection State & Sensitive Storage Status backend foundation，Batch 5 为 Provider Connection State frontend read-only UI foundation，Batch 6 为 Provider Credential Reference & Secret Redaction backend foundation，Batch 7 为 Provider Credential Reference frontend read-only UI foundation，Batch 8 为 Provider Security Audit Event & Redacted Audit Log backend foundation，Batch 9 为 Provider Security Audit Event frontend read-only UI foundation，Batch 10 为 Provider OAuth State & Callback Boundary backend foundation；这些批次不代表 v0.8 release 已完成。
+状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation，Batch 4 为 Provider Connection State & Sensitive Storage Status backend foundation，Batch 5 为 Provider Connection State frontend read-only UI foundation，Batch 6 为 Provider Credential Reference & Secret Redaction backend foundation，Batch 7 为 Provider Credential Reference frontend read-only UI foundation，Batch 8 为 Provider Security Audit Event & Redacted Audit Log backend foundation，Batch 9 为 Provider Security Audit Event frontend read-only UI foundation，Batch 10 为 Provider OAuth State & Callback Boundary backend foundation，Batch 11 为 Provider OAuth Boundary frontend read-only UI foundation，Batch 12 为 Provider Token Lifecycle Boundary backend foundation；这些批次不代表 v0.8 release 已完成。
 
 Batch 1（已完成）：
 
@@ -647,7 +647,7 @@ Batch 10（已完成）：
 - 不调用外部服务。
 - 不修改 v0.7.0 release scope。
 
-Batch 11（本批）：
+Batch 11（已完成）：
 
 - Provider OAuth Boundary frontend read-only UI foundation。
 - frontend-only 或 frontend + docs only。
@@ -682,6 +682,46 @@ Batch 11（本批）：
 - 不保存 raw request、raw response 或 raw payload。
 - 不新增真实 Credential storage。
 - 不新增 connect / authorize / refresh / revoke / disconnect 操作。
+- 不接真实 Douyin API。
+- 不抓取真实指标。
+- 不上传、不发布、不排期发布。
+- 不调用外部服务。
+- 不修改 v0.7.0 release scope。
+
+Batch 12（本批）：
+
+- Provider Token Lifecycle Boundary backend foundation。
+- backend-only。
+- 新增 metadata-only provider token lifecycle boundary table。
+- 新增 backend-only provider token lifecycle boundary metadata service。
+- 新增只读 provider token lifecycle boundary metadata API。
+- 明确 `token_lifecycle_policy_status`、`token_storage_policy_status`、`refresh_policy_status`、`expiry_policy_status`、`revoke_policy_status`、`disconnect_policy_status`、`rotation_policy_status`、`error_redaction_policy_status` 和 `audit_event_policy_status`。
+- 明确 `fake_local`、`douyin_sandbox`、`douyin_real` source separation。
+- 明确 `fake_local` 不要求 token、不要求 refresh、不要求 revoke、不要求 disconnect、不是真实 Douyin。
+- 明确 `douyin_sandbox` 和 `douyin_real` 当前只是 token lifecycle boundary placeholder metadata。
+- 明确 token lifecycle boundary metadata 不等于真实 token storage。
+- 明确 token lifecycle boundary metadata 不等于真实 token refresh。
+- 明确 token lifecycle boundary metadata 不等于真实 token revoke。
+- 明确 token lifecycle boundary metadata 不等于 disconnect implementation。
+- 不新增前端 UI。
+- 不实现 OAuth。
+- 不新增 OAuth callback route。
+- 不新增 OAuth state storage。
+- 不新增 token exchange。
+- 不生成真实 provider authorization URL。
+- 不保存 access token。
+- 不保存 refresh token。
+- 不保存 token value。
+- 不保存 secret。
+- 不保存 API key。
+- 不保存 authorization code。
+- 不保存 OAuth client secret。
+- 不保存 OAuth state value。
+- 不保存 credential material。
+- 不保存 raw request、raw response 或 raw payload。
+- 不新增真实 Credential storage。
+- 不新增 token refresh / revoke / disconnect 写 API。
+- 不新增 connect / authorize / refresh / revoke / disconnect 写 API。
 - 不接真实 Douyin API。
 - 不抓取真实指标。
 - 不上传、不发布、不排期发布。

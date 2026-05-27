@@ -380,6 +380,81 @@ CREATE TABLE IF NOT EXISTS provider_oauth_boundaries (
     CHECK (audit_event_policy_status IN ('metadata_only', 'planned', 'not_required'))
 );
 
+CREATE TABLE IF NOT EXISTS provider_token_lifecycle_boundaries (
+    provider_id TEXT PRIMARY KEY,
+    source_type TEXT NOT NULL,
+    token_lifecycle_policy_status TEXT NOT NULL,
+    token_storage_policy_status TEXT NOT NULL,
+    refresh_policy_status TEXT NOT NULL,
+    expiry_policy_status TEXT NOT NULL,
+    revoke_policy_status TEXT NOT NULL,
+    disconnect_policy_status TEXT NOT NULL,
+    rotation_policy_status TEXT NOT NULL,
+    error_redaction_policy_status TEXT NOT NULL,
+    audit_event_policy_status TEXT NOT NULL,
+    safe_status_message TEXT NOT NULL,
+    last_status_change_reason TEXT NOT NULL DEFAULT 'initial_metadata',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (token_lifecycle_policy_status IN ('not_required', 'planned', 'not_implemented', 'unavailable')),
+    CHECK (
+        token_storage_policy_status IN (
+            'none',
+            'planned',
+            'not_implemented',
+            'unavailable'
+        )
+    ),
+    CHECK (
+        refresh_policy_status IN (
+            'not_required',
+            'planned',
+            'required_planned',
+            'not_implemented',
+            'unavailable'
+        )
+    ),
+    CHECK (
+        expiry_policy_status IN (
+            'not_required',
+            'planned',
+            'required_planned',
+            'not_implemented',
+            'unavailable'
+        )
+    ),
+    CHECK (
+        revoke_policy_status IN (
+            'not_required',
+            'planned',
+            'required_planned',
+            'not_implemented',
+            'unavailable'
+        )
+    ),
+    CHECK (
+        disconnect_policy_status IN (
+            'not_required',
+            'planned',
+            'required_planned',
+            'not_implemented',
+            'unavailable'
+        )
+    ),
+    CHECK (
+        rotation_policy_status IN (
+            'not_required',
+            'planned',
+            'required_planned',
+            'not_implemented',
+            'unavailable'
+        )
+    ),
+    CHECK (error_redaction_policy_status IN ('active', 'planned', 'not_required')),
+    CHECK (audit_event_policy_status IN ('metadata_only', 'planned', 'not_required'))
+);
+
 CREATE TABLE IF NOT EXISTS topic_generation_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,

@@ -411,6 +411,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。UI 文案中的 token / OAuth / credential / secret / authorization code / state / callback 只能作为“不保存、不实现、不暴露”的边界说明。
 
+## v0.8 Batch 12 Provider Token Lifecycle Boundary backend foundation 验收
+
+v0.8 Batch 12 允许新增 backend-only provider token lifecycle boundary metadata table、backend-only provider token lifecycle boundary metadata service 和只读 provider token lifecycle boundary metadata API。本批新增的数据表只允许保存非敏感 metadata；API 只能返回 `token_lifecycle_policy_status`、`token_storage_policy_status`、`refresh_policy_status`、`expiry_policy_status`、`revoke_policy_status`、`disconnect_policy_status`、`rotation_policy_status`、`error_redaction_policy_status`、`audit_event_policy_status`、`safe_status_message` 和 `boundary_notes` 等边界 metadata。
+
+本批不新增前端 UI，不新增真实 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不新增 token exchange，不新增授权 URL 生成，不新增 Credential storage / token storage / real provider，不新增 token refresh / revoke / disconnect 写 API。本批 token lifecycle boundary metadata 不代表真实 token storage、refresh、expiry handling、revoke、disconnect 或 rotation。
+
+本地质量门禁要从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、refresh token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。文档和测试中的 token / OAuth / credential / secret / authorization code / state / refresh / revoke / disconnect 只能作为“不保存、不实现、不暴露”的边界说明、fake 测试输入或黑名单断言。
+
 ## 启动 Backend
 
 ```powershell
