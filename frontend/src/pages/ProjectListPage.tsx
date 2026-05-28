@@ -6,6 +6,7 @@ import { ProviderConnectionStatePanel } from "../components/ProviderConnectionSt
 import { ProviderCredentialReferencePanel } from "../components/ProviderCredentialReferencePanel";
 import { ProviderOAuthBoundaryPanel } from "../components/ProviderOAuthBoundaryPanel";
 import { ProviderRegistryPanel } from "../components/ProviderRegistryPanel";
+import { ProviderReadinessSummaryPanel } from "../components/ProviderReadinessSummaryPanel";
 import { ProviderSecurityAuditPanel } from "../components/ProviderSecurityAuditPanel";
 import { ProviderTokenLifecyclePanel } from "../components/ProviderTokenLifecyclePanel";
 import { StatusBadge } from "../components/StatusBadge";
@@ -53,6 +54,7 @@ export function ProjectListPage({ onCreate, onOpen }: ProjectListPageProps) {
       <ProviderSecurityAuditPanel />
       <ProviderOAuthBoundaryPanel />
       <ProviderTokenLifecyclePanel />
+      <ProviderReadinessSummaryPanel />
       <label className="mt-5 inline-flex items-center gap-2 text-sm text-stone-700">
         <input
           checked={includeArchived}

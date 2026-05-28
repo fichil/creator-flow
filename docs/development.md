@@ -480,6 +480,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、refresh token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。文档和测试中的 token / OAuth / credential / secret / authorization code / state / refresh / revoke / disconnect / readiness 只能作为“不保存、不实现、不暴露”的边界说明、fake 测试输入或黑名单断言。
 
+## v0.8 Batch 15 Provider Integration Readiness Summary frontend read-only UI foundation 验收
+
+v0.8 Batch 15 允许新增 frontend read-only Provider Integration Readiness Summary UI，并允许新增 frontend API client 类型和只读 fetch function。本批不新增 backend API，不修改数据库表，不新增真实 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不新增 token exchange，不新增授权 URL 生成，不新增 Credential storage / token storage / real provider，也不新增 token refresh / revoke / disconnect UI。
+
+本批不新增 readiness override / approve / certify UI，不新增 token viewer、secret input、credential 管理界面、authorization code input、OAuth state input、raw request viewer、raw response viewer、raw payload viewer、token response viewer、refresh response viewer 或 revoke response viewer。本批 UI 只能展示非敏感 readiness summary metadata；Readiness Summary UI 不代表真实 OAuth、真实 token lifecycle、真实 metrics fetching、真实 publishing 或 production readiness certification。
+
+本地质量门禁要从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、refresh token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。UI 文案中的 token / OAuth / credential / secret / authorization code / state / refresh / revoke / disconnect / readiness 只能作为“不保存、不实现、不暴露”的边界说明。
+
 ## 启动 Backend
 
 ```powershell

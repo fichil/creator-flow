@@ -8,6 +8,7 @@ import type {
   ProviderConnectionState,
   ProviderCredentialReference,
   ProviderOAuthBoundary,
+  ProviderReadinessSummary,
   ProviderSecurityAuditEvent,
   ProviderTokenLifecycleBoundary,
 } from "../api/client";
@@ -521,6 +522,137 @@ const tokenLifecycleBoundaries: ProviderTokenLifecycleBoundary[] = [
   },
 ];
 
+const readinessItems = [
+  {
+    boundary_id: "provider_registry",
+    boundary_name: "Provider Registry",
+    readiness_status: "metadata_only",
+    is_blocking_real_integration: false,
+    safe_status_message: "Provider registry metadata is available for this known provider.",
+    source_metadata: { provider_type: "platform" },
+  },
+  {
+    boundary_id: "capability_metadata",
+    boundary_name: "Capability Metadata",
+    readiness_status: "metadata_only",
+    is_blocking_real_integration: false,
+    safe_status_message: "Capability metadata is static, read-only, and does not imply real integration.",
+    source_metadata: { supports_oauth: false },
+  },
+  {
+    boundary_id: "connection_state",
+    boundary_name: "Connection State",
+    readiness_status: "not_required",
+    is_blocking_real_integration: false,
+    safe_status_message: "Connection state metadata is read-only.",
+    source_metadata: { authorization_status: "not_required" },
+  },
+  {
+    boundary_id: "credential_reference",
+    boundary_name: "Credential Reference",
+    readiness_status: "not_required",
+    is_blocking_real_integration: false,
+    safe_status_message: "Credential reference metadata is read-only.",
+    source_metadata: { storage_status: "none" },
+  },
+  {
+    boundary_id: "security_audit",
+    boundary_name: "Security Audit",
+    readiness_status: "metadata_only",
+    is_blocking_real_integration: false,
+    safe_status_message: "Security audit metadata can be read safely.",
+    source_metadata: { audit_boundary_status: "metadata_only" },
+  },
+  {
+    boundary_id: "oauth_boundary",
+    boundary_name: "OAuth Boundary",
+    readiness_status: "not_required",
+    is_blocking_real_integration: false,
+    safe_status_message: "OAuth boundary metadata is read-only.",
+    source_metadata: { state_policy_status: "not_required" },
+  },
+  {
+    boundary_id: "token_lifecycle_boundary",
+    boundary_name: "Token Lifecycle Boundary",
+    readiness_status: "not_required",
+    is_blocking_real_integration: false,
+    safe_status_message: "Token lifecycle boundary metadata is read-only.",
+    source_metadata: { token_storage_policy_status: "none" },
+  },
+];
+
+const readinessSummaries: ProviderReadinessSummary[] = [
+  {
+    provider_id: "fake_local",
+    provider_name: "Local Fake Provider",
+    source_type: "fake_local",
+    implementation_status: "available_local_fake",
+    is_available: true,
+    is_real_provider: false,
+    requires_user_authorization: false,
+    overall_readiness_status: "local_fake_ready",
+    v0_9_poc_readiness_status: "not_applicable_local_fake",
+    can_use_local_fake_workflow: true,
+    is_safe_to_attempt_real_oauth: false,
+    is_safe_to_store_tokens: false,
+    is_safe_to_fetch_real_metrics: false,
+    is_safe_to_publish: false,
+    is_ready_for_v0_9_sandbox_poc: false,
+    is_ready_for_v0_9_real_poc: false,
+    readiness_items: readinessItems,
+    blocking_reasons: ["local fake provider is not a real Douyin provider", "no real OAuth", "no real metrics"],
+    next_safe_steps: ["keep fake/local workflow available as fallback"],
+    safe_summary: "Local fake provider is ready only for local fake/demo/test workflow.",
+    boundary_notes: ["local fake/demo/test data only", "not real Douyin data", "no token stored"],
+  },
+  {
+    provider_id: "douyin_sandbox",
+    provider_name: "Douyin Sandbox Placeholder",
+    source_type: "sandbox",
+    implementation_status: "planned",
+    is_available: false,
+    is_real_provider: false,
+    requires_user_authorization: true,
+    overall_readiness_status: "sandbox_placeholder_not_ready",
+    v0_9_poc_readiness_status: "blocked_placeholder_only",
+    can_use_local_fake_workflow: false,
+    is_safe_to_attempt_real_oauth: false,
+    is_safe_to_store_tokens: false,
+    is_safe_to_fetch_real_metrics: false,
+    is_safe_to_publish: false,
+    is_ready_for_v0_9_sandbox_poc: false,
+    is_ready_for_v0_9_real_poc: false,
+    readiness_items: readinessItems,
+    blocking_reasons: ["OAuth is not implemented", "token lifecycle is not implemented"],
+    next_safe_steps: ["define v0.9 sandbox/mock callback smoke test separately"],
+    safe_summary: "Douyin sandbox readiness is placeholder metadata only.",
+    boundary_notes: ["placeholder metadata only", "no real Douyin API call"],
+  },
+  {
+    provider_id: "douyin_real",
+    provider_name: "Douyin Real Placeholder",
+    source_type: "real",
+    implementation_status: "planned",
+    is_available: false,
+    is_real_provider: true,
+    requires_user_authorization: true,
+    overall_readiness_status: "real_placeholder_not_ready",
+    v0_9_poc_readiness_status: "blocked_missing_real_oauth",
+    can_use_local_fake_workflow: false,
+    is_safe_to_attempt_real_oauth: false,
+    is_safe_to_store_tokens: false,
+    is_safe_to_fetch_real_metrics: false,
+    is_safe_to_publish: false,
+    is_ready_for_v0_9_sandbox_poc: false,
+    is_ready_for_v0_9_real_poc: false,
+    readiness_items: readinessItems,
+    blocking_reasons: ["real OAuth is not implemented", "token storage is not implemented"],
+    next_safe_steps: ["complete v0.8 readiness review before v0.9 POC"],
+    safe_summary: "Douyin real readiness is a future real provider placeholder only.",
+    boundary_notes: ["future real provider placeholder only", "not real Douyin integration"],
+  },
+];
+
 function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(
     new Response(JSON.stringify(body), {
@@ -552,6 +684,9 @@ function installListPageFetchMock(projects: Project[] = [project]) {
     }
     if (url.pathname === "/api/provider-token-lifecycle-boundaries") {
       return jsonResponse({ token_lifecycle_boundaries: tokenLifecycleBoundaries });
+    }
+    if (url.pathname === "/api/provider-readiness-summaries") {
+      return jsonResponse({ readiness_summaries: readinessSummaries });
     }
     if (url.pathname === "/api/projects") {
       return jsonResponse(projects);
@@ -598,12 +733,16 @@ describe("ProjectListPage", () => {
     expect(await screen.findByLabelText("Provider token lifecycle boundary fake_local")).toBeTruthy();
     expect(screen.getByLabelText("Provider token lifecycle boundary douyin_sandbox")).toBeTruthy();
     expect(screen.getByLabelText("Provider token lifecycle boundary douyin_real")).toBeTruthy();
+    expect(await screen.findByLabelText("Provider readiness summary fake_local")).toBeTruthy();
+    expect(screen.getByLabelText("Provider readiness summary douyin_sandbox")).toBeTruthy();
+    expect(screen.getByLabelText("Provider readiness summary douyin_real")).toBeTruthy();
     await waitFor(() => expect(server.calls).toContain("GET /api/providers"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-connections"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-credential-references"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-security-audit-events?limit=20"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-oauth-boundaries"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-token-lifecycle-boundaries"));
+    await waitFor(() => expect(server.calls).toContain("GET /api/provider-readiness-summaries"));
     await waitFor(() => expect(server.calls).toContain("GET /api/projects"));
   });
 

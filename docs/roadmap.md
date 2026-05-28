@@ -380,7 +380,7 @@
 
 目标：为真实平台接入建立 Provider、OAuth、Credential 和 Secret 管理边界，先解决安全基础和架构基础，再进入抖音 POC。
 
-状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation，Batch 4 为 Provider Connection State & Sensitive Storage Status backend foundation，Batch 5 为 Provider Connection State frontend read-only UI foundation，Batch 6 为 Provider Credential Reference & Secret Redaction backend foundation，Batch 7 为 Provider Credential Reference frontend read-only UI foundation，Batch 8 为 Provider Security Audit Event & Redacted Audit Log backend foundation，Batch 9 为 Provider Security Audit Event frontend read-only UI foundation，Batch 10 为 Provider OAuth State & Callback Boundary backend foundation，Batch 11 为 Provider OAuth Boundary frontend read-only UI foundation，Batch 12 为 Provider Token Lifecycle Boundary backend foundation，Batch 13 为 Provider Token Lifecycle Boundary frontend read-only UI foundation，Batch 14 为 Provider Integration Readiness Summary backend foundation；这些批次不代表 v0.8 release 已完成。
+状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation，Batch 4 为 Provider Connection State & Sensitive Storage Status backend foundation，Batch 5 为 Provider Connection State frontend read-only UI foundation，Batch 6 为 Provider Credential Reference & Secret Redaction backend foundation，Batch 7 为 Provider Credential Reference frontend read-only UI foundation，Batch 8 为 Provider Security Audit Event & Redacted Audit Log backend foundation，Batch 9 为 Provider Security Audit Event frontend read-only UI foundation，Batch 10 为 Provider OAuth State & Callback Boundary backend foundation，Batch 11 为 Provider OAuth Boundary frontend read-only UI foundation，Batch 12 为 Provider Token Lifecycle Boundary backend foundation，Batch 13 为 Provider Token Lifecycle Boundary frontend read-only UI foundation，Batch 14 为 Provider Integration Readiness Summary backend foundation，Batch 15 为 Provider Integration Readiness Summary frontend read-only UI foundation；这些批次不代表 v0.8 release 已完成。
 
 Batch 1（已完成）：
 
@@ -774,7 +774,7 @@ Batch 13（已完成）：
 - 不调用外部服务。
 - 不修改 v0.7.0 release scope。
 
-Batch 14（本批）：
+Batch 14（已完成）：
 
 - Provider Integration Readiness Summary backend foundation。
 - backend-only。
@@ -807,6 +807,48 @@ Batch 14（本批）：
 - 不新增真实 Credential storage。
 - 不新增 token refresh / revoke / disconnect 写 API。
 - 不新增 connect / authorize / refresh / revoke / disconnect 写 API。
+- 不接真实 Douyin API。
+- 不抓取真实指标。
+- 不上传、不发布、不排期发布。
+- 不调用外部服务。
+- 不修改 v0.7.0 release scope。
+
+Batch 15（本批）：
+
+- Provider Integration Readiness Summary frontend read-only UI foundation。
+- frontend-only 或 frontend + docs only。
+- 基于 Batch 14 的只读 `/api/provider-readiness-summaries` metadata API。
+- 在前端展示 provider readiness summary metadata、source type、implementation status、`overall_readiness_status`、`v0_9_poc_readiness_status`、`readiness_items`、`blocking_reasons`、`next_safe_steps`、`safe_summary` 和 boundary notes。
+- 明确区分 `fake_local`、`douyin_sandbox`、`douyin_real`。
+- 明确 Readiness Summary UI 只展示非敏感 readiness metadata。
+- 明确 `fake_local` local readiness 不等于真实 Douyin readiness。
+- 明确 `douyin_sandbox` 和 `douyin_real` 当前只是 metadata-only / placeholder readiness。
+- 明确 readiness summary 不等于真实 OAuth、真实 token storage、真实指标读取、真实发布或真实 v0.9 POC 已完成。
+- 明确 frontend 不提供 readiness override / approve / certify 操作。
+- 不新增 backend API。
+- 不修改数据库表。
+- 不新增 readiness 写入 UI。
+- 不新增 secret input 表单。
+- 不新增 token viewer。
+- 不新增 credential 管理界面。
+- 不实现 OAuth。
+- 不新增 OAuth callback route。
+- 不新增 OAuth state storage。
+- 不新增 token exchange。
+- 不生成真实 provider authorization URL。
+- 不保存 access token。
+- 不保存 refresh token。
+- 不保存 token value。
+- 不保存 secret。
+- 不保存 API key。
+- 不保存 authorization code。
+- 不保存 OAuth client secret。
+- 不保存 OAuth state value。
+- 不保存 credential material。
+- 不保存 raw request、raw response 或 raw payload。
+- 不保存 token expiry value、token refresh response、token revoke response 或 provider token response。
+- 不新增真实 Credential storage。
+- 不新增 connect / authorize / refresh / revoke / disconnect 操作。
 - 不接真实 Douyin API。
 - 不抓取真实指标。
 - 不上传、不发布、不排期发布。

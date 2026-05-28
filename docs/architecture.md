@@ -246,6 +246,18 @@ API consumer 只能看到非敏感 readiness metadata，例如 `overall_readines
 
 Future real provider planning 只能通过 readiness statuses、`blocking_reasons`、`next_safe_steps` 和 `boundary_notes` 表达，不能通过 ready、connected、authorized、token stored、token refreshed、real synced 或 published 状态暗示已可用。
 
+### Provider Integration Readiness Summary Frontend Read-only Boundary
+
+v0.8 Batch 15 在前端增加只读 Provider Integration Readiness Summary UI，但 frontend 只能消费 backend Provider Integration Readiness Summary 的只读 metadata。Frontend 不保存、不缓存、不展示 access token、refresh token、token value、secret、API key、authorization code、OAuth client secret、OAuth state value、credential material、private key、raw request、raw response、raw payload、token expiry value、token refresh response、token revoke response 或 provider token response，也不能从 readiness summary metadata 推断真实平台可用。
+
+UI 必须显式区分 `fake_local`、`douyin_sandbox` 和 `douyin_real`。`fake_local` 的 `local_fake_ready` 只能展示为 local fake workflow readiness，不得展示为 real provider readiness。`douyin_sandbox` / `douyin_real` 的 `metadata_only` 或 `placeholder_not_ready` 不得展示为 OAuth ready、token ready、metrics ready、publish ready 或 production ready。
+
+该 UI 可以展示 `overall_readiness_status`、`v0_9_poc_readiness_status`、`readiness_items`、`blocking_reasons`、`next_safe_steps`、`safe_summary` 和 `boundary_notes`。该 UI 不提供 connect / authorize / OAuth start / callback / token exchange / refresh / revoke / disconnect / rotate / mark expired / upload / publish / schedule 操作，也不提供 readiness approve、override、certify、production readiness declaration 或 v0.9 POC start 操作。
+
+该 UI 不提供 secret input、token viewer、credential viewer、authorization code input、OAuth state input、raw request viewer、raw response viewer、raw payload viewer、token response viewer、refresh response viewer 或 revoke response viewer。Readiness summary 只能作为 review aid 展示，不能暗示 production readiness certification。
+
+Future real provider planning 只能通过 readiness statuses、`blocking_reasons`、`next_safe_steps` 和 `boundary_notes` 展示，不能通过按钮、connected 状态、authorized 状态、token stored、token refreshed、real synced、published 或 production ready 状态暗示已可用。Provider Integration Readiness Summary UI 不等于真实 provider adapter，也不等于 OAuth、Credential 管理界面、Secret Manager、token console、token lifecycle executor、production readiness dashboard 或平台账号设置页。
+
 ### Credential Boundary
 
 - token、secret、refresh token、API key 和平台账号凭据不得进入 Git。

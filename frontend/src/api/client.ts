@@ -492,6 +492,43 @@ export type ProviderTokenLifecycleBoundaryListResponse = {
   token_lifecycle_boundaries: ProviderTokenLifecycleBoundary[];
 };
 
+export type ProviderBoundaryReadinessItem = {
+  boundary_id: string;
+  boundary_name: string;
+  readiness_status: string;
+  is_blocking_real_integration: boolean;
+  safe_status_message: string;
+  source_metadata: Record<string, unknown>;
+};
+
+export type ProviderReadinessSummary = {
+  provider_id: string;
+  provider_name: string;
+  source_type: string;
+  implementation_status: string;
+  is_available: boolean;
+  is_real_provider: boolean;
+  requires_user_authorization: boolean;
+  overall_readiness_status: string;
+  v0_9_poc_readiness_status: string;
+  can_use_local_fake_workflow: boolean;
+  is_safe_to_attempt_real_oauth: boolean;
+  is_safe_to_store_tokens: boolean;
+  is_safe_to_fetch_real_metrics: boolean;
+  is_safe_to_publish: boolean;
+  is_ready_for_v0_9_sandbox_poc: boolean;
+  is_ready_for_v0_9_real_poc: boolean;
+  readiness_items: ProviderBoundaryReadinessItem[];
+  blocking_reasons: string[];
+  next_safe_steps: string[];
+  safe_summary: string;
+  boundary_notes: string[];
+};
+
+export type ProviderReadinessSummaryListResponse = {
+  readiness_summaries: ProviderReadinessSummary[];
+};
+
 type TextMaterialType = "text" | "summary" | "project_record";
 type FileMaterialType = "image" | "screenshot";
 
@@ -567,6 +604,11 @@ export async function listProviderTokenLifecycleBoundaries(): Promise<ProviderTo
     "/api/provider-token-lifecycle-boundaries",
   );
   return response.token_lifecycle_boundaries;
+}
+
+export async function listProviderReadinessSummaries(): Promise<ProviderReadinessSummary[]> {
+  const response = await request<ProviderReadinessSummaryListResponse>("/api/provider-readiness-summaries");
+  return response.readiness_summaries;
 }
 
 export function createProject(payload: { title: string; description?: string }): Promise<Project> {
