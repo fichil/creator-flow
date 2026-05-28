@@ -236,6 +236,16 @@ Frontend 不保存、不缓存、不展示 access token、refresh token、token 
 
 `required_planned` 只能作为未来边界规划展示，不能暗示 refresh / expiry / revoke / disconnect / rotation 已启用。`token_storage_policy_status`、`refresh_policy_status`、`revoke_policy_status`、`disconnect_policy_status` 和 `rotation_policy_status` 只能作为安全边界 metadata 展示，不能暗示 token storage、token refresh、token revoke、disconnect 或 token rotation 已实现。Future real provider planning 只能通过 `implementation_status`、`token_lifecycle_policy_status`、`token_storage_policy_status`、`refresh_policy_status`、`expiry_policy_status`、`revoke_policy_status`、`disconnect_policy_status`、`rotation_policy_status`、`error_redaction_policy_status`、`audit_event_policy_status` 和 `boundary_notes` 展示，不能通过按钮、connected 状态、authorized 状态、token stored、token refreshed、token revoked、disconnected、rotated 或 real synced 状态暗示已可用。Provider Token Lifecycle Boundary UI 不等于真实 provider adapter，不等于 OAuth、Credential 管理界面、Secret Manager、token console、token lifecycle executor，也不等于平台账号设置页。
 
+### Provider Integration Readiness Summary Backend Foundation
+
+v0.8 Batch 14 增加 backend-only Provider Integration Readiness Summary computed metadata layer。该层依赖 Provider Registry 作为 provider source of truth，并聚合 Provider Registry、Connection State、Credential Reference、Security Audit、OAuth Boundary 和 Token Lifecycle Boundary 的非敏感 metadata。
+
+Provider Integration Readiness Summary 不新增数据库表，不保存 readiness state，不读取环境变量中的真实平台密钥，不读取 token、secret、authorization code、OAuth state value、raw request、raw response 或 raw payload，不调用外部服务，不实现 OAuth，不执行 token exchange、token refresh、token revoke、disconnect 或 rotation，也不等于真实 provider adapter、Credential storage 或 v0.9 POC 已完成。
+
+API consumer 只能看到非敏感 readiness metadata，例如 `overall_readiness_status`、`v0_9_poc_readiness_status`、`readiness_items`、`blocking_reasons`、`next_safe_steps`、`safe_summary` 和 `boundary_notes`。`fake_local` 的 local readiness 只代表 local fake/demo/test workflow 可用，不得解释为 real provider readiness。`douyin_sandbox` / `douyin_real` 的 metadata readiness 不得解释为真实 OAuth、真实 token lifecycle 或真实 metrics readiness。
+
+Future real provider planning 只能通过 readiness statuses、`blocking_reasons`、`next_safe_steps` 和 `boundary_notes` 表达，不能通过 ready、connected、authorized、token stored、token refreshed、real synced 或 published 状态暗示已可用。
+
 ### Credential Boundary
 
 - token、secret、refresh token、API key 和平台账号凭据不得进入 Git。

@@ -457,6 +457,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、refresh token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。UI 文案中的 token / OAuth / credential / secret / authorization code / state / refresh / revoke / disconnect 只能作为“不保存、不实现、不暴露”的边界说明。
 
+## v0.8 Batch 14 Provider Integration Readiness Summary backend foundation 验收
+
+v0.8 Batch 14 允许新增 backend-only provider integration readiness summary service，并允许新增只读 provider readiness summary API。本批不新增数据库表，不新增前端 UI，不新增真实 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不新增 token exchange，不新增授权 URL 生成，不新增 Credential storage / token storage / real provider，也不新增 token refresh / revoke / disconnect 写 API。
+
+本批 readiness summary 只能聚合 Provider Registry、Connection State、Credential Reference、Security Audit、OAuth Boundary 和 Token Lifecycle Boundary 的非敏感 metadata。Readiness summary 不代表真实 OAuth、真实 token lifecycle、真实 metrics fetching 或 v0.9 POC 已完成，也不得把 `fake_local` 的 local fake/demo/test workflow readiness 解释为真实 Douyin readiness。
+
+本地质量门禁要从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、refresh token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。文档和测试中的 token / OAuth / credential / secret / authorization code / state / refresh / revoke / disconnect / readiness 只能作为“不保存、不实现、不暴露”的边界说明、fake 测试输入或黑名单断言。
+
 ## 启动 Backend
 
 ```powershell

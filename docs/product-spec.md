@@ -373,6 +373,28 @@ v0.8 Batch 13 产品边界：
 - v0.8 Batch 13 不承诺真实发布。
 - v0.8 Batch 13 只建立 frontend read-only token lifecycle boundary metadata display foundation。
 
+v0.8 Batch 14 产品边界：
+
+- 用户未来可以看到 provider integration readiness summary。
+- 用户未来可以区分 local fake readiness、sandbox placeholder readiness、future real provider placeholder readiness。
+- 用户未来可以看到 `readiness_items`、`blocking_reasons` 和 `next_safe_steps`。
+- `fake_local` 只表示 local fake/demo/test workflow 可用。
+- `douyin_sandbox` 和 `douyin_real` 当前只是 metadata-only / placeholder readiness。
+- 当前不会显示真实 OAuth 可用。
+- 当前不会显示真实 token storage 可用。
+- 当前不会显示真实 token refresh / revoke / disconnect 可用。
+- 当前不会显示真实 metrics fetching 可用。
+- 当前不会显示真实 publish / upload / scheduling 可用。
+- 当前不会新增连接、授权、刷新、撤销、断开、上传、发布或排期发布入口。
+- 当前不会新增 secret input、token viewer 或 credential 管理界面。
+- v0.8 Batch 14 不承诺真实 Douyin 可用。
+- v0.8 Batch 14 不承诺真实 OAuth 可用。
+- v0.8 Batch 14 不承诺真实 token lifecycle 可用。
+- v0.8 Batch 14 不承诺真实 Credential storage。
+- v0.8 Batch 14 不承诺真实指标读取。
+- v0.8 Batch 14 不承诺真实发布。
+- v0.8 Batch 14 只建立 backend readiness summary foundation。
+
 ## Road to Douyin user testing
 
 v0.7.0 已完成 local fake/manual metrics review summary workflow。v0.7.0 之后的路线不再从 local fake/manual workflow 直接跳到生产级真实平台能力，而是继续进入 v0.8、v0.9 和 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。

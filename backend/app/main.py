@@ -15,6 +15,7 @@ from app.api.routes import (
     provider_credential_references,
     provider_oauth_boundaries,
     provider_registry,
+    provider_readiness,
     provider_security_audit,
     provider_token_lifecycle,
     projects,
@@ -73,6 +74,11 @@ app.include_router(
     provider_token_lifecycle.router,
     prefix="/api/provider-token-lifecycle-boundaries",
     tags=["provider-token-lifecycle-boundaries"],
+)
+app.include_router(
+    provider_readiness.router,
+    prefix="/api/provider-readiness-summaries",
+    tags=["provider-readiness-summaries"],
 )
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(materials.router, prefix="/api/projects", tags=["materials"])
