@@ -380,7 +380,7 @@
 
 目标：为真实平台接入建立 Provider、OAuth、Credential 和 Secret 管理边界，先解决安全基础和架构基础，再进入抖音 POC。
 
-状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation，Batch 4 为 Provider Connection State & Sensitive Storage Status backend foundation，Batch 5 为 Provider Connection State frontend read-only UI foundation，Batch 6 为 Provider Credential Reference & Secret Redaction backend foundation，Batch 7 为 Provider Credential Reference frontend read-only UI foundation，Batch 8 为 Provider Security Audit Event & Redacted Audit Log backend foundation，Batch 9 为 Provider Security Audit Event frontend read-only UI foundation，Batch 10 为 Provider OAuth State & Callback Boundary backend foundation，Batch 11 为 Provider OAuth Boundary frontend read-only UI foundation，Batch 12 为 Provider Token Lifecycle Boundary backend foundation，Batch 13 为 Provider Token Lifecycle Boundary frontend read-only UI foundation，Batch 14 为 Provider Integration Readiness Summary backend foundation，Batch 15 为 Provider Integration Readiness Summary frontend read-only UI foundation，Batch 16 为 Provider & Credential Security Foundation RC Audit / Closure Checklist；这些批次不代表 v0.8 release 已完成。
+状态：Completed / Released。v0.8.0 已发布为 Provider & Credential Security Foundation release。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation，Batch 4 为 Provider Connection State & Sensitive Storage Status backend foundation，Batch 5 为 Provider Connection State frontend read-only UI foundation，Batch 6 为 Provider Credential Reference & Secret Redaction backend foundation，Batch 7 为 Provider Credential Reference frontend read-only UI foundation，Batch 8 为 Provider Security Audit Event & Redacted Audit Log backend foundation，Batch 9 为 Provider Security Audit Event frontend read-only UI foundation，Batch 10 为 Provider OAuth State & Callback Boundary backend foundation，Batch 11 为 Provider OAuth Boundary frontend read-only UI foundation，Batch 12 为 Provider Token Lifecycle Boundary backend foundation，Batch 13 为 Provider Token Lifecycle Boundary frontend read-only UI foundation，Batch 14 为 Provider Integration Readiness Summary backend foundation，Batch 15 为 Provider Integration Readiness Summary frontend read-only UI foundation，Batch 16 为 Provider & Credential Security Foundation RC Audit / Closure Checklist。v0.8.0 是安全边界 foundation release，不是真实 Douyin integration，不是 OAuth implementation，不是 token storage implementation，也不是 production release。
 
 Batch 1（已完成）：
 
@@ -855,7 +855,7 @@ Batch 15（已完成）：
 - 不调用外部服务。
 - 不修改 v0.7.0 release scope。
 
-Batch 16（本批）：
+Batch 16（已完成）：
 
 - Provider & Credential Security Foundation RC Audit / Closure Checklist。
 - docs-only。
@@ -866,7 +866,7 @@ Batch 16（本批）：
 - 梳理只读 frontend panels：Provider Registry、Connection State、Credential Reference、Security Audit、OAuth Boundary、Token Lifecycle Boundary、Integration Readiness Summary。
 - 梳理 metadata-only DB 表与 response schema 的敏感字段禁入边界。
 - 明确 v0.8 仍不等于真实 Douyin 接入、不等于 OAuth implementation、不等于 token storage、不等于真实指标读取、不等于真实发布、不等于 v0.9 POC 已完成。
-- 明确 README 仍保持当前稳定版本为 `v0.7.0`。
+- 在 RC audit 阶段确认 README 仍保持当前稳定版本为 `v0.7.0`；release finalization 后当前稳定版本更新为 `v0.8.0 - Provider & Credential Security Foundation`。
 - 明确 v0.9 才进入 Douyin Provider POC / Sandbox Integration。
 - 不新增业务代码。
 - 不新增 backend API。
@@ -880,6 +880,23 @@ Batch 16（本批）：
 - 不声明 v0.8 已 release。
 - 不进入 v0.9 POC 开发。
 - 不修改 v0.7.0 release scope。
+
+v0.8.0 Release Finalization（已完成）：
+
+- 将 v0.8 从 Planned / RC 阶段收口为 Completed / Released。
+- 新增 v0.8.0 release notes 和 v0.8.0 release ADR。
+- 当前稳定版本更新为 `v0.8.0 - Provider & Credential Security Foundation`。
+- v0.8.0 包含 Provider Registry、Connection State、Credential Reference、Security Audit、OAuth Boundary、Token Lifecycle Boundary、Integration Readiness Summary、对应 frontend read-only panels、文档、ADR 和 RC audit。
+- v0.8.0 不是真实 Douyin integration。
+- v0.8.0 不是 OAuth implementation。
+- v0.8.0 不是 token storage implementation。
+- v0.8.0 不保存 token、secret、API key、credential、authorization code 或 OAuth state。
+- v0.8.0 不抓取真实指标，不上传、不发布、不排期发布，不调用外部服务。
+- v0.8.0 不是 production release。
+- v0.9 remains the next stage。
+- v0.9 will be Douyin Provider POC / Sandbox Integration。
+- v0.9 must start with separate ADR / batch。
+- v0.9 must not silently turn placeholders into real provider behavior。
 
 范围：
 
@@ -938,7 +955,7 @@ Batch 16（本批）：
 
 目标：进行抖音 Provider 最小可行接入预研与 POC，验证 Provider contract、OAuth 回调和最小指标读取路径；该版本面向开发者/内部测试，不承诺用户级稳定可用。
 
-状态：Planned。
+状态：Planned / Next Stage。v0.9 是 v0.8.0 release 之后的下一阶段，必须以单独 ADR、单独 branch、单独测试和边界审查开始，不能静默把 `douyin_sandbox` 或 `douyin_real` placeholder 转成真实 provider 行为。
 
 范围：
 

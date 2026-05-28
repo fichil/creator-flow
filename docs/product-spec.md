@@ -426,7 +426,7 @@ v0.8 Batch 16 产品边界：
 - 用户不会看到新的前端 UI。
 - 用户不会看到新的连接、授权、刷新、撤销、断开、上传、发布、排期发布、readiness approval、readiness override 或 production readiness certification 操作。
 - 本批只梳理 Batch 1-15 的已完成范围、只读 API、frontend panels、metadata-only DB 表、response schema、文档一致性和安全扫描要求。
-- 当前稳定版本仍是 v0.7.0。
+- Batch 16 执行时当前稳定版本仍是 v0.7.0；v0.8.0 release finalization 后当前稳定版本更新为 v0.8.0。
 - v0.8 Batch 16 不创建 v0.8.0 tag。
 - v0.8 Batch 16 不声明 v0.8 已 release。
 - v0.8 Batch 16 不进入 v0.9 POC 开发。
@@ -437,9 +437,30 @@ v0.8 Batch 16 产品边界：
 - v0.8 Batch 16 不承诺真实指标读取。
 - v0.8 Batch 16 不承诺真实发布、上传或排期发布。
 
+v0.8.0 Provider & Credential Security Foundation 产品边界：
+
+- 用户现在可以看到 provider/security/readiness 边界，包括 Provider Registry、Connection State、Credential Reference、Security Audit、OAuth Boundary、Token Lifecycle Boundary 和 Integration Readiness Summary。
+- 所有 provider panels 均为 read-only metadata display。
+- 用户可以区分 `fake_local`、`douyin_sandbox` 和 `douyin_real`。
+- 用户可以看到 provider metadata、source type、implementation status、policy/status metadata、safe status message、readiness items、blocking reasons、next safe steps 和 boundary notes。
+- 用户不能连接真实 Douyin。
+- 用户不能授权 OAuth。
+- 用户不能保存 token、secret、API key、credential、authorization code 或 OAuth state。
+- 用户不能执行 token exchange、token refresh、token revoke、disconnect 或 token rotation。
+- 用户不能抓取真实指标。
+- 用户不能上传、发布或排期发布。
+- 用户不会看到 secret input、token viewer、credential 管理界面、raw request viewer、raw response viewer、raw payload viewer、readiness approval、readiness override 或 production readiness certification。
+- v0.8.0 不承诺真实 Douyin 可用。
+- v0.8.0 不承诺真实 OAuth 可用。
+- v0.8.0 不承诺真实 token storage 可用。
+- v0.8.0 不承诺真实 Credential storage。
+- v0.8.0 不承诺真实指标读取。
+- v0.8.0 不承诺真实发布。
+- v0.8.0 不是 production-ready real Douyin integration。
+
 ## Road to Douyin user testing
 
-v0.7.0 已完成 local fake/manual metrics review summary workflow。v0.7.0 之后的路线不再从 local fake/manual workflow 直接跳到生产级真实平台能力，而是继续进入 v0.8、v0.9 和 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。
+v0.7.0 已完成 local fake/manual metrics review summary workflow。v0.8.0 已完成 Provider & Credential Security Foundation release。v0.8.0 之后的路线不会从 metadata-only / read-only security foundation 直接跳到生产级真实平台能力，而是进入 v0.9 Douyin Provider POC / Sandbox Integration，再进入 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。
 
 用户测试目标：
 

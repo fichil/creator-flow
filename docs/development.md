@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.7.0 Metrics Review Summary local fake/manual workflow release 状态。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证内容项目、素材导入、ContentPlan / GenerationSchedule / Manual GenerationRun backend foundation 与 frontend UI foundation、Review Draft backend foundation 与 frontend UI foundation、PublishIntent / PublicationRecord backend foundation、PublishIntent confirm backend workflow、FakePublisherProvider backend workflow、PublicationMetricSnapshot backend foundation、FakeMetricsProvider backend workflow、PublicationMetricReviewSummary backend foundation、项目详情页本地 fake publishing workflow、fake metrics UI 与 fake/local metrics review summary UI、Topic Candidate、Script Draft、Storyboard、fake render job、fake subtitle draft 和 fake preview manifest metadata 工作流。v0.7.0 当前支持项目详情页查看和手动生成 fake/local metrics snapshots，并支持 backend API 与项目详情页创建、查询、读取和展示 fake/local metrics review summary。当前仍不接真实 Douyin API，不实现 OAuth，不保存 token / secret / API key，不上传、不发布、不排期、不自动发布，不做定时指标同步，不抓取真实平台指标，也不接真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.8.0 Provider & Credential Security Foundation release 状态。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证 v0.7.0 以前的 local fake/manual workflow，以及 v0.8.0 新增的 Provider Registry、Connection State、Credential Reference、Security Audit、OAuth Boundary、Token Lifecycle Boundary、Integration Readiness Summary 和对应 frontend read-only panels。v0.8.0 当前仍不接真实 Douyin API，不实现 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不执行 token exchange，不保存 token / secret / API key / credential / authorization code / OAuth state，不上传、不发布、不排期、不自动发布，不做定时指标同步，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -505,9 +505,9 @@ git status --short
 
 ## v0.8 Batch 16 Provider & Credential Security Foundation RC Audit / Closure Checklist 验收
 
-v0.8 Batch 16 只允许新增 v0.8 RC checklist 文档、新增 closure / RC audit ADR，并更新 README、roadmap、architecture、product spec 和 development docs。本批不新增业务代码，不新增 backend API，不修改数据库表，不新增前端 UI，不新增真实 Provider，不实现 OAuth，不新增 token lifecycle workflow，不接真实 Douyin，不创建 `v0.8.0` tag，不声明 v0.8 已 release，不进入 v0.9 POC 开发，也不修改 v0.7.0 release scope。
+v0.8 Batch 16 只允许新增 v0.8 RC checklist 文档、新增 closure / RC audit ADR，并更新 README、roadmap、architecture、product spec 和 development docs。Batch 16 本身不新增业务代码，不新增 backend API，不修改数据库表，不新增前端 UI，不新增真实 Provider，不实现 OAuth，不新增 token lifecycle workflow，不接真实 Douyin，不创建 `v0.8.0` tag，不声明 v0.8 已 release，不进入 v0.9 POC 开发，也不修改 v0.7.0 release scope；`v0.8.0` tag 只能由后续 release finalization 流程创建。
 
-RC checklist 必须覆盖 Batch 1-15 是否全部完成、每个 batch 的 branch / commit / 测试结果 / 边界确认、backend-only / frontend-only / docs-only 范围是否一致、所有只读 API 是否无写操作、所有 frontend panels 是否无操作按钮 / token viewer / secret input、所有 DB 表是否只保存 metadata、所有 response schema 是否不包含可承载敏感值字段、所有 docs 是否一致说明 v0.8 不等于真实 Douyin 接入、README 是否仍明确当前稳定版本是 v0.7.0、roadmap 是否明确 v0.9 才进入 Douyin Provider POC / Sandbox Integration。
+RC checklist 必须覆盖 Batch 1-15 是否全部完成、每个 batch 的 branch / commit / 测试结果 / 边界确认、backend-only / frontend-only / docs-only 范围是否一致、所有只读 API 是否无写操作、所有 frontend panels 是否无操作按钮 / token viewer / secret input、所有 DB 表是否只保存 metadata、所有 response schema 是否不包含可承载敏感值字段、所有 docs 是否一致说明 v0.8 不等于真实 Douyin 接入、Batch 16 执行时 README 是否仍明确当前稳定版本是 v0.7.0、roadmap 是否明确 v0.9 才进入 Douyin Provider POC / Sandbox Integration。release finalization 后 README 应更新为当前稳定版本 `v0.8.0 - Provider & Credential Security Foundation`。
 
 本地质量门禁要从仓库根目录执行：
 
@@ -525,6 +525,37 @@ git status --short
 ```
 
 安全扫描必须确认没有真实 token、refresh token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。文档中的 token / OAuth / credential / secret / authorization code / state / refresh / revoke / disconnect / readiness 只能作为“不保存、不实现、不暴露”的边界说明、RC 审计项或黑名单断言。
+
+## v0.8.0 Provider & Credential Security Foundation Release 验证
+
+v0.8.0 release finalization 只允许更新 README、README.en、roadmap、architecture、product spec、development docs，新增 release notes 和 release ADR，并创建 annotated `v0.8.0` tag。本 release 不新增业务代码，不新增 backend API，不修改数据库表，不新增前端 UI，不新增真实 Provider，不实现 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不新增 token exchange，不新增 Credential storage / token storage / real provider，不新增 connect / authorize / refresh / revoke / disconnect 写 API 或 UI action，不进入 v0.9 POC。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、refresh token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体、运行时文件或真实平台返回数据进入 Git。扫描命中文档中的 token / OAuth / credential / secret / authorization code / state / refresh / revoke / disconnect / readiness 只能作为“不保存、不实现、不暴露”的边界说明、fake 测试输入、黑名单断言或既有依赖元数据。
+
+tag 创建流程必须先确认 `git tag --list v0.8.0` 无输出，再创建 annotated tag：
+
+```powershell
+git tag -a v0.8.0 -m "v0.8.0 Provider & Credential Security Foundation"
+git push -u origin release/v0.8.0-provider-security-foundation
+git push origin v0.8.0
+```
+
+不得修改、删除或覆盖 `v0.7.0` tag。不得覆盖任何已有 tag。v0.8.0 release notes 必须继续说明 v0.8.0 不接真实 Douyin、不实现 OAuth、不保存 token / secret / API key / credential / authorization code / OAuth state、不抓取真实指标、不上传、不发布、不排期发布、不调用外部服务，也不声明 production ready。
 
 ## 启动 Backend
 
