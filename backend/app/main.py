@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
     content_plans,
+    douyin_sandbox,
     generation_runs,
     generation_schedules,
     health,
@@ -49,6 +50,11 @@ app.add_middleware(
 )
 
 app.include_router(health.router, prefix="/api", tags=["health"])
+app.include_router(
+    douyin_sandbox.router,
+    prefix="/api/providers/douyin",
+    tags=["douyin-sandbox"],
+)
 app.include_router(provider_registry.router, prefix="/api/providers", tags=["providers"])
 app.include_router(
     provider_connections.router,

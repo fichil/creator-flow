@@ -9,6 +9,7 @@ These stages are future roadmap targets. They are not current v0.9 capabilities.
 Current v0.9 work remains POC-oriented:
 
 - v0.9 establishes provider safety boundaries, sandbox-only deterministic workflows, registry / factory routing, and POC readiness documentation.
+- v0.9 Batch 6 adds a sandbox-only backend API contract / smoke endpoint surface for provider descriptors, mock connection, metrics preview, and publish dry-run.
 - v0.9 does not provide production readiness, commercial readiness, real Douyin publish readiness, or SaaS readiness.
 - v0.9 does not claim real OAuth, real token exchange, real credential storage, real metrics ingestion, real upload, real publishing, or scheduled publishing.
 - v0.9 Batch 5 is docs-only / planning-only and does not implement any new runtime capability.
@@ -36,6 +37,7 @@ Goal:
 
 - Establish safe provider boundaries for Douyin integration work.
 - Provide sandbox-only deterministic workflow, registry / factory routing, and readiness checklist coverage.
+- Provide a sandbox-only backend API callable surface for frontend sandbox POC or smoke checks.
 - Prepare the contract surface for v1.0 user testing.
 
 Non-Goals:
@@ -49,6 +51,7 @@ Non-Goals:
 Completion Standards:
 
 - POC planning, adapter skeleton, sandbox operations, provider routing, and sandbox metrics / mock workflow POC are documented and tested.
+- Sandbox API contract / smoke endpoints return deterministic sandbox / simulated / dry-run results only.
 - `fake_local`, `douyin_sandbox`, and `douyin_real` remain separated.
 - `douyin_real` remains blocked / not implemented until separate ADRs approve real integration.
 

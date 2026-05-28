@@ -142,9 +142,21 @@ The workflow layer does not register a real Douyin client, does not create an HT
 
 This sandbox metrics / mock workflow POC is not a real provider adapter implementation, not real OAuth, not a real sandbox callback, not token lifecycle implementation, and not real metrics, upload, publish, or scheduling capability.
 
+### v0.9 Douyin Sandbox API Contract / Smoke Endpoints
+
+v0.9 Batch 6 adds a backend-only sandbox API contract above the Douyin registry / factory and sandbox workflow layers. The API call chain is:
+
+`FastAPI route -> Douyin provider registry / factory -> douyin_sandbox adapter -> sandbox workflow result -> deterministic API response`.
+
+The API may expose provider descriptor list / lookup, sandbox mock connection, sandbox metrics preview, and sandbox publish dry-run endpoints. These endpoints are a v0.9 POC callable surface only. They return deterministic sandbox / simulated / dry-run payloads and stable fake ids, and they do not represent real Douyin account connection, real OAuth, real metrics, real upload, real publish, or scheduling.
+
+`douyin_real` remains blocked / not implemented through the API contract. Unknown provider ids must fail explicitly and must not fallback to `douyin_sandbox`.
+
+The sandbox API route does not use a database dependency, does not write persistence state, does not create HTTP clients, does not load SDKs, does not read environment secrets, does not read or save credentials, does not create OAuth URLs, and does not call external services. Real OAuth, real publish APIs, real metrics APIs, real token exchange, and real credential storage remain v1.0+ future work and require separate ADRs, tests, and security scans.
+
 ### Future Architecture Path to v2.0 Commercial Release
 
-v0.9 Batch 5 only aligns documentation and planning. It does not add architecture runtime capability. The current v0.9 architecture has sandbox/mock workflow and registry / factory foundation only; it does not implement real Douyin OAuth, token storage, real metrics fetching, real publishing, production deployment, tenant isolation, billing, RBAC, or admin console.
+v0.9 Batch 5 only aligns documentation and planning. It does not add architecture runtime capability. The current v0.9 architecture has sandbox/mock workflow, registry / factory foundation, and sandbox-only API contract only; it does not implement real Douyin OAuth, token storage, real metrics fetching, real publishing, production deployment, tenant isolation, billing, RBAC, or admin console.
 
 v1.0 real provider boundary:
 

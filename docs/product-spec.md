@@ -520,6 +520,19 @@ v0.9 Batch 5 产品边界：
 - 本批不新增真实 tenant、billing、RBAC 或 admin console 实现。
 - 本批不表示 v0.9 POC 已完成，不表示 v1.0、v1.5 或 v2.0 已完成，也不表示当前可以给直接客户生产商用或给客户的客户 SaaS 商用。
 
+v0.9 Batch 6 产品边界：
+
+- 本批新增 backend-only Douyin Sandbox API Contract / Smoke Endpoints，是 v0.9 POC callable surface。
+- 用户不会看到新增前端 UI，也不能通过本批完成真实抖音连接。
+- API 只返回 `douyin_sandbox` 的 deterministic sandbox / simulated / dry-run result。
+- API 可返回 provider descriptor list / lookup、sandbox mock connection、sandbox metrics preview 和 sandbox publish dry-run。
+- `douyin_real` 继续 blocked / not implemented。
+- unknown provider 明确失败，不 fallback 到 sandbox。
+- 本批 API 不是客户商用功能，不是生产 API，不表示可以真实发布抖音视频。
+- 本批不接真实 Douyin API，不实现 OAuth，不创建 OAuth URL，不新增 OAuth callback route，不新增 OAuth state storage，不交换或保存 token，也不读取环境变量密钥。
+- 本批不访问真实平台，不抓取真实指标，不上传、不发布、不排期发布，不写真实 publication record，也不新增真实 tenant、billing、RBAC 或 admin console 实现。
+- 本批不表示 v0.9 POC 已完成，不表示 v1.0、v1.5 或 v2.0 已完成。
+
 真实 Douyin API、真实 OAuth、真实 OAuth callback route、真实 token exchange、真实 token storage、真实指标读取、上传、发布、排期发布和自动发布都必须等后续单独 ADR、单独分支、单独测试和安全扫描通过后才能进入。
 
 ## Road to Douyin user testing
