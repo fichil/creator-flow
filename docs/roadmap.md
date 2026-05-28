@@ -1,6 +1,6 @@
 # 路线图
 
-本路线图描述计划和 readiness target，不代表当前仓库已经具备未来版本能力。当前已发布版本是 `v0.9.0 - Douyin Provider POC / Sandbox Integration`；v1.0 已进入 Batch 0 docs-only / planning-only 阶段，但真实 Douyin OAuth、token、publish、metrics 能力尚未开始实现。v1.5 和 v2.0 仍是后续目标，不是当前能力声明。
+本路线图描述计划和 readiness target，不代表当前仓库已经具备未来版本能力。当前已发布版本是 `v0.9.0 - Douyin Provider POC / Sandbox Integration`；v1.0 已进入 Batch 1 OAuth boundary / callback contract 阶段，但真实 Douyin OAuth、token、publish、metrics 能力尚未开始实现。v1.5 和 v2.0 仍是后续目标，不是当前能力声明。
 
 ## Phase 0 Documentation Foundation
 
@@ -1270,13 +1270,13 @@ v0.9 明确不做事项：
 - 任何真实 Douyin API、真实 OAuth、真实 token storage、真实指标读取、上传、发布或排期发布都已具备单独 ADR、单独测试和安全扫描。
 - 平台 API 权限风险已形成 v1.0 用户测试 checklist 的前置条件。
 - v1.0 到 v2.0 的详细 roadmap 见 [`roadmap-v1-to-v2-commercial-release.md`](roadmap-v1-to-v2-commercial-release.md)，对应 checklist 见 [`checklists/v1.0-douyin-user-test-release-readiness.md`](checklists/v1.0-douyin-user-test-release-readiness.md)、[`checklists/v1.5-minimum-production-release-readiness.md`](checklists/v1.5-minimum-production-release-readiness.md) 和 [`checklists/v2.0-multi-tenant-saas-commercial-release-readiness.md`](checklists/v2.0-multi-tenant-saas-commercial-release-readiness.md)。这些文档是未来 roadmap / readiness target，不代表当前 v0.9 已具备 v1.0、v1.5 或 v2.0 能力。
-- v0.9.0 发布后，v1.0 可以先进入 docs-only / planning-only 的 Batch 0；任一后续真实实现方向都必须继续保持无真实 Douyin / OAuth / token / publish / metrics 的边界，直到单独 ADR、平台权限、应用审核、用户授权、测试和安全门槛批准真实能力。
+- v0.9.0 发布后，v1.0 已完成 docs-only / planning-only 的 Batch 0，并进入 Batch 1 OAuth boundary / callback contract；任一后续真实实现方向都必须继续保持无真实 Douyin / OAuth / token / publish / metrics 的边界，直到单独 ADR、平台权限、应用审核、用户授权、测试和安全门槛批准真实能力。
 
 ## v1.0 Douyin Integration User Test Release
 
 目标：达到可以进行用户抖音接入测试的 v1.0.0 版本，验证用户授权、账号连接状态和至少一种真实或 sandbox/manual fallback 指标回流路径。v1.0.0 是 User Test Release，不是生产级自动化运营或自动发布版本。
 
-状态：Batch 0 planning started。当前仅进入 docs-only / planning-only 的 Douyin Integration User Test Release 规划，不实现真实 OAuth、token lifecycle、credential storage、real provider API、publish workflow 或 metrics read。
+状态：Batch 1 OAuth boundary / callback contract。当前仅定义未来真实 Douyin OAuth authorization start、callback、error callback、unsupported provider、cancelled authorization、malformed callback、replayed callback 和 expired callback 的 contract 边界，不实现真实 OAuth、token lifecycle、credential storage、real provider API、publish workflow 或 metrics read。
 
 v1.0 Batch 0 允许范围：
 
@@ -1298,6 +1298,33 @@ v1.0 Batch 0 明确不是：
 - 不修改数据库表或 migration。
 - 不新增 backend API。
 - 不新增 frontend OAuth UI。
+- 不调用 Douyin API 或外部服务。
+- 不上传、不发布、不排期发布。
+- 不抓取真实指标。
+- 不声明 v1.0、v1.5 或 v2.0 已完成。
+
+v1.0 Batch 1 允许范围：
+
+- 新增 v1.0 OAuth boundary / callback contract ADR：[`decisions/0046-v1.0-oauth-boundary-callback-contract.md`](decisions/0046-v1.0-oauth-boundary-callback-contract.md)。
+- 新增未来 Douyin OAuth callback contract 文档：[`contracts/v1.0-douyin-oauth-callback-contract.md`](contracts/v1.0-douyin-oauth-callback-contract.md)。
+- 新增 callback contract test matrix，用于后续实现前的 contract 测试计划。
+- 更新 README、README.en、roadmap、architecture、product spec、development docs、v1.0 plan、v1.0 readiness checklist 和 v1-to-v2 roadmap。
+- 明确 authorization start、success callback、error callback、unsupported provider、cancelled authorization、malformed callback、missing state、replayed callback 和 expired callback 的未来 contract 边界。
+- 明确 callback contract 只是未来实现约束，不代表当前已经存在 route。
+- 明确后续 callback route 必须等待 Batch 2 OAuth state storage / anti-replay foundation，token exchange 必须等待 Batch 3，credential storage 必须等待 Batch 4，runtime feature flag / kill switch enablement 必须等待 Batch 5。
+
+v1.0 Batch 1 明确不是：
+
+- 不实现真实 OAuth。
+- 不创建 OAuth URL。
+- 不新增 OAuth callback route。
+- 不新增 OAuth state storage。
+- 不新增 token exchange。
+- 不保存 token、secret、API key、credential、authorization code 或 OAuth state。
+- 不修改数据库表或 migration。
+- 不新增 backend API。
+- 不新增 frontend OAuth UI。
+- 不新增 Provider runtime behavior。
 - 不调用 Douyin API 或外部服务。
 - 不上传、不发布、不排期发布。
 - 不抓取真实指标。

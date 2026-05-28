@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 0 Douyin Integration User Test Release planning 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface，以及 v1.0 Batch 0 docs-only / planning-only 边界。当前仓库仍不接真实 Douyin API，不实现 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不执行 token exchange，不保存 token / secret / API key / credential / authorization code / OAuth state，不上传、不发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 1 OAuth boundary / callback contract 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface，以及 v1.0 Batch 1 docs-only contract 边界。当前仓库仍不接真实 Douyin API，不实现 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不执行 token exchange，不保存 token / secret / API key / credential / authorization code / OAuth state，不上传、不发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -317,6 +317,38 @@ cd ..
 ```
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档中的敏感字段只能作为边界说明、禁止项或扫描项出现，不得包含真实值。
+
+## v1.0 Batch 1 OAuth Boundary / Callback Contract 验收
+
+v1.0 Batch 1 是 docs-only contract 批次。本批只允许新增和更新 OAuth boundary / callback contract ADR、未来 callback contract 文档、callback contract test matrix、README、roadmap、architecture、product spec、development docs、v1.0 plan、v1.0 readiness checklist 和 v1-to-v2 roadmap。
+
+本批只定义未来 authorization start、success callback with code/state、provider error callback、unsupported provider、cancelled authorization、malformed callback、missing state、replayed callback 和 expired callback 的 contract 边界。本批不允许新增业务代码，不允许新增 API route，不允许修改数据库表或 migration，不允许新增前端 UI，不允许新增 Provider runtime behavior，不允许真实网络调用，不允许读取环境变量密钥，不允许创建 OAuth URL，不允许新增 OAuth callback route，不允许新增 OAuth state storage，不允许 token exchange，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许真实 metrics fetching，不允许 upload / publish / scheduling，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
+
+本批必须明确：
+
+- ADR 0046 和 callback contract 只定义未来实现约束，不代表当前已有 route。
+- 未来 callback route 必须等待 Batch 2 OAuth state storage / anti-replay foundation。
+- 未来 token exchange 必须等待 Batch 3。
+- 未来 credential storage 必须等待 Batch 4。
+- 未来 real OAuth runtime enablement 必须等待 Batch 5 feature flag / kill switch。
+- `fake_local`、`douyin_sandbox` 和 `douyin_real` 必须严格隔离，`douyin_real` 不允许 fallback 到 `douyin_sandbox`。
+- 所有日志、audit、error response 和 test fixture 都必须 redacted，不得出现真实 token、secret、credential、authorization code、OAuth state、cookie、session、API key 或平台原始 payload。
+
+本批本地质量门禁从仓库根目录执行：
+
+```powershell
+git diff --check
+.\scripts\test-backend.ps1
+
+cd .\frontend
+npm.cmd test
+npm.cmd run build
+cd ..
+
+.\scripts\validate-v0.9-poc.ps1
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档中的敏感字段只能作为边界说明、禁止项、contract 类别或扫描项出现，不得包含真实值。
 
 ## v0.5 Release Candidate 质量门禁
 
