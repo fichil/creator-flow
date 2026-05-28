@@ -37,6 +37,29 @@ Get-ChildItem .\scripts\*.ps1 | Unblock-File
 
 也可以使用后文的手动命令作为 fallback。
 
+## v0.9 Batch 0 Douyin Provider POC Planning 验收
+
+v0.9 Batch 0 是 docs-only planning / ADR / checklist 批次。它只允许新增 v0.9 Douyin Provider POC / Sandbox Integration planning 文档、新增 v0.9 entry ADR、新增 v0.9 POC readiness checklist，并同步更新 README、roadmap、architecture、product spec 和 development docs。
+
+本批不允许新增业务代码，不允许新增 backend API，不允许修改数据库表，不允许新增前端 UI，不允许新增真实 Provider，不允许实现 OAuth，不允许新增 OAuth callback route，不允许新增 OAuth state storage，不允许新增 token exchange，不允许保存 token / secret / API key / credential / authorization code / OAuth state，不允许接真实 Douyin，不允许调用外部服务，不允许抓取真实指标，不允许上传、不允许发布、不允许排期发布。
+
+后续 v0.9 实现批次必须继续运行完整本地质量门禁：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+后续任何真实平台相关变更还必须执行安全扫描，检查 token、secret、credential、authorization code、OAuth state、数据库、uploads、dist、node_modules、`.venv`、运行时文件和真实平台返回数据没有进入 Git。真实 Douyin API、真实 OAuth、真实 token exchange、真实 token storage、真实指标读取、上传、发布或排期发布都必须先有单独 ADR、单独分支、单独测试和单独安全扫描。
+
 ## v0.5 Release Candidate 质量门禁
 
 v0.5 RC 收口不接真实平台、不新增真实发布能力。release readiness 说明见 [`docs/releases/v0.5-rc-checklist.md`](releases/v0.5-rc-checklist.md)。合并或发布候选验收时建议从仓库根目录执行：

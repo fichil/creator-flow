@@ -953,50 +953,87 @@ v0.8.0 Release Finalization（已完成）：
 
 ## v0.9 Douyin Provider POC / Sandbox Integration
 
-目标：进行抖音 Provider 最小可行接入预研与 POC，验证 Provider contract、OAuth 回调和最小指标读取路径；该版本面向开发者/内部测试，不承诺用户级稳定可用。
+目标：进行抖音 Provider 最小可行接入预研与 POC 的阶段化准备，先确认 Provider contract、sandbox/mock callback、连接状态 dry-run、指标读取 POC planning 和 source separation 边界；该版本面向开发者/内部测试，不承诺用户级稳定可用。
 
-状态：Planned / Next Stage。v0.9 是 v0.8.0 release 之后的下一阶段，必须以单独 ADR、单独 branch、单独测试和边界审查开始，不能静默把 `douyin_sandbox` 或 `douyin_real` placeholder 转成真实 provider 行为。
+状态：Planned / Starting。v0.9 是 v0.8.0 release 之后的下一阶段。v0.9 Batch 0 仅完成 Douyin Provider POC / Sandbox Integration 的 planning、ADR 和 checklist，不新增业务代码，不新增 backend API，不修改数据库表，不新增前端 UI，不新增真实 Provider，不实现 OAuth，不接真实 Douyin。
 
-范围：
+v0.8 状态：
 
-- Douyin provider adapter skeleton，遵守 v0.8 的 Provider registry、credential boundary 和 capability metadata。
-- Douyin open platform app configuration guide。
-- OAuth callback smoke test 或 mock/sandbox callback 验证。
-- account connection status 和授权错误状态方向。
-- token refresh dry-run 或 sandbox 验证，前提是平台权限允许。
-- 最小真实指标读取 POC，前提是平台开放能力、应用审核、OAuth scope 和 API 权限允许。
-- 如果真实 API 权限不可用，则使用 manual import 或 mock/sandbox provider contract test 作为 fallback。
-- 明确区分 `fake_local`、`douyin_sandbox` 和 `douyin_real` source，不混淆来源。
+- v0.8 已 Completed / Released。
+- v0.8.0 已发布为 Provider & Credential Security Foundation。
+- v0.8.0 release commit 和 tag 是 v0.9 的进入基线。
+- v0.8.0 是 metadata-only / read-only security foundation，不是真实 Douyin integration，不是 OAuth implementation，不是 token storage implementation，也不是 production release。
 
-验收标准：
+v0.9 entry criteria：
 
-- Douyin provider POC 可以在 sandbox/mock 条件下验证 Provider contract。
-- OAuth callback 或 mock callback 的 smoke test 能明确成功、失败和 state 校验路径。
-- account connection status 能表达未连接、已连接、授权失败、token 过期或权限不足等状态方向。
-- 在平台权限允许时，至少一种真实指标读取路径被 POC 验证；权限不可用时，有 manual import 或 mock/sandbox contract test fallback。
-- 文档明确 Douyin API 权限、应用审核和平台可用性是风险项。
+- v0.8.0 release exists。
+- v0.8.0 tag exists。
+- v0.8.0 GitHub Release exists。
+- Provider Registry exists。
+- Connection State exists。
+- Credential Reference exists。
+- Security Audit exists。
+- OAuth Boundary exists。
+- Token Lifecycle Boundary exists。
+- Readiness Summary exists。
+- `fake_local` / `douyin_sandbox` / `douyin_real` source separation exists。
+- v0.9 must not bypass these boundaries。
 
-明确不做事项：
+Batch 0 允许范围：
 
-- 不承诺生产级真实发布。
-- 不做自动发布。
-- 不做大规模定时同步。
-- 不做多账号矩阵运营。
-- 不做商业 dashboard。
-- 不绕过平台 API 权限或审核。
-- 不采集未授权账号数据。
-- 不把 sandbox/mock 结果描述成真实用户可用能力。
+- 新增 v0.9 Douyin Provider POC / Sandbox Integration planning 文档。
+- 新增 v0.9 entry ADR。
+- 新增 v0.9 POC readiness checklist。
+- 更新 README、roadmap、architecture、product spec 和 development docs。
+- 明确 v0.9 第一阶段允许后续进入 Douyin provider adapter skeleton、sandbox/mock callback smoke test、provider status transition dry-run、metrics read POC planning 和 read-only mock/sandbox boundary。
+- 明确第一批实现必须优先 sandbox/mock，不得直接进入真实 Douyin。
+
+后续实现方向必须另行 ADR、分支、测试和安全扫描：
+
+- Douyin provider adapter skeleton。
+- sandbox/mock callback smoke test。
+- provider status transition dry-run。
+- metrics read POC planning。
+- read-only mock/sandbox boundary。
+- 如果未来涉及真实平台动作，必须单独 ADR、单独分支、单独测试、单独安全扫描。
+
+source separation：
+
+- `fake_local` 只表示 local fake/demo/test workflow，不是真实 Douyin readiness。
+- `douyin_sandbox` 只表示 sandbox/mock 边界或 placeholder，不得展示为真实用户数据。
+- `douyin_real` 只表示 future real provider，必须等真实 OAuth、credential storage、token lifecycle、provider adapter 和 API permission 边界另行批准后才能进入。
+- sandbox/mock callback 不得被表示为 real OAuth。
+- sandbox 数据不得展示为 real 数据。
+
+v0.9 明确不做事项：
+
+- 不直接把 v0.8 placeholder 变成真实 provider。
+- 不接真实 Douyin API。
+- 不实现真实 OAuth。
+- 不新增真实 OAuth callback route。
+- 不新增 OAuth state storage。
+- 不新增 token exchange。
+- 不保存 token、secret、API key、credential、authorization code 或 OAuth state。
+- 不保存真实 Credential storage。
+- 不抓取真实指标。
+- 不上传、不发布、不排期发布。
+- 不自动发布。
+- 不调用外部服务。
+- 不新增 Docker。
+- 不新增 GitHub Actions。
+- 不声明 v0.9 POC 已完成。
 
 与上一版本的关系：
 
-- v0.9 使用 v0.8 建立的 Provider、Credential、OAuth 和 token lifecycle 边界进行 Douyin POC。
+- v0.9 使用 v0.8 建立的 Provider Registry、Connection State、Credential Reference、Security Audit、OAuth Boundary、Token Lifecycle Boundary 和 Readiness Summary 边界进行 planning 和后续 POC 设计。
 - v0.9 仍保留 fake/local workflow；当 Douyin 权限不可用或授权失败时，系统必须能回退到 manual import 或 mock/sandbox provider contract test。
+- v0.9 不得绕过 v0.8 的 credential、token、OAuth、source separation 和 readiness boundaries。
 
 进入下一版本的条件：
 
-- Douyin app 配置、OAuth callback、授权状态和 token refresh 风险已被验证或明确记录。
-- 至少一种指标读取路径完成真实、sandbox、mock 或 manual import fallback 验证。
+- sandbox/mock callback、provider status transition dry-run 和 metrics read POC planning 已被单独实现批次验证或明确记录为阻塞。
 - source 标记、授权状态和错误提示不会混淆 `fake_local`、`douyin_sandbox` 与 `douyin_real`。
+- 任何真实 Douyin API、真实 OAuth、真实 token storage、真实指标读取、上传、发布或排期发布都已具备单独 ADR、单独测试和安全扫描。
 - 平台 API 权限风险已形成 v1.0 用户测试 checklist 的前置条件。
 
 ## v1.0 Douyin Integration User Test Release

@@ -87,10 +87,22 @@ v0.7.0 release 之后的架构路线必须从 fake/local metrics review summary 
 
 - v0.7.0 已完成 metrics review summary local fake/manual workflow，不改变 Provider 架构，只基于现有 `PublicationMetricSnapshot` 和 fake/local metrics source 做 metrics review summary，将指标转化为人工复盘参考。
 - v0.8.0 已发布为 Provider & Credential Security Foundation，建立 Provider registry / credential boundary / OAuth callback / token lifecycle 的安全基础，包括 provider capability metadata、connection status、credential reference metadata、secret redaction、授权失败状态和 audit log 方向。
-- v0.9 做 Douyin Provider POC / Sandbox Integration，用 Douyin provider adapter skeleton、OAuth callback smoke test 或 mock/sandbox callback、token refresh dry-run 和最小指标读取 POC 验证边界。
+- v0.9 做 Douyin Provider POC / Sandbox Integration，但必须先以 Batch 0 的 planning、ADR 和 checklist 开始；后续实现必须先走 sandbox/mock callback、provider status transition dry-run 和 read-only mock/sandbox boundary，不得直接进入真实 Douyin。
 - v1.0 才进入 Douyin Integration User Test Release，用于用户授权、账号连接状态和至少一种真实或 sandbox/manual fallback 指标回流测试。
 
 核心领域模型不能依赖 Douyin 专有字段。`PublicationRecord`、`PublicationMetricSnapshot`、`MetricSource`、`ContentPlan`、`TopicCandidate`、`ScriptDraft` 和其他核心模型只能保存平台无关的必要字段；Douyin 原始响应、平台专有字段、scope 细节和接口差异应留在 provider adapter、provider metadata 或受控附加 metadata 中。
+
+### v0.9 Douyin Provider POC / Sandbox Integration Planning
+
+v0.9 Batch 0 only introduces provider POC planning. It does not add business code, backend APIs, database tables, frontend UI, real Provider adapters, OAuth implementation, OAuth callback routes, OAuth state storage, token exchange, token storage, real Douyin API calls, real metrics fetching, upload, publish, scheduling, or external service calls.
+
+Future v0.9 implementation must layer on top of the v0.8 Provider Registry, Connection State, Credential Reference, Security Audit, OAuth Boundary, Token Lifecycle Boundary, Readiness Summary, secret redaction, and source separation boundaries. v0.9 work must not bypass these boundaries by treating placeholder metadata as an implemented provider.
+
+`douyin_sandbox` and `douyin_real` must remain distinct. `fake_local` remains local fake/demo/test workflow only; `douyin_sandbox` may only represent sandbox/mock planning or explicitly labeled sandbox/mock results; `douyin_real` may only represent future real provider behavior after separate ADRs, tests, platform permission review, and security scans.
+
+A sandbox/mock callback must not be represented as real OAuth. It may only validate routing shape, state validation planning, redacted error handling, and provider status transition dry-run semantics after a separate implementation ADR. It must not create a real OAuth callback route in Batch 0 and must not save authorization codes, OAuth state values, token responses, or raw callback payloads.
+
+Any real token storage requires a separate encrypted credential storage ADR before implementation. Any real API call requires an explicit provider adapter ADR and tests before implementation. Any real Douyin API call, real metrics read, upload, publish, scheduling, token exchange, refresh, revoke, or disconnect must be scoped in a separate branch with security scan evidence.
 
 ### Provider Registry
 

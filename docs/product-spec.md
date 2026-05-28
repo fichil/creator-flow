@@ -458,6 +458,16 @@ v0.8.0 Provider & Credential Security Foundation 产品边界：
 - v0.8.0 不承诺真实发布。
 - v0.8.0 不是 production-ready real Douyin integration。
 
+## v0.9 Douyin Provider POC / Sandbox Integration 产品边界
+
+v0.9 的用户价值目标是为未来抖音接入做 Provider POC 和 sandbox/mock integration 准备，而不是立即给用户真实连接抖音。v0.9 Batch 0 只完成 planning、ADR 和 readiness checklist，不增加用户可操作功能，不新增业务代码，不新增 backend API，不修改数据库表，也不新增前端 UI。
+
+v0.9 第一阶段必须优先验证 sandbox/mock callback planning、provider status transition dry-run 和 read-only mock/sandbox boundary。后续如果展示 sandbox/mock readiness，必须明确标注不是 real Douyin、不是真实账号连接、不是真实 OAuth、不是真实指标，也不是生产可用集成。
+
+用户不会在本批看到 OAuth login、connect、authorize、OAuth callback、token viewer、credential 管理、真实指标、上传、发布或排期发布入口。v0.9 Batch 0 不会保存 token、secret、API key、credential、authorization code 或 OAuth state，也不会调用外部服务。
+
+真实 Douyin API、真实 OAuth、真实 OAuth callback route、真实 token exchange、真实 token storage、真实指标读取、上传、发布、排期发布和自动发布都必须等后续单独 ADR、单独分支、单独测试和安全扫描通过后才能进入。
+
 ## Road to Douyin user testing
 
 v0.7.0 已完成 local fake/manual metrics review summary workflow。v0.8.0 已完成 Provider & Credential Security Foundation release。v0.8.0 之后的路线不会从 metadata-only / read-only security foundation 直接跳到生产级真实平台能力，而是进入 v0.9 Douyin Provider POC / Sandbox Integration，再进入 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。
