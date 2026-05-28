@@ -21,6 +21,7 @@
 .\scripts\test-backend.ps1
 .\scripts\build-frontend.ps1
 .\scripts\smoke-api.ps1
+.\scripts\validate-v0.9-poc.ps1
 ```
 
 - `dev-backend.ps1`：进入 `backend`，确保 `.venv` 可用，安装 backend 依赖并启动 `uvicorn`。
@@ -28,6 +29,7 @@
 - `test-backend.ps1`：运行 backend pytest。
 - `build-frontend.ps1`：运行 frontend production build。
 - `smoke-api.ps1`：假设 backend 已运行在 `http://127.0.0.1:8000`，执行最小 API smoke checks。
+- `validate-v0.9-poc.ps1`：运行 v0.9 POC RC 本地验证，包括 backend tests、frontend tests、frontend build、`git diff --check`、smoke-api 和边界关键词扫描。
 
 如果 PowerShell 拒绝执行本地脚本，可以只对本仓库脚本解除阻止：
 
@@ -36,6 +38,255 @@ Get-ChildItem .\scripts\*.ps1 | Unblock-File
 ```
 
 也可以使用后文的手动命令作为 fallback。
+
+## v0.9 Batch 0 Douyin Provider POC Planning 验收
+
+v0.9 Batch 0 是 docs-only planning / ADR / checklist 批次。它只允许新增 v0.9 Douyin Provider POC / Sandbox Integration planning 文档、新增 v0.9 entry ADR、新增 v0.9 POC readiness checklist，并同步更新 README、roadmap、architecture、product spec 和 development docs。
+
+本批不允许新增业务代码，不允许新增 backend API，不允许修改数据库表，不允许新增前端 UI，不允许新增真实 Provider，不允许实现 OAuth，不允许新增 OAuth callback route，不允许新增 OAuth state storage，不允许新增 token exchange，不允许保存 token / secret / API key / credential / authorization code / OAuth state，不允许接真实 Douyin，不允许调用外部服务，不允许抓取真实指标，不允许上传、不允许发布、不允许排期发布。
+
+后续 v0.9 实现批次必须继续运行完整本地质量门禁：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+后续任何真实平台相关变更还必须执行安全扫描，检查 token、secret、credential、authorization code、OAuth state、数据库、uploads、dist、node_modules、`.venv`、运行时文件和真实平台返回数据没有进入 Git。真实 Douyin API、真实 OAuth、真实 token exchange、真实 token storage、真实指标读取、上传、发布或排期发布都必须先有单独 ADR、单独分支、单独测试和单独安全扫描。
+
+## v0.9 Batch 1 Douyin Provider Adapter Skeleton backend foundation 验收
+
+v0.9 Batch 1 允许新增 backend-only Douyin Provider Adapter Skeleton，以及 blocked / not implemented operation boundary result。本批可以为 `douyin_sandbox` 和 `douyin_real` 建立 skeleton class，但所有真实平台动作都必须返回 blocked / not implemented result。
+
+本批不允许新增 API route，不允许修改数据库表，不允许新增前端 UI，不允许真实网络调用，不允许读取环境变量密钥，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许实现 OAuth，不允许新增 OAuth callback route，不允许 token exchange，不允许真实 metrics fetching，不允许 upload / publish / scheduling，也不允许改变既有 fake/local workflow 语义。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体、运行时文件或真实平台返回数据进入 Git。后续任何真实平台相关变更必须继续检查 token、secret、credential、authorization code、OAuth state、数据库、uploads、dist、node_modules、`.venv`、运行时文件和真实平台返回数据，并在单独 ADR、单独分支、单独测试和单独安全扫描后再进入。
+
+## v0.9 Batch 2 Douyin Provider Sandbox Operation Simulation 验收
+
+v0.9 Batch 2 允许在 Batch 1 的 backend-only adapter skeleton 上，为 `douyin_sandbox` 增加 sandbox-only operation simulation。模拟结果必须 deterministic、可测试、无外部依赖，使用稳定 fake id 和 dry-run 语义；`douyin_real` 必须继续返回 blocked / not implemented result。
+
+本批不允许新增 API route，不允许修改数据库表，不允许新增前端 UI，不允许真实网络调用，不允许读取环境变量密钥，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许实现 OAuth，不允许新增 OAuth callback route，不允许 token exchange，不允许真实 metrics fetching，不允许 upload / publish / scheduling，也不允许声明 v0.9 POC 已完成。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体、运行时文件或真实平台返回数据进入 Git。测试中的 fake id、fake environment value、敏感字段 deny-list 和文档边界说明必须被确认不是实际凭据或真实平台返回数据。
+
+## v0.9 Batch 3 Douyin Provider Registry / Factory Routing 验收
+
+v0.9 Batch 3 允许新增 backend-only Douyin Provider Registry / Factory Routing foundation。该层只能通过白名单 provider id 获取 `douyin_sandbox` / `douyin_real` descriptor，并创建对应 adapter；`douyin_sandbox` 必须继续路由到 Batch 2 的 deterministic sandbox-only simulation，`douyin_real` 必须继续返回 blocked / not implemented result，unknown provider、空字符串、`None`、大小写变体和带空格 provider id 必须明确失败且不 fallback。
+
+本批不允许新增 API route，不允许修改数据库表，不允许新增前端 UI，不允许真实网络调用，不允许读取环境变量密钥，不允许创建 OAuth URL，不允许新增 OAuth callback route，不允许 token exchange，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许真实 metrics fetching，不允许 upload / publish / scheduling，也不允许声明 v0.9 POC 已完成。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件或真实平台返回数据进入 Git。测试中的 fake environment value、敏感字段 deny-list、operation name 和文档边界说明必须被确认不是实际凭据或真实平台返回数据。
+
+## v0.9 Batch 4 Douyin Provider Sandbox Metrics / Mock Workflow POC 验收
+
+v0.9 Batch 4 允许新增 backend-only Douyin Provider Sandbox Metrics / Mock Workflow POC。该层必须通过 Batch 3 registry / factory 路由获取 `douyin_sandbox` adapter，并只返回 deterministic simulated mock account connection、sandbox metrics payload 和 dry-run publish result；`douyin_real` 必须继续返回 blocked / not implemented result，unknown provider 必须继续明确失败且不 fallback。
+
+本批不允许新增 API route，不允许修改数据库表，不允许新增前端 UI，不允许真实网络调用，不允许读取环境变量密钥，不允许创建 OAuth URL，不允许新增 OAuth callback route，不允许 token exchange，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许真实 metrics fetching，不允许 upload / publish / scheduling，也不允许声明 v0.9 POC 已完成。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件或真实平台返回数据进入 Git。测试中的 sandbox-only fake id、fake environment value、敏感字段 deny-list、operation name 和文档边界说明必须被确认不是实际凭据或真实平台返回数据。
+
+## v0.9 Batch 5 Roadmap to v2.0 Commercial Release Documentation Alignment 验收
+
+v0.9 Batch 5 是 docs-only / planning-only 批次。它只允许新增和更新 roadmap、ADR、readiness checklist、README、architecture、product spec 和 development docs，用于说明 v1.0 Douyin Integration User Test Release、v1.5 Minimum Production Release 和 v2.0 Multi-Tenant SaaS Commercial Release 的未来目标、商用边界、技术门槛、安全门槛和发布门槛。
+
+本批不允许新增业务代码，不允许新增 API route，不允许修改数据库表或 migration，不允许新增前端 UI，不允许真实网络调用，不允许读取环境变量密钥，不允许创建 OAuth URL，不允许新增 OAuth callback route，不允许新增 OAuth state storage，不允许 token exchange，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许真实 metrics fetching，不允许 upload / publish / scheduling，不允许新增真实 tenant、billing、RBAC 或 admin console 实现，也不允许声明 v0.9 POC、v1.0、v1.5 或 v2.0 已完成。
+
+Roadmap implementation guidance：
+
+- 开发者不得提前实现真实 OAuth、token、credential storage、publish、metrics、tenant、billing、RBAC、admin console 或 SaaS 能力，除非对应批次和 ADR 明确要求。
+- 新增真实平台能力必须先经过 boundary tests、security tests、docs 和 checklist 更新。
+- v1.5 的 production deployment、customer acceptance、support、monitoring、incident response、privacy、backup / restore 和 commercial boundary 必须单独批次处理，不得混入 v0.9 docs 批次。
+- v2.0 的 migration、tenant isolation、RBAC、billing、quota、admin console、audit export、SLA、support operations、privacy / compliance 和 scalability work 必须单独批次处理，不得混入 v0.9 docs 批次。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件或真实平台返回数据进入 Git。文档中出现的 v1.5 / v2.0 商用描述必须是 future roadmap / readiness target，不得被写成当前能力。
+
+## v0.9 Batch 6 Douyin Sandbox API Contract / Smoke Endpoints 验收
+
+v0.9 Batch 6 允许新增 backend-only Douyin sandbox API contract / smoke endpoints。新增 API 只能作为 v0.9 POC callable surface，必须通过 registry / factory 和 sandbox workflow 返回 deterministic sandbox / simulated / dry-run response。
+
+本批允许新增 sandbox-only backend API route，但不允许修改数据库表或 migration，不允许新增前端 UI，不允许真实网络调用，不允许读取环境变量密钥，不允许创建 OAuth URL，不允许新增 OAuth callback route，不允许新增 OAuth state storage，不允许 token exchange，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许真实 metrics fetching，不允许 upload / publish / scheduling，不允许新增真实 tenant、billing、RBAC 或 admin console 实现，也不允许声明 v0.9 POC、v1.0、v1.5 或 v2.0 已完成。
+
+Sandbox API contract 开发约束：
+
+- Provider list / lookup API 必须只返回安全 descriptor。
+- Sandbox mock connection、metrics preview 和 publish dry-run API 必须只使用 `douyin_sandbox`。
+- `douyin_real` 必须返回 blocked / not implemented，不得执行成功。
+- Unknown provider 必须明确失败，不得 fallback 到 sandbox。
+- API response 必须配套 boundary tests、sensitive payload tests 和 external call guard。
+- API route 不得使用新增 DB write，不得保存 sandbox result，不得创建真实 publication record。
+- 后续任何 real provider API、OAuth API、token API、metrics API、publish API 或 SaaS API 必须单独批次处理。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+如运行 smoke API，应先确认服务使用本地临时或可清理数据路径。若 `scripts/smoke-api.ps1` 依赖运行中的服务且当前环境不适合运行，应在验收记录中说明原因；完整 backend tests 仍必须通过。
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件或真实平台返回数据进入 Git。文档、测试 deny-list 和边界说明中的敏感词只允许作为禁止项或扫描项，不得包含真实值。
+
+## v0.9 Batch 7 Douyin Frontend Sandbox POC Panel 验收
+
+v0.9 Batch 7 允许新增 frontend-only / frontend-primary Douyin Sandbox POC Panel。该面板只能调用 Batch 6 sandbox-only backend API，并且只能展示 deterministic sandbox / simulated / dry-run provider descriptors、mock connection、metrics preview 和 publish dry-run result。
+
+本批允许新增 sandbox-only frontend UI，但不允许修改数据库表或 migration，不允许新增真实 backend API，不允许真实网络调用，不允许读取环境变量密钥，不允许创建 OAuth URL，不允许新增 OAuth callback route，不允许新增 OAuth state storage，不允许 token exchange，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许真实 metrics fetching，不允许 upload / publish / scheduling，不允许新增真实 tenant、billing、RBAC 或 admin console 实现，也不允许声明 v0.9 POC、v1.0、v1.5 或 v2.0 已完成。
+
+Frontend sandbox POC 开发约束：
+
+- 任何前端 provider UI 必须有明显 boundary banner。
+- API client 只能使用项目 API base，不得硬编码 Douyin 外部域名或第三方服务。
+- API client tests 必须 mock fetch 或现有 HTTP client，不得执行真实网络调用。
+- UI 不得提供真实 OAuth login、connect real Douyin、OAuth URL、token viewer、token / secret / credential input、真实文件上传、真实视频上传、真实发布或真实排期入口。
+- UI 必须明确 `douyin_sandbox` 是 sandbox / simulated / dry-run，`douyin_real` 是 blocked / not implemented，unknown provider 不 fallback。
+- 前端测试必须覆盖 boundary banner、provider descriptor display、mock connection、metrics preview、publish dry-run、error handling、sensitive payload guard 和 no external domain call。
+- 后续任何真实 provider UI、真实 OAuth UI、真实 token UI、真实 upload / publish / scheduling UI 必须单独批次处理，不得混入 v0.9 sandbox UI。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+如果 `frontend/package.json` 未配置 lint 或 typecheck 脚本，不要硬失败，但应在验收记录中说明未配置或未运行。安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件或真实平台返回数据进入 Git。文档、测试 deny-list、redaction guard 和边界说明中的敏感词只能作为禁止项或扫描项，不得包含真实值。
+
+## v0.9 Batch 8 Douyin Provider POC Readiness Finalization 验收
+
+v0.9 Batch 8 是 POC readiness finalization / release candidate package 批次。本批只允许新增和更新 RC checklist、test matrix、validation script、ADR 和文档一致性说明；默认不修改 backend app 业务代码，不修改 frontend app 业务代码，不新增真实 backend API，不修改数据库表或 migration，不新增真实 Provider，不进入真实 OAuth、token、metrics、publish 或 SaaS 能力。
+
+本批验证入口：
+
+```powershell
+.\scripts\validate-v0.9-poc.ps1
+```
+
+该脚本只做本地验证，不修改文件、不提交、不 push、不读取真实环境变量密钥、不访问真实 Douyin、不访问第三方服务。它会运行 backend tests、frontend tests、frontend build、`git diff --check`、尽可能运行 smoke-api，并执行文案、敏感字段和 sandbox 边界关键词扫描。若 smoke-api 没有本地 backend 可用，脚本会提示需要先启动 backend 或使用 `-SmokeBaseUrl` 指定临时 backend；如需严格要求 smoke 通过，可以使用 `-RequireSmokeApi`。
+
+Batch 8 相关文档：
+
+- RC checklist：[`docs/releases/v0.9-douyin-provider-poc-rc-checklist.md`](releases/v0.9-douyin-provider-poc-rc-checklist.md)。
+- Test matrix：[`docs/testing/v0.9-douyin-provider-poc-test-matrix.md`](testing/v0.9-douyin-provider-poc-test-matrix.md)。
+- ADR：[`docs/decisions/0043-v0.9-poc-readiness-finalization.md`](decisions/0043-v0.9-poc-readiness-finalization.md)。
+
+进入 v1.0 前不得绕过 v0.9 RC checklist、test matrix、security scan、docs wording scan 和 human review / PR / merge / release decision。真实 OAuth、token lifecycle、credential storage、real provider API、real publish、real metrics 和 v1.5 / v2.0 相关 tenant、billing、RBAC、admin console 能力必须单独批次进入，并配套 ADR、tests、docs/checklist 和安全扫描。
+
+## v0.9 Batch 9 Release Branch / PR Merge Preparation 验收
+
+v0.9 Batch 9 是 release / PR merge preparation 批次。本批只允许新增和更新 PR description draft、release notes draft、merge readiness checklist、tag readiness checklist、ADR 和文档一致性说明；默认不修改 backend app 业务代码，不修改 frontend app 业务代码，不修改测试，不新增真实 backend API，不修改数据库表或 migration，不新增真实 Provider，不进入真实 OAuth、token、metrics、publish 或 SaaS 能力。
+
+Batch 9 相关文档：
+
+- PR description draft：[`docs/releases/v0.9-pr-description-draft.md`](releases/v0.9-pr-description-draft.md)。
+- Release notes draft：[`docs/releases/v0.9-release-notes-draft.md`](releases/v0.9-release-notes-draft.md)。
+- Merge readiness checklist：[`docs/releases/v0.9-merge-readiness-checklist.md`](releases/v0.9-merge-readiness-checklist.md)。
+- Tag readiness checklist：[`docs/releases/v0.9-tag-readiness-checklist.md`](releases/v0.9-tag-readiness-checklist.md)。
+- ADR：[`docs/decisions/0044-v0.9-release-merge-preparation.md`](decisions/0044-v0.9-release-merge-preparation.md)。
+
+Batch 9 验收必须继续运行完整本地质量门禁：backend tests、frontend tests、frontend build、smoke-api、`.\scripts\validate-v0.9-poc.ps1`、`git diff --check`、文案扫描、安全扫描和 ignored artifact 检查。
+
+Codex 不得自动 merge main，不得自动创建 `v0.9.0` tag，不得创建 GitHub Release，不得 force push，也不得改写历史。后续 merge、tag 和 GitHub Release 都必须由 human PR review / merge decision / tag decision 明确批准。
 
 ## v0.5 Release Candidate 质量门禁
 

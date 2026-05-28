@@ -92,6 +92,37 @@ const project: Project = {
   material_count: 2,
 };
 
+const douyinSandboxDescriptors = [
+  {
+    provider_id: "douyin_sandbox",
+    display_name: "Douyin Sandbox",
+    environment: "sandbox",
+    mode: "sandbox",
+    status: "available_for_sandbox",
+    supports_simulation: true,
+    supports_real_oauth: false,
+    supports_real_publish: false,
+    supports_real_metrics: false,
+    simulated: true,
+    dry_run: true,
+    boundary_notes: ["sandbox descriptor", "simulation only", "deterministic dry-run API contract"],
+  },
+  {
+    provider_id: "douyin_real",
+    display_name: "Douyin Real",
+    environment: "real",
+    mode: "real",
+    status: "blocked",
+    supports_simulation: false,
+    supports_real_oauth: false,
+    supports_real_publish: false,
+    supports_real_metrics: false,
+    simulated: false,
+    dry_run: false,
+    boundary_notes: ["real provider descriptor", "blocked", "not implemented"],
+  },
+];
+
 const connections: ProviderConnectionState[] = [
   {
     provider_id: "fake_local",
@@ -688,6 +719,9 @@ function installListPageFetchMock(projects: Project[] = [project]) {
     if (url.pathname === "/api/provider-readiness-summaries") {
       return jsonResponse({ readiness_summaries: readinessSummaries });
     }
+    if (url.pathname === "/api/providers/douyin") {
+      return jsonResponse({ providers: douyinSandboxDescriptors });
+    }
     if (url.pathname === "/api/projects") {
       return jsonResponse(projects);
     }
@@ -736,6 +770,8 @@ describe("ProjectListPage", () => {
     expect(await screen.findByLabelText("Provider readiness summary fake_local")).toBeTruthy();
     expect(screen.getByLabelText("Provider readiness summary douyin_sandbox")).toBeTruthy();
     expect(screen.getByLabelText("Provider readiness summary douyin_real")).toBeTruthy();
+    expect(await screen.findByLabelText("Douyin sandbox provider douyin_sandbox")).toBeTruthy();
+    expect(screen.getByLabelText("Douyin sandbox provider douyin_real")).toBeTruthy();
     await waitFor(() => expect(server.calls).toContain("GET /api/providers"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-connections"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-credential-references"));
@@ -743,6 +779,7 @@ describe("ProjectListPage", () => {
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-oauth-boundaries"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-token-lifecycle-boundaries"));
     await waitFor(() => expect(server.calls).toContain("GET /api/provider-readiness-summaries"));
+    await waitFor(() => expect(server.calls).toContain("GET /api/providers/douyin"));
     await waitFor(() => expect(server.calls).toContain("GET /api/projects"));
   });
 

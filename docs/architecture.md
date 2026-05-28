@@ -87,10 +87,116 @@ v0.7.0 release 之后的架构路线必须从 fake/local metrics review summary 
 
 - v0.7.0 已完成 metrics review summary local fake/manual workflow，不改变 Provider 架构，只基于现有 `PublicationMetricSnapshot` 和 fake/local metrics source 做 metrics review summary，将指标转化为人工复盘参考。
 - v0.8.0 已发布为 Provider & Credential Security Foundation，建立 Provider registry / credential boundary / OAuth callback / token lifecycle 的安全基础，包括 provider capability metadata、connection status、credential reference metadata、secret redaction、授权失败状态和 audit log 方向。
-- v0.9 做 Douyin Provider POC / Sandbox Integration，用 Douyin provider adapter skeleton、OAuth callback smoke test 或 mock/sandbox callback、token refresh dry-run 和最小指标读取 POC 验证边界。
+- v0.9 做 Douyin Provider POC / Sandbox Integration，但必须先以 Batch 0 的 planning、ADR 和 checklist 开始；后续实现必须先走 sandbox/mock callback、provider status transition dry-run 和 read-only mock/sandbox boundary，不得直接进入真实 Douyin。
 - v1.0 才进入 Douyin Integration User Test Release，用于用户授权、账号连接状态和至少一种真实或 sandbox/manual fallback 指标回流测试。
+- v1.5 是未来 Minimum Production Release 目标，面向直接客户的受控商用，需要生产部署、安全隐私、备份恢复、监控告警、支持流程和平台依赖边界，不是当前能力。
+- v2.0 是未来 Multi-Tenant SaaS Commercial Release 目标，面向客户的客户 SaaS 商用，需要多租户、组织、客户、客户的客户、权限、审计、计费、SLA、运营后台、合规与生产支持能力，不是当前能力。
 
 核心领域模型不能依赖 Douyin 专有字段。`PublicationRecord`、`PublicationMetricSnapshot`、`MetricSource`、`ContentPlan`、`TopicCandidate`、`ScriptDraft` 和其他核心模型只能保存平台无关的必要字段；Douyin 原始响应、平台专有字段、scope 细节和接口差异应留在 provider adapter、provider metadata 或受控附加 metadata 中。
+
+### v0.9 Douyin Provider POC / Sandbox Integration Planning
+
+v0.9 Batch 0 only introduces provider POC planning. It does not add business code, backend APIs, database tables, frontend UI, real Provider adapters, OAuth implementation, OAuth callback routes, OAuth state storage, token exchange, token storage, real Douyin API calls, real metrics fetching, upload, publish, scheduling, or external service calls.
+
+Future v0.9 implementation must layer on top of the v0.8 Provider Registry, Connection State, Credential Reference, Security Audit, OAuth Boundary, Token Lifecycle Boundary, Readiness Summary, secret redaction, and source separation boundaries. v0.9 work must not bypass these boundaries by treating placeholder metadata as an implemented provider.
+
+`douyin_sandbox` and `douyin_real` must remain distinct. `fake_local` remains local fake/demo/test workflow only; `douyin_sandbox` may only represent sandbox/mock planning or explicitly labeled sandbox/mock results; `douyin_real` may only represent future real provider behavior after separate ADRs, tests, platform permission review, and security scans.
+
+A sandbox/mock callback must not be represented as real OAuth. It may only validate routing shape, state validation planning, redacted error handling, and provider status transition dry-run semantics after a separate implementation ADR. It must not create a real OAuth callback route in Batch 0 and must not save authorization codes, OAuth state values, token responses, or raw callback payloads.
+
+Any real token storage requires a separate encrypted credential storage ADR before implementation. Any real API call requires an explicit provider adapter ADR and tests before implementation. Any real Douyin API call, real metrics read, upload, publish, scheduling, token exchange, refresh, revoke, or disconnect must be scoped in a separate branch with security scan evidence.
+
+### v0.9 Douyin Provider Adapter Skeleton
+
+v0.9 Batch 1 introduces a backend-only Douyin Provider Adapter Skeleton in the backend providers layer. The skeleton layers on top of the v0.8 Provider Registry, source separation, OAuth Boundary, Token Lifecycle Boundary, Credential Reference, Security Audit, and Readiness Summary metadata; it does not replace those boundaries and does not mark unimplemented capabilities as available.
+
+The adapter skeleton does not register a real Douyin client, does not create an HTTP client, does not load an external SDK, does not read credentials, does not read environment secrets, and does not call external services. Every adapter operation returns a blocked / not implemented boundary result with safe metadata showing that no external call, credential read, token read, or token write happened.
+
+`douyin_sandbox` and `douyin_real` must remain separated through distinct adapter classes or an equivalently explicit source separation boundary. `douyin_sandbox` is not real Douyin OAuth, and `douyin_real` remains a future real provider placeholder until separate ADRs approve provider adapter behavior, OAuth, credential storage, token exchange, and real API calls. The skeleton is not a real provider adapter implementation and must not be used as proof that real Douyin integration, real metrics fetching, upload, publish, or scheduling is available.
+
+### v0.9 Douyin Provider Sandbox Operation Simulation
+
+v0.9 Batch 2 adds sandbox-only operation simulation for `douyin_sandbox` inside the backend provider adapter layer. The simulation is deterministic and dependency-free: it returns stable dry-run results and fake sandbox identifiers such as `sandbox_video_001`, `sandbox_publish_001`, and `sandbox_metrics_001`.
+
+Sandbox operation simulation does not create an HTTP client, does not call a Douyin SDK, does not read environment secrets, does not read credentials, does not exchange or store tokens, and does not parse real callback payloads or platform responses. It is an adapter contract test boundary only, not real Douyin integration and not proof that OAuth, metrics fetching, upload, publish, or scheduling are available.
+
+`douyin_real` must continue to return blocked / not implemented boundary results for every operation. Real-provider behavior still requires separate ADRs for OAuth, callback handling, encrypted credential storage, token exchange / refresh / revoke, metrics read POC, disconnect lifecycle, and any upload / publish / scheduling workflow.
+
+### v0.9 Douyin Provider Registry / Factory Routing
+
+v0.9 Batch 3 adds a backend-only Douyin Provider Registry / Factory Routing foundation in the backend providers layer. It defines safe local descriptors for the whitelisted provider ids `douyin_sandbox` and `douyin_real`, and it can create the matching adapter class from an exact provider id.
+
+The routing layer is metadata and factory selection only. It does not register a real Douyin client, does not create an HTTP client, does not load an SDK, does not read environment secrets, does not read credentials, does not access the database, does not create OAuth URLs, and does not call external services.
+
+`douyin_sandbox` routes to the existing deterministic sandbox-only operation simulation. `douyin_real` can be recognized by descriptor and factory but must continue to return blocked / not implemented operation results. Unknown, empty, case-variant, or whitespace-variant provider ids must fail explicitly and must not fallback to sandbox.
+
+This registry / factory routing foundation is not a real provider adapter implementation, not real OAuth, not a real sandbox callback, not token lifecycle implementation, and not real metrics, upload, publish, or scheduling capability.
+
+### v0.9 Douyin Provider Sandbox Metrics / Mock Workflow POC
+
+v0.9 Batch 4 adds a backend-only sandbox workflow POC above the Douyin registry / factory routing layer. The workflow uses the exact `douyin_sandbox` provider id to create the sandbox adapter, then composes deterministic mock account connection, sandbox metrics POC, and dry-run publish results from the existing sandbox operation simulation.
+
+The workflow layer does not register a real Douyin client, does not create an HTTP client, does not load an SDK, does not read environment secrets, does not read credentials, does not access the database, does not create OAuth URLs, and does not call external services. It returns stable fake ids such as `sandbox_connection_001`, `sandbox_account_001`, `sandbox_metrics_snapshot_001`, `sandbox_video_001`, and `sandbox_publish_001`.
+
+`douyin_sandbox` workflow results are sandbox-only deterministic simulation and must not be represented as real account connection, real OAuth, real metrics, real upload, real publish, or real scheduling. `douyin_real` remains blocked / not implemented through the same factory route, and unknown providers must still fail explicitly without fallback.
+
+This sandbox metrics / mock workflow POC is not a real provider adapter implementation, not real OAuth, not a real sandbox callback, not token lifecycle implementation, and not real metrics, upload, publish, or scheduling capability.
+
+### v0.9 Douyin Sandbox API Contract / Smoke Endpoints
+
+v0.9 Batch 6 adds a backend-only sandbox API contract above the Douyin registry / factory and sandbox workflow layers. The API call chain is:
+
+`FastAPI route -> Douyin provider registry / factory -> douyin_sandbox adapter -> sandbox workflow result -> deterministic API response`.
+
+The API may expose provider descriptor list / lookup, sandbox mock connection, sandbox metrics preview, and sandbox publish dry-run endpoints. These endpoints are a v0.9 POC callable surface only. They return deterministic sandbox / simulated / dry-run payloads and stable fake ids, and they do not represent real Douyin account connection, real OAuth, real metrics, real upload, real publish, or scheduling.
+
+`douyin_real` remains blocked / not implemented through the API contract. Unknown provider ids must fail explicitly and must not fallback to `douyin_sandbox`.
+
+The sandbox API route does not use a database dependency, does not write persistence state, does not create HTTP clients, does not load SDKs, does not read environment secrets, does not read or save credentials, does not create OAuth URLs, and does not call external services. Real OAuth, real publish APIs, real metrics APIs, real token exchange, and real credential storage remain v1.0+ future work and require separate ADRs, tests, and security scans.
+
+### v0.9 Douyin Frontend Sandbox POC Panel
+
+v0.9 Batch 7 adds a frontend-only sandbox POC panel above the Batch 6 sandbox API contract. The frontend call chain is:
+
+`DouyinSandboxPanel -> frontend sandbox API client -> Batch 6 sandbox API -> Douyin registry / factory -> douyin_sandbox workflow`.
+
+The panel is a visual sandbox smoke surface only. It may display provider descriptors, sandbox mock connection results, sandbox metrics preview results, and sandbox publish dry-run results. All displayed results must remain deterministic sandbox / simulated / dry-run output.
+
+The frontend does not receive, collect, input, store, or transmit real tokens, secrets, API keys, credentials, authorization codes, OAuth state, raw platform payloads, uploads, or publish instructions. It does not call Douyin external domains or third-party services, and tests must mock the API client.
+
+`douyin_real` remains visible only for source separation and remains blocked / not implemented. The panel must not provide real OAuth UI, real provider connect UI, token viewers, credential forms, upload controls, real publish controls, or scheduling controls. Real OAuth and real publish UI remain v1.0+ future work and require separate ADRs, tests, and security scans.
+
+### v0.9 POC Readiness Final Architecture Boundary
+
+v0.9 Batch 8 finalizes the POC readiness review package without adding runtime provider capability. The final v0.9 POC architecture boundary is:
+
+`frontend sandbox panel -> sandbox API -> registry / factory -> douyin_sandbox workflow -> deterministic result`.
+
+`douyin_sandbox` remains deterministic sandbox / simulated / dry-run only. `douyin_real` remains blocked / not implemented. Unknown provider ids do not fallback. The POC path performs no database mutation, no external calls, no credential storage, no token exchange, no OAuth URL generation, no upload, no publish, no scheduling, and no real metrics fetch.
+
+Batch 8 adds review artifacts only: RC checklist, test matrix, validation script, ADR, and documentation consistency updates. Real OAuth, real token lifecycle, real credential storage, real publish, real metrics, production deployment, and SaaS tenant architecture remain v1.0+ / v1.5 / v2.0 future work with separate ADRs, tests, and security scans.
+
+### Future Architecture Path to v2.0 Commercial Release
+
+v0.9 Batch 5 only aligns documentation and planning. It does not add architecture runtime capability. The current v0.9 architecture has sandbox/mock workflow, registry / factory foundation, sandbox-only API contract, and frontend sandbox POC panel only; it does not implement real Douyin OAuth, token storage, real metrics fetching, real publishing, production deployment, tenant isolation, billing, RBAC, or admin console.
+
+v1.0 real provider boundary:
+
+- Real Douyin provider behavior must remain behind explicit provider adapter, OAuth callback, OAuth state, token lifecycle, encrypted credential storage, real metrics read, publish workflow, and disablement ADRs.
+- Real provider work must preserve `fake_local`, `douyin_sandbox`, and `douyin_real` separation.
+- Real platform calls must not bypass Provider Registry, Credential Reference, Security Audit, OAuth Boundary, Token Lifecycle Boundary, secret redaction, or readiness gates.
+
+v1.5 production deployment boundary:
+
+- v1.5 may target controlled direct-customer commercial use only after production deployment, security review, privacy / data retention, backup / restore, monitoring / alerting, incident response, support workflow, provider reliability, publish workflow reliability, metrics reliability, operational runbook, and customer acceptance readiness are satisfied.
+- v1.5 is not a multi-tenant SaaS architecture and does not default to serving customers' customers.
+- Managed, single-tenant, or controlled deployments must document customer data isolation, human-confirmed publishing, platform permission dependencies, and Douyin policy / API limits.
+
+v2.0 multi-tenant SaaS boundary:
+
+- Tenant isolation, tenant-scoped provider connection, tenant-scoped credential reference, tenant-aware audit, organization / customer / customer-of-customer models, RBAC, billing / plan / quota, admin console, tenant monitoring, support operations, SLA, privacy / compliance, data export / deletion, incident response, scalability, and abuse prevention are future v2.0 roadmap capabilities.
+- These capabilities require separate ADRs, migrations, tests, security scans, deployment plans, and operational runbooks.
+- The v2.0 architecture must not treat v1.5 direct-customer production deployments as sufficient for customer-of-customer SaaS commercialization.
 
 ### Provider Registry
 
