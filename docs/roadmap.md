@@ -1124,6 +1124,36 @@ Batch 6 明确不是：
 - 不新增真实 tenant、billing、RBAC 或 admin console 实现。
 - 不声明 v0.9 POC、v1.0、v1.5 或 v2.0 已完成。
 
+Batch 7 允许范围：
+- Douyin Frontend Sandbox POC Panel frontend-primary 批次。
+- 新增 frontend sandbox POC panel，作为 visual sandbox smoke surface。
+- 前端只调用 Batch 6 的 sandbox-only backend API。
+- 展示 `douyin_sandbox` 和 `douyin_real` provider descriptors。
+- 展示 deterministic sandbox / simulated / dry-run mock connection、metrics preview 和 publish dry-run result。
+- 页面必须有 boundary banner，明确不连接真实 Douyin、不执行 OAuth、不保存 token、不上传、不发布、不排期。
+- `douyin_real` 必须继续展示为 blocked / not implemented。
+- unknown provider 必须继续不 fallback。
+- 新增 frontend tests 和 API client mock tests，验证 sandbox 文案、按钮动作、敏感 payload 防护和无外部 Douyin 域名调用。
+- 更新 README、roadmap、architecture、product spec、development docs、v0.9 readiness checklist 和 ADR。
+
+Batch 7 明确不是：
+- 不是生产 UI。
+- 不接真实 Douyin API。
+- 不实现 OAuth。
+- 不创建 OAuth URL。
+- 不新增 OAuth callback route。
+- 不新增 OAuth state storage。
+- 不新增 token exchange 或 token storage。
+- 不保存 token、secret、API key、credential、authorization code 或 OAuth state。
+- 不读取真实环境变量密钥。
+- 不调用外部服务或 Douyin 外部域名。
+- 不抓取真实指标。
+- 不上传、不发布、不排期发布。
+- 不修改数据库表或 migration。
+- 不新增真实 backend API。
+- 不新增真实 tenant、billing、RBAC 或 admin console 实现。
+- 不声明 v0.9 POC、v1.0、v1.5 或 v2.0 已完成。
+
 后续实现方向必须另行 ADR、分支、测试和安全扫描：
 
 - sandbox/mock callback smoke test。
@@ -1171,7 +1201,7 @@ v0.9 明确不做事项：
 - 任何真实 Douyin API、真实 OAuth、真实 token storage、真实指标读取、上传、发布或排期发布都已具备单独 ADR、单独测试和安全扫描。
 - 平台 API 权限风险已形成 v1.0 用户测试 checklist 的前置条件。
 - v1.0 到 v2.0 的详细 roadmap 见 [`roadmap-v1-to-v2-commercial-release.md`](roadmap-v1-to-v2-commercial-release.md)，对应 checklist 见 [`checklists/v1.0-douyin-user-test-release-readiness.md`](checklists/v1.0-douyin-user-test-release-readiness.md)、[`checklists/v1.5-minimum-production-release-readiness.md`](checklists/v1.5-minimum-production-release-readiness.md) 和 [`checklists/v2.0-multi-tenant-saas-commercial-release-readiness.md`](checklists/v2.0-multi-tenant-saas-commercial-release-readiness.md)。这些文档是未来 roadmap / readiness target，不代表当前 v0.9 已具备 v1.0、v1.5 或 v2.0 能力。
-- Batch 6 之后，下一步可以单独进入 frontend sandbox POC 或 v0.9 release readiness；任一方向都必须继续保持 sandbox-only、dry-run、无真实 Douyin / OAuth / token / publish / metrics 的边界。
+- Batch 7 之后，下一步可以单独进入 v0.9 POC Readiness Finalization / Release Candidate；任一方向都必须继续保持 sandbox-only、dry-run、无真实 Douyin / OAuth / token / publish / metrics 的边界。
 
 ## v1.0 Douyin Integration User Test Release
 

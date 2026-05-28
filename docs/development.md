@@ -217,6 +217,39 @@ git status --short
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件或真实平台返回数据进入 Git。文档、测试 deny-list 和边界说明中的敏感词只允许作为禁止项或扫描项，不得包含真实值。
 
+## v0.9 Batch 7 Douyin Frontend Sandbox POC Panel 验收
+
+v0.9 Batch 7 允许新增 frontend-only / frontend-primary Douyin Sandbox POC Panel。该面板只能调用 Batch 6 sandbox-only backend API，并且只能展示 deterministic sandbox / simulated / dry-run provider descriptors、mock connection、metrics preview 和 publish dry-run result。
+
+本批允许新增 sandbox-only frontend UI，但不允许修改数据库表或 migration，不允许新增真实 backend API，不允许真实网络调用，不允许读取环境变量密钥，不允许创建 OAuth URL，不允许新增 OAuth callback route，不允许新增 OAuth state storage，不允许 token exchange，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许真实 metrics fetching，不允许 upload / publish / scheduling，不允许新增真实 tenant、billing、RBAC 或 admin console 实现，也不允许声明 v0.9 POC、v1.0、v1.5 或 v2.0 已完成。
+
+Frontend sandbox POC 开发约束：
+
+- 任何前端 provider UI 必须有明显 boundary banner。
+- API client 只能使用项目 API base，不得硬编码 Douyin 外部域名或第三方服务。
+- API client tests 必须 mock fetch 或现有 HTTP client，不得执行真实网络调用。
+- UI 不得提供真实 OAuth login、connect real Douyin、OAuth URL、token viewer、token / secret / credential input、真实文件上传、真实视频上传、真实发布或真实排期入口。
+- UI 必须明确 `douyin_sandbox` 是 sandbox / simulated / dry-run，`douyin_real` 是 blocked / not implemented，unknown provider 不 fallback。
+- 前端测试必须覆盖 boundary banner、provider descriptor display、mock connection、metrics preview、publish dry-run、error handling、sensitive payload guard 和 no external domain call。
+- 后续任何真实 provider UI、真实 OAuth UI、真实 token UI、真实 upload / publish / scheduling UI 必须单独批次处理，不得混入 v0.9 sandbox UI。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+如果 `frontend/package.json` 未配置 lint 或 typecheck 脚本，不要硬失败，但应在验收记录中说明未配置或未运行。安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件或真实平台返回数据进入 Git。文档、测试 deny-list、redaction guard 和边界说明中的敏感词只能作为禁止项或扫描项，不得包含真实值。
+
 ## v0.5 Release Candidate 质量门禁
 
 v0.5 RC 收口不接真实平台、不新增真实发布能力。release readiness 说明见 [`docs/releases/v0.5-rc-checklist.md`](releases/v0.5-rc-checklist.md)。合并或发布候选验收时建议从仓库根目录执行：

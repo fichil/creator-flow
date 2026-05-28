@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { listProjects, Project } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
+import { DouyinSandboxPanel } from "../components/DouyinSandboxPanel";
 import { ProviderConnectionStatePanel } from "../components/ProviderConnectionStatePanel";
 import { ProviderCredentialReferencePanel } from "../components/ProviderCredentialReferencePanel";
 import { ProviderOAuthBoundaryPanel } from "../components/ProviderOAuthBoundaryPanel";
@@ -55,6 +56,7 @@ export function ProjectListPage({ onCreate, onOpen }: ProjectListPageProps) {
       <ProviderOAuthBoundaryPanel />
       <ProviderTokenLifecyclePanel />
       <ProviderReadinessSummaryPanel />
+      <DouyinSandboxPanel />
       <label className="mt-5 inline-flex items-center gap-2 text-sm text-stone-700">
         <input
           checked={includeArchived}
