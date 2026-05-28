@@ -89,6 +89,8 @@ v0.7.0 release 之后的架构路线必须从 fake/local metrics review summary 
 - v0.8.0 已发布为 Provider & Credential Security Foundation，建立 Provider registry / credential boundary / OAuth callback / token lifecycle 的安全基础，包括 provider capability metadata、connection status、credential reference metadata、secret redaction、授权失败状态和 audit log 方向。
 - v0.9 做 Douyin Provider POC / Sandbox Integration，但必须先以 Batch 0 的 planning、ADR 和 checklist 开始；后续实现必须先走 sandbox/mock callback、provider status transition dry-run 和 read-only mock/sandbox boundary，不得直接进入真实 Douyin。
 - v1.0 才进入 Douyin Integration User Test Release，用于用户授权、账号连接状态和至少一种真实或 sandbox/manual fallback 指标回流测试。
+- v1.5 是未来 Minimum Production Release 目标，面向直接客户的受控商用，需要生产部署、安全隐私、备份恢复、监控告警、支持流程和平台依赖边界，不是当前能力。
+- v2.0 是未来 Multi-Tenant SaaS Commercial Release 目标，面向客户的客户 SaaS 商用，需要多租户、组织、客户、客户的客户、权限、审计、计费、SLA、运营后台、合规与生产支持能力，不是当前能力。
 
 核心领域模型不能依赖 Douyin 专有字段。`PublicationRecord`、`PublicationMetricSnapshot`、`MetricSource`、`ContentPlan`、`TopicCandidate`、`ScriptDraft` 和其他核心模型只能保存平台无关的必要字段；Douyin 原始响应、平台专有字段、scope 细节和接口差异应留在 provider adapter、provider metadata 或受控附加 metadata 中。
 
@@ -139,6 +141,28 @@ The workflow layer does not register a real Douyin client, does not create an HT
 `douyin_sandbox` workflow results are sandbox-only deterministic simulation and must not be represented as real account connection, real OAuth, real metrics, real upload, real publish, or real scheduling. `douyin_real` remains blocked / not implemented through the same factory route, and unknown providers must still fail explicitly without fallback.
 
 This sandbox metrics / mock workflow POC is not a real provider adapter implementation, not real OAuth, not a real sandbox callback, not token lifecycle implementation, and not real metrics, upload, publish, or scheduling capability.
+
+### Future Architecture Path to v2.0 Commercial Release
+
+v0.9 Batch 5 only aligns documentation and planning. It does not add architecture runtime capability. The current v0.9 architecture has sandbox/mock workflow and registry / factory foundation only; it does not implement real Douyin OAuth, token storage, real metrics fetching, real publishing, production deployment, tenant isolation, billing, RBAC, or admin console.
+
+v1.0 real provider boundary:
+
+- Real Douyin provider behavior must remain behind explicit provider adapter, OAuth callback, OAuth state, token lifecycle, encrypted credential storage, real metrics read, publish workflow, and disablement ADRs.
+- Real provider work must preserve `fake_local`, `douyin_sandbox`, and `douyin_real` separation.
+- Real platform calls must not bypass Provider Registry, Credential Reference, Security Audit, OAuth Boundary, Token Lifecycle Boundary, secret redaction, or readiness gates.
+
+v1.5 production deployment boundary:
+
+- v1.5 may target controlled direct-customer commercial use only after production deployment, security review, privacy / data retention, backup / restore, monitoring / alerting, incident response, support workflow, provider reliability, publish workflow reliability, metrics reliability, operational runbook, and customer acceptance readiness are satisfied.
+- v1.5 is not a multi-tenant SaaS architecture and does not default to serving customers' customers.
+- Managed, single-tenant, or controlled deployments must document customer data isolation, human-confirmed publishing, platform permission dependencies, and Douyin policy / API limits.
+
+v2.0 multi-tenant SaaS boundary:
+
+- Tenant isolation, tenant-scoped provider connection, tenant-scoped credential reference, tenant-aware audit, organization / customer / customer-of-customer models, RBAC, billing / plan / quota, admin console, tenant monitoring, support operations, SLA, privacy / compliance, data export / deletion, incident response, scalability, and abuse prevention are future v2.0 roadmap capabilities.
+- These capabilities require separate ADRs, migrations, tests, security scans, deployment plans, and operational runbooks.
+- The v2.0 architecture must not treat v1.5 direct-customer production deployments as sufficient for customer-of-customer SaaS commercialization.
 
 ### Provider Registry
 

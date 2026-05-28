@@ -152,6 +152,36 @@ git status --short
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件或真实平台返回数据进入 Git。测试中的 sandbox-only fake id、fake environment value、敏感字段 deny-list、operation name 和文档边界说明必须被确认不是实际凭据或真实平台返回数据。
 
+## v0.9 Batch 5 Roadmap to v2.0 Commercial Release Documentation Alignment 验收
+
+v0.9 Batch 5 是 docs-only / planning-only 批次。它只允许新增和更新 roadmap、ADR、readiness checklist、README、architecture、product spec 和 development docs，用于说明 v1.0 Douyin Integration User Test Release、v1.5 Minimum Production Release 和 v2.0 Multi-Tenant SaaS Commercial Release 的未来目标、商用边界、技术门槛、安全门槛和发布门槛。
+
+本批不允许新增业务代码，不允许新增 API route，不允许修改数据库表或 migration，不允许新增前端 UI，不允许真实网络调用，不允许读取环境变量密钥，不允许创建 OAuth URL，不允许新增 OAuth callback route，不允许新增 OAuth state storage，不允许 token exchange，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许真实 metrics fetching，不允许 upload / publish / scheduling，不允许新增真实 tenant、billing、RBAC 或 admin console 实现，也不允许声明 v0.9 POC、v1.0、v1.5 或 v2.0 已完成。
+
+Roadmap implementation guidance：
+
+- 开发者不得提前实现真实 OAuth、token、credential storage、publish、metrics、tenant、billing、RBAC、admin console 或 SaaS 能力，除非对应批次和 ADR 明确要求。
+- 新增真实平台能力必须先经过 boundary tests、security tests、docs 和 checklist 更新。
+- v1.5 的 production deployment、customer acceptance、support、monitoring、incident response、privacy、backup / restore 和 commercial boundary 必须单独批次处理，不得混入 v0.9 docs 批次。
+- v2.0 的 migration、tenant isolation、RBAC、billing、quota、admin console、audit export、SLA、support operations、privacy / compliance 和 scalability work 必须单独批次处理，不得混入 v0.9 docs 批次。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件或真实平台返回数据进入 Git。文档中出现的 v1.5 / v2.0 商用描述必须是 future roadmap / readiness target，不得被写成当前能力。
+
 ## v0.5 Release Candidate 质量门禁
 
 v0.5 RC 收口不接真实平台、不新增真实发布能力。release readiness 说明见 [`docs/releases/v0.5-rc-checklist.md`](releases/v0.5-rc-checklist.md)。合并或发布候选验收时建议从仓库根目录执行：
