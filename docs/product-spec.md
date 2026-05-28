@@ -466,6 +466,17 @@ v0.9 第一阶段必须优先验证 sandbox/mock callback planning、provider st
 
 用户不会在本批看到 OAuth login、connect、authorize、OAuth callback、token viewer、credential 管理、真实指标、上传、发布或排期发布入口。v0.9 Batch 0 不会保存 token、secret、API key、credential、authorization code 或 OAuth state，也不会调用外部服务。
 
+v0.9 Batch 1 产品边界：
+
+- 用户不会感知新增功能。
+- 本批无 UI，不新增前端入口。
+- 本批不允许用户连接抖音。
+- 本批不允许用户授权 OAuth。
+- 本批不允许用户读取真实指标。
+- 本批不允许用户上传、发布或排期发布。
+- 本批只是后端结构安全准备，新增 backend-only Douyin Provider Adapter Skeleton 和 blocked / not implemented boundary result。
+- Skeleton 不调用真实 Douyin API，不实现 OAuth，不新增 OAuth callback route，不交换或保存 token，也不读取环境变量密钥。
+
 真实 Douyin API、真实 OAuth、真实 OAuth callback route、真实 token exchange、真实 token storage、真实指标读取、上传、发布、排期发布和自动发布都必须等后续单独 ADR、单独分支、单独测试和安全扫描通过后才能进入。
 
 ## Road to Douyin user testing

@@ -955,7 +955,7 @@ v0.8.0 Release Finalization（已完成）：
 
 目标：进行抖音 Provider 最小可行接入预研与 POC 的阶段化准备，先确认 Provider contract、sandbox/mock callback、连接状态 dry-run、指标读取 POC planning 和 source separation 边界；该版本面向开发者/内部测试，不承诺用户级稳定可用。
 
-状态：Planned / Starting。v0.9 是 v0.8.0 release 之后的下一阶段。v0.9 Batch 0 仅完成 Douyin Provider POC / Sandbox Integration 的 planning、ADR 和 checklist，不新增业务代码，不新增 backend API，不修改数据库表，不新增前端 UI，不新增真实 Provider，不实现 OAuth，不接真实 Douyin。
+状态：Planned / Starting。v0.9 是 v0.8.0 release 之后的下一阶段。v0.9 Batch 0 已完成 Douyin Provider POC / Sandbox Integration 的 planning、ADR 和 checklist，不新增业务代码，不新增 backend API，不修改数据库表，不新增前端 UI，不新增真实 Provider，不实现 OAuth，不接真实 Douyin。v0.9 Batch 1 进入 Douyin Provider Adapter Skeleton backend foundation，但只新增 backend-only skeleton 和 blocked boundary result，不进入真实 provider integration、真实 OAuth、真实 sandbox callback 或真实 metrics read。
 
 v0.8 状态：
 
@@ -987,6 +987,25 @@ Batch 0 允许范围：
 - 更新 README、roadmap、architecture、product spec 和 development docs。
 - 明确 v0.9 第一阶段允许后续进入 Douyin provider adapter skeleton、sandbox/mock callback smoke test、provider status transition dry-run、metrics read POC planning 和 read-only mock/sandbox boundary。
 - 明确第一批实现必须优先 sandbox/mock，不得直接进入真实 Douyin。
+
+Batch 1 允许范围：
+
+- Douyin Provider Adapter Skeleton backend foundation，本批。
+- 新增 backend-only `douyin_sandbox` adapter skeleton。
+- 新增 backend-only `douyin_real` adapter skeleton。
+- 新增 adapter operation boundary result / blocked operation result。
+- 所有 adapter operations 返回 blocked / not implemented result。
+- 新增 backend tests，验证 skeleton 不联网、不读环境变量密钥、不保存 token 或 credential、不新增 API route。
+- 更新 README、roadmap、architecture、product spec、development docs、readiness checklist 和 ADR。
+
+Batch 1 明确不是：
+
+- 不是真实 provider integration。
+- 不是真实 OAuth。
+- 不是真实 sandbox callback。
+- 不是真实 metrics read。
+- 不是 token storage、upload、publish 或 scheduling 批次。
+- 只是 skeleton + blocked boundary result。
 
 后续实现方向必须另行 ADR、分支、测试和安全扫描：
 

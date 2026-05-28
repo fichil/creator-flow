@@ -104,6 +104,14 @@ A sandbox/mock callback must not be represented as real OAuth. It may only valid
 
 Any real token storage requires a separate encrypted credential storage ADR before implementation. Any real API call requires an explicit provider adapter ADR and tests before implementation. Any real Douyin API call, real metrics read, upload, publish, scheduling, token exchange, refresh, revoke, or disconnect must be scoped in a separate branch with security scan evidence.
 
+### v0.9 Douyin Provider Adapter Skeleton
+
+v0.9 Batch 1 introduces a backend-only Douyin Provider Adapter Skeleton in the backend providers layer. The skeleton layers on top of the v0.8 Provider Registry, source separation, OAuth Boundary, Token Lifecycle Boundary, Credential Reference, Security Audit, and Readiness Summary metadata; it does not replace those boundaries and does not mark unimplemented capabilities as available.
+
+The adapter skeleton does not register a real Douyin client, does not create an HTTP client, does not load an external SDK, does not read credentials, does not read environment secrets, and does not call external services. Every adapter operation returns a blocked / not implemented boundary result with safe metadata showing that no external call, credential read, token read, or token write happened.
+
+`douyin_sandbox` and `douyin_real` must remain separated through distinct adapter classes or an equivalently explicit source separation boundary. `douyin_sandbox` is not real Douyin OAuth, and `douyin_real` remains a future real provider placeholder until separate ADRs approve provider adapter behavior, OAuth, credential storage, token exchange, and real API calls. The skeleton is not a real provider adapter implementation and must not be used as proof that real Douyin integration, real metrics fetching, upload, publish, or scheduling is available.
+
 ### Provider Registry
 
 v0.8 的 Provider registry 或等价注册表方向用于描述平台能力，而不是直接实现真实平台接入。注册表至少应能表达：
