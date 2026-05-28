@@ -272,6 +272,22 @@ Batch 8 相关文档：
 
 进入 v1.0 前不得绕过 v0.9 RC checklist、test matrix、security scan、docs wording scan 和 human review / PR / merge / release decision。真实 OAuth、token lifecycle、credential storage、real provider API、real publish、real metrics 和 v1.5 / v2.0 相关 tenant、billing、RBAC、admin console 能力必须单独批次进入，并配套 ADR、tests、docs/checklist 和安全扫描。
 
+## v0.9 Batch 9 Release Branch / PR Merge Preparation 验收
+
+v0.9 Batch 9 是 release / PR merge preparation 批次。本批只允许新增和更新 PR description draft、release notes draft、merge readiness checklist、tag readiness checklist、ADR 和文档一致性说明；默认不修改 backend app 业务代码，不修改 frontend app 业务代码，不修改测试，不新增真实 backend API，不修改数据库表或 migration，不新增真实 Provider，不进入真实 OAuth、token、metrics、publish 或 SaaS 能力。
+
+Batch 9 相关文档：
+
+- PR description draft：[`docs/releases/v0.9-pr-description-draft.md`](releases/v0.9-pr-description-draft.md)。
+- Release notes draft：[`docs/releases/v0.9-release-notes-draft.md`](releases/v0.9-release-notes-draft.md)。
+- Merge readiness checklist：[`docs/releases/v0.9-merge-readiness-checklist.md`](releases/v0.9-merge-readiness-checklist.md)。
+- Tag readiness checklist：[`docs/releases/v0.9-tag-readiness-checklist.md`](releases/v0.9-tag-readiness-checklist.md)。
+- ADR：[`docs/decisions/0044-v0.9-release-merge-preparation.md`](decisions/0044-v0.9-release-merge-preparation.md)。
+
+Batch 9 验收必须继续运行完整本地质量门禁：backend tests、frontend tests、frontend build、smoke-api、`.\scripts\validate-v0.9-poc.ps1`、`git diff --check`、文案扫描、安全扫描和 ignored artifact 检查。
+
+Codex 不得自动 merge main，不得自动创建 `v0.9.0` tag，不得创建 GitHub Release，不得 force push，也不得改写历史。后续 merge、tag 和 GitHub Release 都必须由 human PR review / merge decision / tag decision 明确批准。
+
 ## v0.5 Release Candidate 质量门禁
 
 v0.5 RC 收口不接真实平台、不新增真实发布能力。release readiness 说明见 [`docs/releases/v0.5-rc-checklist.md`](releases/v0.5-rc-checklist.md)。合并或发布候选验收时建议从仓库根目录执行：
