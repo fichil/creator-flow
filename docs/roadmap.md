@@ -955,7 +955,7 @@ v0.8.0 Release Finalization（已完成）：
 
 目标：进行抖音 Provider 最小可行接入预研与 POC 的阶段化准备，先确认 Provider contract、sandbox/mock callback、连接状态 dry-run、指标读取 POC planning 和 source separation 边界；该版本面向开发者/内部测试，不承诺用户级稳定可用。
 
-状态：Planned / Starting。v0.9 是 v0.8.0 release 之后的下一阶段。v0.9 Batch 0 已完成 Douyin Provider POC / Sandbox Integration 的 planning、ADR 和 checklist，不新增业务代码，不新增 backend API，不修改数据库表，不新增前端 UI，不新增真实 Provider，不实现 OAuth，不接真实 Douyin。v0.9 Batch 1 已完成 Douyin Provider Adapter Skeleton backend foundation。v0.9 Batch 2 已完成 `douyin_sandbox` 的 sandbox-only operation simulation，但 `douyin_real` 继续 blocked / not implemented；Batch 2 仍不进入真实 provider integration、真实 OAuth、真实 sandbox callback、真实 token lifecycle 或真实 metrics read。
+状态：Planned / Starting。v0.9 是 v0.8.0 release 之后的下一阶段。v0.9 Batch 0 已完成 Douyin Provider POC / Sandbox Integration 的 planning、ADR 和 checklist，不新增业务代码，不新增 backend API，不修改数据库表，不新增前端 UI，不新增真实 Provider，不实现 OAuth，不接真实 Douyin。v0.9 Batch 1 已完成 Douyin Provider Adapter Skeleton backend foundation。v0.9 Batch 2 已完成 `douyin_sandbox` 的 sandbox-only operation simulation，但 `douyin_real` 继续 blocked / not implemented。v0.9 Batch 3 已完成 backend-only Douyin Provider Registry / Factory Routing foundation，可通过白名单 provider id 获取 descriptor 并创建 adapter；`douyin_sandbox` 继续路由到 sandbox-only deterministic simulation，`douyin_real` 继续 blocked / not implemented，unknown provider 明确失败且不会 fallback。Batch 3 仍不进入真实 provider integration、真实 OAuth、真实 sandbox callback、真实 token lifecycle 或真实 metrics read。
 
 v0.8 状态：
 
@@ -1027,9 +1027,31 @@ Batch 2 明确不是：
 - 不新增 backend API、数据库表或前端 UI。
 - 不声明 v0.9 POC 已完成。
 
+Batch 3 允许范围：
+- Douyin Provider Registry / Factory Routing backend foundation，本批。
+- 新增 `douyin_sandbox` 和 `douyin_real` 的最小 descriptor。
+- 支持通过白名单 provider id 获取 descriptor。
+- 支持通过白名单 provider id 创建对应 adapter。
+- `douyin_sandbox` 继续路由到 Batch 2 的 deterministic sandbox-only simulation。
+- `douyin_real` 继续返回 blocked / not implemented result。
+- unknown provider、空字符串、`None`、大小写变体和带空格 provider id 明确失败，不 fallback 到 sandbox。
+- 新增 backend tests，验证 routing、source separation、unknown-provider failure、无外部调用和敏感信息边界。
+- 更新 README、roadmap、architecture、product spec、development docs、readiness checklist 和 ADR。
+
+Batch 3 明确不是：
+- 不是真实 provider integration。
+- 不是真实 OAuth。
+- 不创建 OAuth URL。
+- 不新增 OAuth callback route。
+- 不新增 OAuth state storage。
+- 不新增 token exchange、token refresh、token revoke 或 token storage。
+- 不是真实 metrics fetching。
+- 不是真实 upload、publish 或 scheduling。
+- 不新增 backend API、数据库表或前端 UI。
+- 不声明 v0.9 POC 已完成。
+
 后续实现方向必须另行 ADR、分支、测试和安全扫描：
 
-- Douyin provider adapter skeleton。
 - sandbox/mock callback smoke test。
 - provider status transition dry-run。
 - metrics read POC planning。

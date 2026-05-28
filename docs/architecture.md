@@ -120,6 +120,16 @@ Sandbox operation simulation does not create an HTTP client, does not call a Dou
 
 `douyin_real` must continue to return blocked / not implemented boundary results for every operation. Real-provider behavior still requires separate ADRs for OAuth, callback handling, encrypted credential storage, token exchange / refresh / revoke, metrics read POC, disconnect lifecycle, and any upload / publish / scheduling workflow.
 
+### v0.9 Douyin Provider Registry / Factory Routing
+
+v0.9 Batch 3 adds a backend-only Douyin Provider Registry / Factory Routing foundation in the backend providers layer. It defines safe local descriptors for the whitelisted provider ids `douyin_sandbox` and `douyin_real`, and it can create the matching adapter class from an exact provider id.
+
+The routing layer is metadata and factory selection only. It does not register a real Douyin client, does not create an HTTP client, does not load an SDK, does not read environment secrets, does not read credentials, does not access the database, does not create OAuth URLs, and does not call external services.
+
+`douyin_sandbox` routes to the existing deterministic sandbox-only operation simulation. `douyin_real` can be recognized by descriptor and factory but must continue to return blocked / not implemented operation results. Unknown, empty, case-variant, or whitespace-variant provider ids must fail explicitly and must not fallback to sandbox.
+
+This registry / factory routing foundation is not a real provider adapter implementation, not real OAuth, not a real sandbox callback, not token lifecycle implementation, and not real metrics, upload, publish, or scheduling capability.
+
 ### Provider Registry
 
 v0.8 的 Provider registry 或等价注册表方向用于描述平台能力，而不是直接实现真实平台接入。注册表至少应能表达：
