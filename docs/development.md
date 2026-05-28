@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.8.0 Provider & Credential Security Foundation release 状态。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证 v0.7.0 以前的 local fake/manual workflow，以及 v0.8.0 新增的 Provider Registry、Connection State、Credential Reference、Security Audit、OAuth Boundary、Token Lifecycle Boundary、Integration Readiness Summary 和对应 frontend read-only panels。v0.8.0 当前仍不接真实 Douyin API，不实现 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不执行 token exchange，不保存 token / secret / API key / credential / authorization code / OAuth state，不上传、不发布、不排期、不自动发布，不做定时指标同步，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 0 Douyin Integration User Test Release planning 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface，以及 v1.0 Batch 0 docs-only / planning-only 边界。当前仓库仍不接真实 Douyin API，不实现 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不执行 token exchange，不保存 token / secret / API key / credential / authorization code / OAuth state，不上传、不发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -287,6 +287,36 @@ Batch 9 相关文档：
 Batch 9 验收必须继续运行完整本地质量门禁：backend tests、frontend tests、frontend build、smoke-api、`.\scripts\validate-v0.9-poc.ps1`、`git diff --check`、文案扫描、安全扫描和 ignored artifact 检查。
 
 Codex 不得自动 merge main，不得自动创建 `v0.9.0` tag，不得创建 GitHub Release，不得 force push，也不得改写历史。后续 merge、tag 和 GitHub Release 都必须由 human PR review / merge decision / tag decision 明确批准。
+
+## v1.0 Batch 0 Douyin Integration User Test Release Planning 验收
+
+v1.0 Batch 0 是 docs-only / planning-only 批次。本批只允许新增和更新 v1.0 planning ADR、v1.0 release plan、README、roadmap、architecture、product spec、development docs、v1.0 readiness checklist 和 v1-to-v2 roadmap，用于规划 Douyin Integration User Test Release。
+
+本批不允许新增业务代码，不允许新增 API route，不允许修改数据库表或 migration，不允许新增前端 UI，不允许真实网络调用，不允许读取环境变量密钥，不允许创建 OAuth URL，不允许新增 OAuth callback route，不允许新增 OAuth state storage，不允许 token exchange，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许真实 metrics fetching，不允许 upload / publish / scheduling，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
+
+本批必须明确：
+
+- v0.9.0 已发布为 Douyin Provider POC / Sandbox Integration。
+- v1.0 是 Douyin Integration User Test Release，不是生产商用版本。
+- v1.0 后续真实实现必须以 Douyin Open Platform app readiness、app review / approval、OAuth permission scope confirmation、callback URL confirmation、token lifecycle policy、credential encryption / storage design、user authorization consent design、platform rate limit / error policy、audit log design 和 kill switch / feature flag design 为前置条件。
+- v1.0 不等于 v1.5 Minimum Production Release。
+- v1.0 不等于 v2.0 Multi-Tenant SaaS Commercial Release。
+
+本批本地质量门禁从仓库根目录执行：
+
+```powershell
+git diff --check
+.\scripts\test-backend.ps1
+
+cd .\frontend
+npm.cmd test
+npm.cmd run build
+cd ..
+
+.\scripts\validate-v0.9-poc.ps1
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档中的敏感字段只能作为边界说明、禁止项或扫描项出现，不得包含真实值。
 
 ## v0.5 Release Candidate 质量门禁
 

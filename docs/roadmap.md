@@ -1,6 +1,6 @@
 # 路线图
 
-本路线图描述计划和 readiness target，不代表当前仓库已经具备未来版本能力。当前稳定版本仍以 README 中声明的 release 为准；v1.0、v1.5 和 v2.0 均是后续目标，不是当前 v0.9 能力声明。
+本路线图描述计划和 readiness target，不代表当前仓库已经具备未来版本能力。当前已发布版本是 `v0.9.0 - Douyin Provider POC / Sandbox Integration`；v1.0 已进入 Batch 0 docs-only / planning-only 阶段，但真实 Douyin OAuth、token、publish、metrics 能力尚未开始实现。v1.5 和 v2.0 仍是后续目标，不是当前能力声明。
 
 ## Phase 0 Documentation Foundation
 
@@ -957,7 +957,7 @@ v0.8.0 Release Finalization（已完成）：
 
 目标：进行抖音 Provider 最小可行接入预研与 POC 的阶段化准备，先确认 Provider contract、sandbox/mock callback、连接状态 dry-run、指标读取 POC planning 和 source separation 边界；该版本面向开发者/内部测试，不承诺用户级稳定可用。
 
-状态：Planned / Starting。v0.9 是 v0.8.0 release 之后的下一阶段。v0.9 Batch 0 已完成 Douyin Provider POC / Sandbox Integration 的 planning、ADR 和 checklist，不新增业务代码，不新增 backend API，不修改数据库表，不新增前端 UI，不新增真实 Provider，不实现 OAuth，不接真实 Douyin。v0.9 Batch 1 已完成 Douyin Provider Adapter Skeleton backend foundation。v0.9 Batch 2 已完成 `douyin_sandbox` 的 sandbox-only operation simulation，但 `douyin_real` 继续 blocked / not implemented。v0.9 Batch 3 已完成 backend-only Douyin Provider Registry / Factory Routing foundation，可通过白名单 provider id 获取 descriptor 并创建 adapter；`douyin_sandbox` 继续路由到 sandbox-only deterministic simulation，`douyin_real` 继续 blocked / not implemented，unknown provider 明确失败且不会 fallback。v0.9 Batch 4 已完成 backend-only Douyin Provider Sandbox Metrics / Mock Workflow POC，通过 registry / factory 路由 `douyin_sandbox` 并返回 deterministic simulated mock account connection、sandbox metrics payload 和 dry-run publish result，同时 `douyin_real` 继续 blocked / not implemented，unknown provider 继续不会 fallback。v0.9 Batch 5 仅完成 docs-only / planning-only 的 roadmap to v2.0 commercial release alignment。v0.9 Batch 6 新增 backend-only Douyin Sandbox API Contract / Smoke Endpoints，提供 sandbox-only provider descriptor list / lookup、mock connection、metrics preview 和 publish dry-run API contract；`douyin_sandbox` 返回 deterministic sandbox / simulated / dry-run result，`douyin_real` 仍 blocked / not implemented，unknown provider 仍明确失败且不会 fallback。v0.9 Batch 7 已完成 frontend Douyin Sandbox POC Panel，作为 visual sandbox smoke surface，只调用 Batch 6 sandbox API。v0.9 Batch 8 准备 POC readiness finalization / release candidate package，新增 RC checklist、test matrix、validation script 和 ADR 0043。v0.9 Batch 9 准备 Release Branch / PR Merge Preparation package，新增 PR 描述草案、release notes 草案、merge readiness checklist、tag readiness checklist 和 ADR 0044；Batch 9 不等于 final release，不自动打 tag、不自动 merge main、不创建 GitHub Release，也不声明 v0.9 POC 已完成。
+状态：Completed / Released。v0.9.0 已从 release commit `0f5263452b65077f2c70c82e506944dd46e60e96` 发布为 Douyin Provider POC / Sandbox Integration。v0.9 Batch 0 已完成 Douyin Provider POC / Sandbox Integration 的 planning、ADR 和 checklist；Batch 1 已完成 Douyin Provider Adapter Skeleton backend foundation；Batch 2 已完成 `douyin_sandbox` 的 sandbox-only operation simulation；Batch 3 已完成 backend-only Douyin Provider Registry / Factory Routing foundation；Batch 4 已完成 backend-only Douyin Provider Sandbox Metrics / Mock Workflow POC；Batch 5 已完成 docs-only / planning-only 的 roadmap to v2.0 commercial release alignment；Batch 6 已完成 backend-only Douyin Sandbox API Contract / Smoke Endpoints；Batch 7 已完成 frontend Douyin Sandbox POC Panel；Batch 8 已完成 POC readiness finalization / release candidate package；Batch 9 已完成 Release Branch / PR Merge Preparation package。v0.9.0 仍不是商用版本，不是真实 provider integration，不调用真实 Douyin API，不实现 OAuth，不创建 OAuth URL，不新增 OAuth callback route，不交换或保存 token，不抓取真实指标，不上传、不发布、不排期发布。
 
 v0.8 状态：
 
@@ -1270,13 +1270,38 @@ v0.9 明确不做事项：
 - 任何真实 Douyin API、真实 OAuth、真实 token storage、真实指标读取、上传、发布或排期发布都已具备单独 ADR、单独测试和安全扫描。
 - 平台 API 权限风险已形成 v1.0 用户测试 checklist 的前置条件。
 - v1.0 到 v2.0 的详细 roadmap 见 [`roadmap-v1-to-v2-commercial-release.md`](roadmap-v1-to-v2-commercial-release.md)，对应 checklist 见 [`checklists/v1.0-douyin-user-test-release-readiness.md`](checklists/v1.0-douyin-user-test-release-readiness.md)、[`checklists/v1.5-minimum-production-release-readiness.md`](checklists/v1.5-minimum-production-release-readiness.md) 和 [`checklists/v2.0-multi-tenant-saas-commercial-release-readiness.md`](checklists/v2.0-multi-tenant-saas-commercial-release-readiness.md)。这些文档是未来 roadmap / readiness target，不代表当前 v0.9 已具备 v1.0、v1.5 或 v2.0 能力。
-- Batch 9 之后，后续路径应是 human PR review、merge decision、final validation on target branch、tag decision、GitHub Release decision，然后才进入 v1.0 planning；任一方向都必须继续保持 sandbox-only、dry-run、无真实 Douyin / OAuth / token / publish / metrics 的边界，直到单独 ADR 和安全门槛批准真实能力。
+- v0.9.0 发布后，v1.0 可以先进入 docs-only / planning-only 的 Batch 0；任一后续真实实现方向都必须继续保持无真实 Douyin / OAuth / token / publish / metrics 的边界，直到单独 ADR、平台权限、应用审核、用户授权、测试和安全门槛批准真实能力。
 
 ## v1.0 Douyin Integration User Test Release
 
 目标：达到可以进行用户抖音接入测试的 v1.0.0 版本，验证用户授权、账号连接状态和至少一种真实或 sandbox/manual fallback 指标回流路径。v1.0.0 是 User Test Release，不是生产级自动化运营或自动发布版本。
 
-状态：Planned。
+状态：Batch 0 planning started。当前仅进入 docs-only / planning-only 的 Douyin Integration User Test Release 规划，不实现真实 OAuth、token lifecycle、credential storage、real provider API、publish workflow 或 metrics read。
+
+v1.0 Batch 0 允许范围：
+
+- 新增 v1.0 Douyin Integration User Test Release planning ADR。
+- 新增 v1.0 Douyin Integration User Test Release plan。
+- 更新 README、README.en、roadmap、architecture、product spec、development docs、v1.0 readiness checklist 和 v1-to-v2 roadmap。
+- 规划真实 Douyin OAuth、token lifecycle、credential storage、publish workflow、metrics read、audit、安全边界、kill switch 和用户测试验收条件。
+- 拆分后续 Batch 1-N 的开发路径。
+- 明确平台权限、应用审核、callback URL、OAuth scope、用户授权和安全存储设计是后续真实能力的前置条件。
+
+v1.0 Batch 0 明确不是：
+
+- 不实现真实 OAuth。
+- 不创建 OAuth URL。
+- 不新增 OAuth callback route。
+- 不新增 OAuth state storage。
+- 不新增 token exchange。
+- 不保存 token、secret、API key、credential、authorization code 或 OAuth state。
+- 不修改数据库表或 migration。
+- 不新增 backend API。
+- 不新增 frontend OAuth UI。
+- 不调用 Douyin API 或外部服务。
+- 不上传、不发布、不排期发布。
+- 不抓取真实指标。
+- 不声明 v1.0、v1.5 或 v2.0 已完成。
 
 范围：
 
@@ -1312,7 +1337,7 @@ v0.9 明确不做事项：
 
 与上一版本的关系：
 
-- v1.0 基于 v0.9 的 Douyin Provider POC / Sandbox Integration，把已验证的 Provider、OAuth、token lifecycle、connection status 和 metrics fallback 边界整理为用户测试版本。
+- v1.0 基于 v0.9.0 的 Douyin Provider POC / Sandbox Integration，把已验证的 sandbox provider contract、source separation、OAuth boundary、token lifecycle boundary、connection status boundary 和 metrics fallback 边界整理为用户测试规划；真实 OAuth、token、publish 和 metrics 实现仍需后续单独批次。
 - v1.0 不是把 sandbox/mock 能力直接宣布为生产能力；真实 Douyin 接入仍取决于平台开放能力、应用审核、OAuth、API 权限与用户授权。
 
 进入下一版本的条件：

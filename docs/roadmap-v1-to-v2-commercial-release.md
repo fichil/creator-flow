@@ -1,27 +1,24 @@
 # Roadmap to v2.0 Commercial Release
 
-This document is a planning artifact. It extends the roadmap from the current v0.9 Douyin Provider POC / Sandbox Integration stage to v1.0 user testing, v1.5 Minimum Production Release, and v2.0 Multi-Tenant SaaS Commercial Release.
+This document is a planning artifact. It extends the roadmap from the released v0.9.0 Douyin Provider POC / Sandbox Integration baseline through v1.0 user testing, v1.5 Minimum Production Release, and v2.0 Multi-Tenant SaaS Commercial Release.
 
-These stages are future roadmap targets. They are not current v0.9 capabilities.
+v1.0 is now in Batch 0 docs-only / planning-only work. v1.5 and v2.0 remain future roadmap targets, and v1.0 planning does not make the current app production, commercial, or SaaS ready.
 
 ## Current Capability Boundary
 
-Current v0.9 work remains POC-oriented:
+Current v0.9.0 release capability remains POC-oriented:
 
-- v0.9 establishes provider safety boundaries, sandbox-only deterministic workflows, registry / factory routing, and POC readiness documentation.
-- v0.9 Batch 6 adds a sandbox-only backend API contract / smoke endpoint surface for provider descriptors, mock connection, metrics preview, and publish dry-run.
-- v0.9 Batch 7 adds a frontend sandbox POC panel as a visual sandbox smoke surface that calls only the Batch 6 sandbox API.
-- v0.9 Batch 8 adds a POC readiness finalization / release candidate package with an RC checklist, test matrix, validation script, ADR, and documentation consistency updates.
-- v0.9 does not provide production readiness, commercial readiness, real Douyin publish readiness, or SaaS readiness.
-- v0.9 does not claim real OAuth, real token exchange, real credential storage, real metrics ingestion, real upload, real publishing, or scheduled publishing.
-- v0.9 Batch 5 is docs-only / planning-only and does not implement any new runtime capability.
+- v0.9.0 establishes provider safety boundaries, sandbox-only deterministic workflows, registry / factory routing, POC readiness documentation, sandbox-only API contract, and frontend sandbox POC review surface.
+- v0.9.0 does not provide production readiness, commercial readiness, real Douyin publish readiness, or SaaS readiness.
+- v0.9.0 does not claim real OAuth, real token exchange, real credential storage, real metrics ingestion, real upload, real publishing, or scheduled publishing.
+- v1.0 Batch 0 adds only planning for the Douyin Integration User Test Release and does not implement any new runtime capability.
 
 ## Version Summary
 
 | Version | Target | Commercial Boundary |
 | --- | --- | --- |
 | v0.9 | Douyin Provider POC / Sandbox Integration | Not commercial, not production, not SaaS |
-| v1.0 | Douyin Integration User Test Release | Small user test only |
+| v1.0 | Douyin Integration User Test Release | Planning started; small user test only |
 | v1.1 | Real Integration Hardening | Not commercial launch |
 | v1.2 | Publishing Workflow Beta | Controlled pilot only |
 | v1.3 | Metrics & Feedback Beta | Controlled pilot only |
@@ -78,6 +75,12 @@ Goal:
 
 - Validate whether real Douyin authorization, publishing, status tracking, and minimum metrics read are feasible for a small user test.
 - Require explicit user authorization and human-confirmed publishing.
+
+Current Batch 0 Boundary:
+
+- Batch 0 is docs-only / planning-only.
+- Batch 0 does not implement real OAuth, OAuth URLs, callback routes, OAuth state storage, token exchange, token storage, credential storage, real provider calls, backend APIs, frontend OAuth UI, database changes, uploads, publishing, scheduling, or real metrics reads.
+- Real implementation must wait for Douyin Open Platform app readiness, app review / approval, OAuth permission scope confirmation, callback URL confirmation, user authorization consent design, token lifecycle policy, encrypted credential storage design, platform error / rate limit policy, audit log design, and kill switch / feature flag design.
 
 Suggested Capabilities:
 

@@ -87,16 +87,26 @@ v0.7.0 release 之后的架构路线必须从 fake/local metrics review summary 
 
 - v0.7.0 已完成 metrics review summary local fake/manual workflow，不改变 Provider 架构，只基于现有 `PublicationMetricSnapshot` 和 fake/local metrics source 做 metrics review summary，将指标转化为人工复盘参考。
 - v0.8.0 已发布为 Provider & Credential Security Foundation，建立 Provider registry / credential boundary / OAuth callback / token lifecycle 的安全基础，包括 provider capability metadata、connection status、credential reference metadata、secret redaction、授权失败状态和 audit log 方向。
-- v0.9 做 Douyin Provider POC / Sandbox Integration，但必须先以 Batch 0 的 planning、ADR 和 checklist 开始；后续实现必须先走 sandbox/mock callback、provider status transition dry-run 和 read-only mock/sandbox boundary，不得直接进入真实 Douyin。
-- v1.0 才进入 Douyin Integration User Test Release，用于用户授权、账号连接状态和至少一种真实或 sandbox/manual fallback 指标回流测试。
+- v0.9.0 已发布为 Douyin Provider POC / Sandbox Integration；它提供 sandbox-only deterministic workflow、registry / factory routing、sandbox-only API contract 和 frontend sandbox POC panel，但仍不是真实 Douyin integration。
+- v1.0 当前进入 Batch 0 docs-only / planning-only 阶段，用于规划 Douyin Integration User Test Release；真实 OAuth、token lifecycle、credential storage、real provider API、publish workflow 和 metrics read 尚未实现。
 - v1.5 是未来 Minimum Production Release 目标，面向直接客户的受控商用，需要生产部署、安全隐私、备份恢复、监控告警、支持流程和平台依赖边界，不是当前能力。
 - v2.0 是未来 Multi-Tenant SaaS Commercial Release 目标，面向客户的客户 SaaS 商用，需要多租户、组织、客户、客户的客户、权限、审计、计费、SLA、运营后台、合规与生产支持能力，不是当前能力。
 
 核心领域模型不能依赖 Douyin 专有字段。`PublicationRecord`、`PublicationMetricSnapshot`、`MetricSource`、`ContentPlan`、`TopicCandidate`、`ScriptDraft` 和其他核心模型只能保存平台无关的必要字段；Douyin 原始响应、平台专有字段、scope 细节和接口差异应留在 provider adapter、provider metadata 或受控附加 metadata 中。
 
+### v1.0 Douyin Integration User Test Release Planning
+
+v1.0 Batch 0 only introduces Douyin Integration User Test Release planning. It does not add business code, backend APIs, database tables, frontend UI, real Provider behavior, OAuth implementation, OAuth callback routes, OAuth state storage, token exchange, token storage, credential storage, real Douyin API calls, real metrics fetching, upload, publish, scheduling, or external service calls.
+
+The target architecture for later v1.0 batches is a guarded real-provider path behind accepted ADRs: OAuth boundary and callback contract, OAuth state anti-replay storage, token exchange boundary, credential reference and encrypted storage design, real provider feature flag / kill switch, user-confirmed publish intent workflow, guarded publish adapter, publish status reconciliation, limited metrics read, audit logs, redaction, and user test readiness evidence.
+
+Real Douyin behavior must remain unavailable until Douyin Open Platform app readiness, app review / approval, OAuth permission scope confirmation, callback URL confirmation, explicit user authorization, token lifecycle policy, credential storage design, rate limit / error policy, audit design, and kill switch design are accepted.
+
+v1.0 is not v1.5 Minimum Production Release and not v2.0 Multi-Tenant SaaS Commercial Release. It does not establish production deployment, SLA, direct-customer commercial readiness, tenant isolation, billing, RBAC, admin console, or customer-of-customer SaaS readiness.
+
 ### v0.9 Douyin Provider POC / Sandbox Integration Planning
 
-v0.9 Batch 0 only introduces provider POC planning. It does not add business code, backend APIs, database tables, frontend UI, real Provider adapters, OAuth implementation, OAuth callback routes, OAuth state storage, token exchange, token storage, real Douyin API calls, real metrics fetching, upload, publish, scheduling, or external service calls.
+v0.9 Batch 0 introduced provider POC planning. v0.9.0 has now been released as Douyin Provider POC / Sandbox Integration. The released v0.9.0 line remains sandbox-only and does not add real Provider adapters, OAuth implementation, OAuth callback routes, OAuth state storage, token exchange, token storage, real Douyin API calls, real metrics fetching, upload, publish, scheduling, or external service calls.
 
 Future v0.9 implementation must layer on top of the v0.8 Provider Registry, Connection State, Credential Reference, Security Audit, OAuth Boundary, Token Lifecycle Boundary, Readiness Summary, secret redaction, and source separation boundaries. v0.9 work must not bypass these boundaries by treating placeholder metadata as an implemented provider.
 
