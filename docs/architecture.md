@@ -166,6 +166,16 @@ The frontend does not receive, collect, input, store, or transmit real tokens, s
 
 `douyin_real` remains visible only for source separation and remains blocked / not implemented. The panel must not provide real OAuth UI, real provider connect UI, token viewers, credential forms, upload controls, real publish controls, or scheduling controls. Real OAuth and real publish UI remain v1.0+ future work and require separate ADRs, tests, and security scans.
 
+### v0.9 POC Readiness Final Architecture Boundary
+
+v0.9 Batch 8 finalizes the POC readiness review package without adding runtime provider capability. The final v0.9 POC architecture boundary is:
+
+`frontend sandbox panel -> sandbox API -> registry / factory -> douyin_sandbox workflow -> deterministic result`.
+
+`douyin_sandbox` remains deterministic sandbox / simulated / dry-run only. `douyin_real` remains blocked / not implemented. Unknown provider ids do not fallback. The POC path performs no database mutation, no external calls, no credential storage, no token exchange, no OAuth URL generation, no upload, no publish, no scheduling, and no real metrics fetch.
+
+Batch 8 adds review artifacts only: RC checklist, test matrix, validation script, ADR, and documentation consistency updates. Real OAuth, real token lifecycle, real credential storage, real publish, real metrics, production deployment, and SaaS tenant architecture remain v1.0+ / v1.5 / v2.0 future work with separate ADRs, tests, and security scans.
+
 ### Future Architecture Path to v2.0 Commercial Release
 
 v0.9 Batch 5 only aligns documentation and planning. It does not add architecture runtime capability. The current v0.9 architecture has sandbox/mock workflow, registry / factory foundation, sandbox-only API contract, and frontend sandbox POC panel only; it does not implement real Douyin OAuth, token storage, real metrics fetching, real publishing, production deployment, tenant isolation, billing, RBAC, or admin console.

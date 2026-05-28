@@ -21,6 +21,7 @@
 .\scripts\test-backend.ps1
 .\scripts\build-frontend.ps1
 .\scripts\smoke-api.ps1
+.\scripts\validate-v0.9-poc.ps1
 ```
 
 - `dev-backend.ps1`：进入 `backend`，确保 `.venv` 可用，安装 backend 依赖并启动 `uvicorn`。
@@ -28,6 +29,7 @@
 - `test-backend.ps1`：运行 backend pytest。
 - `build-frontend.ps1`：运行 frontend production build。
 - `smoke-api.ps1`：假设 backend 已运行在 `http://127.0.0.1:8000`，执行最小 API smoke checks。
+- `validate-v0.9-poc.ps1`：运行 v0.9 POC RC 本地验证，包括 backend tests、frontend tests、frontend build、`git diff --check`、smoke-api 和边界关键词扫描。
 
 如果 PowerShell 拒绝执行本地脚本，可以只对本仓库脚本解除阻止：
 
@@ -249,6 +251,26 @@ git status --short
 ```
 
 如果 `frontend/package.json` 未配置 lint 或 typecheck 脚本，不要硬失败，但应在验收记录中说明未配置或未运行。安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件或真实平台返回数据进入 Git。文档、测试 deny-list、redaction guard 和边界说明中的敏感词只能作为禁止项或扫描项，不得包含真实值。
+
+## v0.9 Batch 8 Douyin Provider POC Readiness Finalization 验收
+
+v0.9 Batch 8 是 POC readiness finalization / release candidate package 批次。本批只允许新增和更新 RC checklist、test matrix、validation script、ADR 和文档一致性说明；默认不修改 backend app 业务代码，不修改 frontend app 业务代码，不新增真实 backend API，不修改数据库表或 migration，不新增真实 Provider，不进入真实 OAuth、token、metrics、publish 或 SaaS 能力。
+
+本批验证入口：
+
+```powershell
+.\scripts\validate-v0.9-poc.ps1
+```
+
+该脚本只做本地验证，不修改文件、不提交、不 push、不读取真实环境变量密钥、不访问真实 Douyin、不访问第三方服务。它会运行 backend tests、frontend tests、frontend build、`git diff --check`、尽可能运行 smoke-api，并执行文案、敏感字段和 sandbox 边界关键词扫描。若 smoke-api 没有本地 backend 可用，脚本会提示需要先启动 backend 或使用 `-SmokeBaseUrl` 指定临时 backend；如需严格要求 smoke 通过，可以使用 `-RequireSmokeApi`。
+
+Batch 8 相关文档：
+
+- RC checklist：[`docs/releases/v0.9-douyin-provider-poc-rc-checklist.md`](releases/v0.9-douyin-provider-poc-rc-checklist.md)。
+- Test matrix：[`docs/testing/v0.9-douyin-provider-poc-test-matrix.md`](testing/v0.9-douyin-provider-poc-test-matrix.md)。
+- ADR：[`docs/decisions/0043-v0.9-poc-readiness-finalization.md`](decisions/0043-v0.9-poc-readiness-finalization.md)。
+
+进入 v1.0 前不得绕过 v0.9 RC checklist、test matrix、security scan、docs wording scan 和 human review / PR / merge / release decision。真实 OAuth、token lifecycle、credential storage、real provider API、real publish、real metrics 和 v1.5 / v2.0 相关 tenant、billing、RBAC、admin console 能力必须单独批次进入，并配套 ADR、tests、docs/checklist 和安全扫描。
 
 ## v0.5 Release Candidate 质量门禁
 

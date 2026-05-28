@@ -547,6 +547,17 @@ v0.9 Batch 7 产品边界：
 - 本批不访问真实平台，不抓取真实指标，不上传、不发布、不排期发布，不写真实 publication record，也不新增真实 tenant、billing、RBAC 或 admin console 实现。
 - 本批不表示 v0.9 POC 已完成，不表示 v1.0、v1.5 或 v2.0 已完成。
 
+v0.9 Batch 8 产品边界：
+
+- 本批是 Douyin Provider POC Readiness Finalization / Release Candidate package。
+- 本批只新增和更新 RC checklist、test matrix、validation script、ADR 和文档一致性说明。
+- 当前用户价值是“可演示 sandbox POC，并可供人工 RC review”，不是生产功能。
+- 本批不新增用户可操作业务能力，不新增真实 backend API，不新增真实 frontend UI，不修改数据库表。
+- 本批不接真实 Douyin API，不实现 OAuth，不创建 OAuth URL，不新增 OAuth callback route，不新增 OAuth state storage，不交换或保存 token，也不读取环境变量密钥。
+- 本批不访问真实平台，不抓取真实指标，不上传、不发布、不排期发布，不写真实 publication record，也不新增真实 tenant、billing、RBAC 或 admin console 实现。
+- 本批不自动打 tag，不自动 merge main，不创建 GitHub Release。
+- 本批不表示 v0.9 POC 已完成，不表示 v1.0、v1.5 或 v2.0 已完成。
+
 真实 Douyin API、真实 OAuth、真实 OAuth callback route、真实 token exchange、真实 token storage、真实指标读取、上传、发布、排期发布和自动发布都必须等后续单独 ADR、单独分支、单独测试和安全扫描通过后才能进入。
 
 ## Road to Douyin user testing

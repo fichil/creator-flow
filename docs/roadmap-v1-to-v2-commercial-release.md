@@ -11,6 +11,7 @@ Current v0.9 work remains POC-oriented:
 - v0.9 establishes provider safety boundaries, sandbox-only deterministic workflows, registry / factory routing, and POC readiness documentation.
 - v0.9 Batch 6 adds a sandbox-only backend API contract / smoke endpoint surface for provider descriptors, mock connection, metrics preview, and publish dry-run.
 - v0.9 Batch 7 adds a frontend sandbox POC panel as a visual sandbox smoke surface that calls only the Batch 6 sandbox API.
+- v0.9 Batch 8 adds a POC readiness finalization / release candidate package with an RC checklist, test matrix, validation script, ADR, and documentation consistency updates.
 - v0.9 does not provide production readiness, commercial readiness, real Douyin publish readiness, or SaaS readiness.
 - v0.9 does not claim real OAuth, real token exchange, real credential storage, real metrics ingestion, real upload, real publishing, or scheduled publishing.
 - v0.9 Batch 5 is docs-only / planning-only and does not implement any new runtime capability.
@@ -40,6 +41,7 @@ Goal:
 - Provide sandbox-only deterministic workflow, registry / factory routing, and readiness checklist coverage.
 - Provide a sandbox-only backend API callable surface for frontend sandbox POC or smoke checks.
 - Provide a frontend sandbox POC panel that displays deterministic simulated / dry-run provider descriptors, mock connection, metrics preview, and publish dry-run results.
+- Provide an RC review package for human review / PR / merge / release decision.
 - Prepare the contract surface for v1.0 user testing.
 
 Non-Goals:
@@ -55,6 +57,7 @@ Completion Standards:
 - POC planning, adapter skeleton, sandbox operations, provider routing, and sandbox metrics / mock workflow POC are documented and tested.
 - Sandbox API contract / smoke endpoints return deterministic sandbox / simulated / dry-run results only.
 - Frontend sandbox POC panel displays sandbox / simulated / dry-run results only and does not provide real OAuth, upload, publish, scheduling, token, secret, or credential inputs.
+- RC checklist, test matrix, validation script, and ADR 0043 are available for human review.
 - `fake_local`, `douyin_sandbox`, and `douyin_real` remain separated.
 - `douyin_real` remains blocked / not implemented until separate ADRs approve real integration.
 
@@ -67,6 +70,7 @@ Exit Conditions:
 
 - v1.0 entry ADRs define real OAuth, callback, token lifecycle, credential storage, publish, metrics, and disablement boundaries.
 - v0.9 documentation does not claim production, commercial, or SaaS readiness.
+- v0.9 RC review leads to a human PR / merge / release decision; it does not automatically create tags or releases.
 
 ## v1.0 Douyin Integration User Test Release
 
