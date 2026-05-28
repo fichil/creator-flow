@@ -16,6 +16,13 @@ from app.providers.douyin.registry import (
     get_douyin_provider_descriptor,
     list_douyin_provider_descriptors,
 )
+from app.providers.douyin.workflow import (
+    DouyinSandboxWorkflowResult,
+    run_douyin_sandbox_dry_run_publish,
+    run_douyin_sandbox_metrics_poc,
+    run_douyin_sandbox_mock_account_connection,
+    run_douyin_sandbox_mock_workflow_poc,
+)
 
 __all__ = [
     "DouyinAdapterOperationResult",
@@ -30,4 +37,9 @@ __all__ = [
     "get_douyin_provider_descriptor",
     "list_douyin_provider_adapters",
     "list_douyin_provider_descriptors",
+    "DouyinSandboxWorkflowResult",
+    "run_douyin_sandbox_dry_run_publish",
+    "run_douyin_sandbox_metrics_poc",
+    "run_douyin_sandbox_mock_account_connection",
+    "run_douyin_sandbox_mock_workflow_poc",
 ]

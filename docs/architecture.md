@@ -130,6 +130,16 @@ The routing layer is metadata and factory selection only. It does not register a
 
 This registry / factory routing foundation is not a real provider adapter implementation, not real OAuth, not a real sandbox callback, not token lifecycle implementation, and not real metrics, upload, publish, or scheduling capability.
 
+### v0.9 Douyin Provider Sandbox Metrics / Mock Workflow POC
+
+v0.9 Batch 4 adds a backend-only sandbox workflow POC above the Douyin registry / factory routing layer. The workflow uses the exact `douyin_sandbox` provider id to create the sandbox adapter, then composes deterministic mock account connection, sandbox metrics POC, and dry-run publish results from the existing sandbox operation simulation.
+
+The workflow layer does not register a real Douyin client, does not create an HTTP client, does not load an SDK, does not read environment secrets, does not read credentials, does not access the database, does not create OAuth URLs, and does not call external services. It returns stable fake ids such as `sandbox_connection_001`, `sandbox_account_001`, `sandbox_metrics_snapshot_001`, `sandbox_video_001`, and `sandbox_publish_001`.
+
+`douyin_sandbox` workflow results are sandbox-only deterministic simulation and must not be represented as real account connection, real OAuth, real metrics, real upload, real publish, or real scheduling. `douyin_real` remains blocked / not implemented through the same factory route, and unknown providers must still fail explicitly without fallback.
+
+This sandbox metrics / mock workflow POC is not a real provider adapter implementation, not real OAuth, not a real sandbox callback, not token lifecycle implementation, and not real metrics, upload, publish, or scheduling capability.
+
 ### Provider Registry
 
 v0.8 的 Provider registry 或等价注册表方向用于描述平台能力，而不是直接实现真实平台接入。注册表至少应能表达：

@@ -498,6 +498,18 @@ v0.9 Batch 3 产品边界：
 - 本批不允许用户连接抖音、授权 OAuth、读取真实指标、上传、发布或排期发布。
 - 本批不接真实 Douyin API，不实现 OAuth，不创建 OAuth URL，不新增 OAuth callback route，不交换或保存 token，也不读取环境变量密钥。
 
+v0.9 Batch 4 产品边界：
+
+- 用户不会感知新增功能。
+- 本批无 UI，不新增前端入口。
+- 本批只新增 backend-only Douyin Provider Sandbox Metrics / Mock Workflow POC。
+- `douyin_sandbox` 可通过 registry / factory 返回 deterministic simulated mock account connection、sandbox metrics payload 和 dry-run publish result。
+- `douyin_real` 仍然 blocked / not implemented。
+- unknown provider 明确失败，不 fallback 到 sandbox。
+- 本批不允许用户连接真实抖音账号、授权 OAuth、读取真实指标、上传、发布或排期发布。
+- 本批不接真实 Douyin API，不实现 OAuth，不创建 OAuth URL，不新增 OAuth callback route，不交换或保存 token，也不读取环境变量密钥。
+- 本批不表示 v0.9 POC 已完成，不表示已经接入真实抖音开放平台，也不表示用户可以真实发布抖音视频。
+
 真实 Douyin API、真实 OAuth、真实 OAuth callback route、真实 token exchange、真实 token storage、真实指标读取、上传、发布、排期发布和自动发布都必须等后续单独 ADR、单独分支、单独测试和安全扫描通过后才能进入。
 
 ## Road to Douyin user testing
