@@ -419,6 +419,24 @@ v0.8 Batch 15 产品边界：
 - v0.8 Batch 15 不承诺 v0.9 POC 已完成。
 - v0.8 Batch 15 只建立 frontend read-only readiness summary display foundation。
 
+v0.8 Batch 16 产品边界：
+
+- 本批只形成 v0.8 Provider & Credential Security Foundation RC audit / closure checklist。
+- 用户不会获得新的业务功能。
+- 用户不会看到新的前端 UI。
+- 用户不会看到新的连接、授权、刷新、撤销、断开、上传、发布、排期发布、readiness approval、readiness override 或 production readiness certification 操作。
+- 本批只梳理 Batch 1-15 的已完成范围、只读 API、frontend panels、metadata-only DB 表、response schema、文档一致性和安全扫描要求。
+- 当前稳定版本仍是 v0.7.0。
+- v0.8 Batch 16 不创建 v0.8.0 tag。
+- v0.8 Batch 16 不声明 v0.8 已 release。
+- v0.8 Batch 16 不进入 v0.9 POC 开发。
+- v0.8 Batch 16 不承诺真实 Douyin 可用。
+- v0.8 Batch 16 不承诺真实 OAuth 可用。
+- v0.8 Batch 16 不承诺真实 token storage、token refresh、token revoke 或 disconnect 可用。
+- v0.8 Batch 16 不承诺真实 Credential storage。
+- v0.8 Batch 16 不承诺真实指标读取。
+- v0.8 Batch 16 不承诺真实发布、上传或排期发布。
+
 ## Road to Douyin user testing
 
 v0.7.0 已完成 local fake/manual metrics review summary workflow。v0.7.0 之后的路线不再从 local fake/manual workflow 直接跳到生产级真实平台能力，而是继续进入 v0.8、v0.9 和 v1.0.0 Douyin Integration User Test Release。v1.0.0 的目标是进行用户抖音接入测试，不是生产级自动化发布版本，也不承诺批量发布、定时发布、多账号矩阵运营或自动内容优化。

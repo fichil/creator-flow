@@ -503,6 +503,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、refresh token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。UI 文案中的 token / OAuth / credential / secret / authorization code / state / refresh / revoke / disconnect / readiness 只能作为“不保存、不实现、不暴露”的边界说明。
 
+## v0.8 Batch 16 Provider & Credential Security Foundation RC Audit / Closure Checklist 验收
+
+v0.8 Batch 16 只允许新增 v0.8 RC checklist 文档、新增 closure / RC audit ADR，并更新 README、roadmap、architecture、product spec 和 development docs。本批不新增业务代码，不新增 backend API，不修改数据库表，不新增前端 UI，不新增真实 Provider，不实现 OAuth，不新增 token lifecycle workflow，不接真实 Douyin，不创建 `v0.8.0` tag，不声明 v0.8 已 release，不进入 v0.9 POC 开发，也不修改 v0.7.0 release scope。
+
+RC checklist 必须覆盖 Batch 1-15 是否全部完成、每个 batch 的 branch / commit / 测试结果 / 边界确认、backend-only / frontend-only / docs-only 范围是否一致、所有只读 API 是否无写操作、所有 frontend panels 是否无操作按钮 / token viewer / secret input、所有 DB 表是否只保存 metadata、所有 response schema 是否不包含可承载敏感值字段、所有 docs 是否一致说明 v0.8 不等于真实 Douyin 接入、README 是否仍明确当前稳定版本是 v0.7.0、roadmap 是否明确 v0.9 才进入 Douyin Provider POC / Sandbox Integration。
+
+本地质量门禁要从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、refresh token、secret、API key、credential、authorization code、OAuth client secret、OAuth state value、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体或运行时文件进入 Git。文档中的 token / OAuth / credential / secret / authorization code / state / refresh / revoke / disconnect / readiness 只能作为“不保存、不实现、不暴露”的边界说明、RC 审计项或黑名单断言。
+
 ## 启动 Backend
 
 ```powershell

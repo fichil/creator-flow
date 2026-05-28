@@ -380,7 +380,7 @@
 
 目标：为真实平台接入建立 Provider、OAuth、Credential 和 Secret 管理边界，先解决安全基础和架构基础，再进入抖音 POC。
 
-状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation，Batch 4 为 Provider Connection State & Sensitive Storage Status backend foundation，Batch 5 为 Provider Connection State frontend read-only UI foundation，Batch 6 为 Provider Credential Reference & Secret Redaction backend foundation，Batch 7 为 Provider Credential Reference frontend read-only UI foundation，Batch 8 为 Provider Security Audit Event & Redacted Audit Log backend foundation，Batch 9 为 Provider Security Audit Event frontend read-only UI foundation，Batch 10 为 Provider OAuth State & Callback Boundary backend foundation，Batch 11 为 Provider OAuth Boundary frontend read-only UI foundation，Batch 12 为 Provider Token Lifecycle Boundary backend foundation，Batch 13 为 Provider Token Lifecycle Boundary frontend read-only UI foundation，Batch 14 为 Provider Integration Readiness Summary backend foundation，Batch 15 为 Provider Integration Readiness Summary frontend read-only UI foundation；这些批次不代表 v0.8 release 已完成。
+状态：Planned。Batch 1 为 Provider & Credential Security documentation foundation，Batch 2 为 Provider Registry & Capability Metadata backend foundation，Batch 3 为 Provider Registry frontend read-only UI foundation，Batch 4 为 Provider Connection State & Sensitive Storage Status backend foundation，Batch 5 为 Provider Connection State frontend read-only UI foundation，Batch 6 为 Provider Credential Reference & Secret Redaction backend foundation，Batch 7 为 Provider Credential Reference frontend read-only UI foundation，Batch 8 为 Provider Security Audit Event & Redacted Audit Log backend foundation，Batch 9 为 Provider Security Audit Event frontend read-only UI foundation，Batch 10 为 Provider OAuth State & Callback Boundary backend foundation，Batch 11 为 Provider OAuth Boundary frontend read-only UI foundation，Batch 12 为 Provider Token Lifecycle Boundary backend foundation，Batch 13 为 Provider Token Lifecycle Boundary frontend read-only UI foundation，Batch 14 为 Provider Integration Readiness Summary backend foundation，Batch 15 为 Provider Integration Readiness Summary frontend read-only UI foundation，Batch 16 为 Provider & Credential Security Foundation RC Audit / Closure Checklist；这些批次不代表 v0.8 release 已完成。
 
 Batch 1（已完成）：
 
@@ -813,7 +813,7 @@ Batch 14（已完成）：
 - 不调用外部服务。
 - 不修改 v0.7.0 release scope。
 
-Batch 15（本批）：
+Batch 15（已完成）：
 
 - Provider Integration Readiness Summary frontend read-only UI foundation。
 - frontend-only 或 frontend + docs only。
@@ -853,6 +853,32 @@ Batch 15（本批）：
 - 不抓取真实指标。
 - 不上传、不发布、不排期发布。
 - 不调用外部服务。
+- 不修改 v0.7.0 release scope。
+
+Batch 16（本批）：
+
+- Provider & Credential Security Foundation RC Audit / Closure Checklist。
+- docs-only。
+- 新增 v0.8 Provider & Credential Security Foundation RC checklist。
+- 新增 v0.8 closure / RC audit ADR。
+- 梳理 Batch 1-15 的 branch、commit、scope、测试门禁和边界确认。
+- 梳理只读 API：`/api/providers`、`/api/provider-connections`、`/api/provider-credential-references`、`/api/provider-security-audit-events`、`/api/provider-oauth-boundaries`、`/api/provider-token-lifecycle-boundaries`、`/api/provider-readiness-summaries`。
+- 梳理只读 frontend panels：Provider Registry、Connection State、Credential Reference、Security Audit、OAuth Boundary、Token Lifecycle Boundary、Integration Readiness Summary。
+- 梳理 metadata-only DB 表与 response schema 的敏感字段禁入边界。
+- 明确 v0.8 仍不等于真实 Douyin 接入、不等于 OAuth implementation、不等于 token storage、不等于真实指标读取、不等于真实发布、不等于 v0.9 POC 已完成。
+- 明确 README 仍保持当前稳定版本为 `v0.7.0`。
+- 明确 v0.9 才进入 Douyin Provider POC / Sandbox Integration。
+- 不新增业务代码。
+- 不新增 backend API。
+- 不修改数据库表。
+- 不新增前端 UI。
+- 不新增真实 Provider。
+- 不实现 OAuth。
+- 不新增 token lifecycle workflow。
+- 不接真实 Douyin。
+- 不创建 `v0.8.0` tag。
+- 不声明 v0.8 已 release。
+- 不进入 v0.9 POC 开发。
 - 不修改 v0.7.0 release scope。
 
 范围：

@@ -258,6 +258,18 @@ UI 必须显式区分 `fake_local`、`douyin_sandbox` 和 `douyin_real`。`fake_
 
 Future real provider planning 只能通过 readiness statuses、`blocking_reasons`、`next_safe_steps` 和 `boundary_notes` 展示，不能通过按钮、connected 状态、authorized 状态、token stored、token refreshed、real synced、published 或 production ready 状态暗示已可用。Provider Integration Readiness Summary UI 不等于真实 provider adapter，也不等于 OAuth、Credential 管理界面、Secret Manager、token console、token lifecycle executor、production readiness dashboard 或平台账号设置页。
 
+### v0.8 Provider Security Foundation RC Audit Boundary
+
+v0.8 Batch 16 是 docs-only RC audit / closure checklist。它只汇总 Batch 1-15 的 Provider Registry、Connection State、Credential Reference、Security Audit、OAuth Boundary、Token Lifecycle Boundary 和 Integration Readiness Summary 边界，不新增 backend API、不修改数据库表、不新增 frontend UI、不新增真实 Provider adapter，也不改变任何 v0.7 fake/local workflow 语义。
+
+RC audit 的目标是确认 v0.8 Provider & Credential Security Foundation 已形成可审查的 metadata-only / read-only foundation：backend-only batches 只能新增 metadata table、metadata service 或只读 API；frontend batches 只能消费只读 metadata API 并展示非敏感 boundary metadata；docs-only batches 只能更新边界说明、ADR 和 checklist。
+
+RC audit 必须确认所有只读 API 无 POST / PUT / PATCH / DELETE 写操作，所有 frontend panels 无 connect / authorize / callback / token exchange / refresh / revoke / disconnect / rotate / mark expired / upload / publish / schedule / readiness approval / override / certification 操作，且无 token viewer、secret input、credential management UI、authorization code input、OAuth state input、raw request viewer、raw response viewer 或 raw payload viewer。
+
+RC audit 也必须确认 metadata-only DB 表和 response schema 不包含可承载敏感值的字段名，不保存 access token、refresh token、token value、secret、API key、authorization code、OAuth client secret、OAuth state value、credential material、private key、raw request、raw response、raw payload、token expiry value、token refresh response、token revoke response 或 provider token response。
+
+Batch 16 不创建 `v0.8.0` tag，不声明 v0.8 已 release，不进入 v0.9 POC 开发。v0.9 仍是 Douyin Provider POC / Sandbox Integration 的入口，必须在单独 ADR、测试和安全门禁后才能新增 provider adapter skeleton、mock/sandbox callback smoke test 或真实指标 POC。
+
 ### Credential Boundary
 
 - token、secret、refresh token、API key 和平台账号凭据不得进入 Git。
