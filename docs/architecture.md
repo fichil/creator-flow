@@ -112,6 +112,14 @@ The adapter skeleton does not register a real Douyin client, does not create an 
 
 `douyin_sandbox` and `douyin_real` must remain separated through distinct adapter classes or an equivalently explicit source separation boundary. `douyin_sandbox` is not real Douyin OAuth, and `douyin_real` remains a future real provider placeholder until separate ADRs approve provider adapter behavior, OAuth, credential storage, token exchange, and real API calls. The skeleton is not a real provider adapter implementation and must not be used as proof that real Douyin integration, real metrics fetching, upload, publish, or scheduling is available.
 
+### v0.9 Douyin Provider Sandbox Operation Simulation
+
+v0.9 Batch 2 adds sandbox-only operation simulation for `douyin_sandbox` inside the backend provider adapter layer. The simulation is deterministic and dependency-free: it returns stable dry-run results and fake sandbox identifiers such as `sandbox_video_001`, `sandbox_publish_001`, and `sandbox_metrics_001`.
+
+Sandbox operation simulation does not create an HTTP client, does not call a Douyin SDK, does not read environment secrets, does not read credentials, does not exchange or store tokens, and does not parse real callback payloads or platform responses. It is an adapter contract test boundary only, not real Douyin integration and not proof that OAuth, metrics fetching, upload, publish, or scheduling are available.
+
+`douyin_real` must continue to return blocked / not implemented boundary results for every operation. Real-provider behavior still requires separate ADRs for OAuth, callback handling, encrypted credential storage, token exchange / refresh / revoke, metrics read POC, disconnect lifecycle, and any upload / publish / scheduling workflow.
+
 ### Provider Registry
 
 v0.8 的 Provider registry 或等价注册表方向用于描述平台能力，而不是直接实现真实平台接入。注册表至少应能表达：

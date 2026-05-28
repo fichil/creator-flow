@@ -38,6 +38,7 @@ SENSITIVE_RESULT_FIELD_NAMES = {
 
 
 BLOCKED_STATUSES = {"blocked", "not_implemented"}
+SANDBOX_SIMULATED_STATUSES = {"simulated_success"}
 
 
 def test_douyin_sandbox_adapter_skeleton_metadata_is_blocked():
@@ -70,24 +71,46 @@ def test_douyin_real_adapter_skeleton_metadata_is_blocked():
     assert adapter.supports_revoke is False
 
 
-def test_douyin_adapter_operations_return_blocked_boundary_results():
-    for adapter in (DouyinSandboxAdapter(), DouyinRealAdapter()):
-        for operation_name, operation in iter_adapter_operations(adapter):
-            result = operation()
+def test_douyin_sandbox_adapter_operations_return_simulated_boundary_results():
+    adapter = DouyinSandboxAdapter()
 
-            assert isinstance(result, DouyinAdapterOperationResult)
-            assert result.provider_id == adapter.provider_id
-            assert result.source_type == adapter.source_type
-            assert result.operation == operation_name
-            assert result.operation_status in BLOCKED_STATUSES
-            assert result.safe_message
-            assert result.boundary_notes
-            assert result.is_real_provider is adapter.is_real_provider
-            assert result.external_call_performed is False
-            assert result.credential_read_performed is False
-            assert result.token_read_performed is False
-            assert result.token_write_performed is False
-            assert_result_has_no_sensitive_field_names(asdict(result))
+    for operation_name, operation in iter_adapter_operations(adapter):
+        result = operation()
+
+        assert isinstance(result, DouyinAdapterOperationResult)
+        assert result.provider_id == adapter.provider_id
+        assert result.source_type == adapter.source_type
+        assert result.operation == operation_name
+        assert result.operation_status in SANDBOX_SIMULATED_STATUSES
+        assert result.safe_message
+        assert result.boundary_notes
+        assert result.is_real_provider is False
+        assert result.external_call_performed is False
+        assert result.credential_read_performed is False
+        assert result.token_read_performed is False
+        assert result.token_write_performed is False
+        assert_result_has_no_sensitive_field_names(asdict(result))
+
+
+def test_douyin_real_adapter_operations_return_blocked_boundary_results():
+    adapter = DouyinRealAdapter()
+
+    for operation_name, operation in iter_adapter_operations(adapter):
+        result = operation()
+
+        assert isinstance(result, DouyinAdapterOperationResult)
+        assert result.provider_id == adapter.provider_id
+        assert result.source_type == adapter.source_type
+        assert result.operation == operation_name
+        assert result.operation_status in BLOCKED_STATUSES
+        assert result.safe_message
+        assert result.boundary_notes
+        assert result.is_real_provider is True
+        assert result.external_call_performed is False
+        assert result.credential_read_performed is False
+        assert result.token_read_performed is False
+        assert result.token_write_performed is False
+        assert_result_has_no_sensitive_field_names(asdict(result))
 
 
 def test_douyin_adapter_operations_do_not_read_environment_values(monkeypatch):

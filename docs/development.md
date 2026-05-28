@@ -83,6 +83,29 @@ git status --short
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体、运行时文件或真实平台返回数据进入 Git。后续任何真实平台相关变更必须继续检查 token、secret、credential、authorization code、OAuth state、数据库、uploads、dist、node_modules、`.venv`、运行时文件和真实平台返回数据，并在单独 ADR、单独分支、单独测试和单独安全扫描后再进入。
 
+## v0.9 Batch 2 Douyin Provider Sandbox Operation Simulation 验收
+
+v0.9 Batch 2 允许在 Batch 1 的 backend-only adapter skeleton 上，为 `douyin_sandbox` 增加 sandbox-only operation simulation。模拟结果必须 deterministic、可测试、无外部依赖，使用稳定 fake id 和 dry-run 语义；`douyin_real` 必须继续返回 blocked / not implemented result。
+
+本批不允许新增 API route，不允许修改数据库表，不允许新增前端 UI，不允许真实网络调用，不允许读取环境变量密钥，不允许读取或保存 token、secret、API key、credential、authorization code 或 OAuth state，不允许实现 OAuth，不允许新增 OAuth callback route，不允许 token exchange，不允许真实 metrics fetching，不允许 upload / publish / scheduling，也不允许声明 v0.9 POC 已完成。
+
+本地质量门禁必须从仓库根目录执行：
+
+```powershell
+cd .\backend
+.\.venv\Scripts\python.exe -m pytest
+
+cd ..\frontend
+npm.cmd run test -- --run
+npm.cmd run build
+
+cd ..
+git diff --check
+git status --short
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、生成媒体、运行时文件或真实平台返回数据进入 Git。测试中的 fake id、fake environment value、敏感字段 deny-list 和文档边界说明必须被确认不是实际凭据或真实平台返回数据。
+
 ## v0.5 Release Candidate 质量门禁
 
 v0.5 RC 收口不接真实平台、不新增真实发布能力。release readiness 说明见 [`docs/releases/v0.5-rc-checklist.md`](releases/v0.5-rc-checklist.md)。合并或发布候选验收时建议从仓库根目录执行：
