@@ -207,6 +207,11 @@ function Test-RcMarkdownFormatting {
 
         $text = [System.Text.Encoding]::UTF8.GetString($bytes)
         $lines = @($text -split "`n")
+        $pass6RawGuard = "<!-- RC Markdown raw verification guard pass 6: this file uses real LF line breaks for GitHub raw review. -->"
+        if (-not ($lines -contains $pass6RawGuard)) {
+            $issues.Add("${path}: pass6 GitHub raw LF verification guard is missing.") | Out-Null
+        }
+
         $firstLine = $lines[0].TrimEnd("`r")
         if ($firstLine -notmatch '^#\s+\S.+$') {
             $issues.Add("${path}: first line must be a standalone H1 heading.") | Out-Null
