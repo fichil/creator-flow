@@ -2,7 +2,7 @@
 
 This document is a planning artifact. It extends the roadmap from the released v0.9.0 Douyin Provider POC / Sandbox Integration baseline through v1.0 user testing, v1.5 Minimum Production Release, and v2.0 Multi-Tenant SaaS Commercial Release.
 
-v1.0 is now in Batch 2 OAuth state storage / anti-replay foundation work. v1.5 and v2.0 remain future roadmap targets, and the Batch 2 foundation does not make the current app production, commercial, or SaaS ready.
+v1.0 is now in Batch 3 token exchange boundary / fake-gated integration work. v1.5 and v2.0 remain future roadmap targets, and the Batch 3 boundary does not make the current app production, commercial, or SaaS ready.
 
 ## Current Capability Boundary
 
@@ -11,14 +11,14 @@ Current v0.9.0 release capability remains POC-oriented:
 - v0.9.0 establishes provider safety boundaries, sandbox-only deterministic workflows, registry / factory routing, POC readiness documentation, sandbox-only API contract, and frontend sandbox POC review surface.
 - v0.9.0 does not provide production readiness, commercial readiness, real Douyin publish readiness, or SaaS readiness.
 - v0.9.0 does not claim real OAuth, real token exchange, real credential storage, real metrics ingestion, real upload, real publishing, or scheduled publishing.
-- v1.0 Batch 2 adds only internal OAuth state storage / anti-replay foundation capability and matching documentation; it does not implement real OAuth runtime behavior, OAuth routes, token exchange, credential storage, real provider calls, publishing, or metrics reads.
+- v1.0 Batch 3 adds only an internal token exchange boundary with fake-gated simulation on top of the Batch 2 state foundation; it does not implement real OAuth runtime behavior, OAuth routes, real token exchange, token storage, credential storage, real provider calls, publishing, or metrics reads.
 
 ## Version Summary
 
 | Version | Target | Commercial Boundary |
 | --- | --- | --- |
 | v0.9 | Douyin Provider POC / Sandbox Integration | Not commercial, not production, not SaaS |
-| v1.0 | Douyin Integration User Test Release | Batch 2 state foundation started; small user test only |
+| v1.0 | Douyin Integration User Test Release | Batch 3 token exchange boundary started; small user test only |
 | v1.1 | Real Integration Hardening | Not commercial launch |
 | v1.2 | Publishing Workflow Beta | Controlled pilot only |
 | v1.3 | Metrics & Feedback Beta | Controlled pilot only |
@@ -76,7 +76,7 @@ Goal:
 - Validate whether real Douyin authorization, publishing, status tracking, and minimum metrics read are feasible for a small user test.
 - Require explicit user authorization and human-confirmed publishing.
 
-Current Batch 2 Boundary:
+Current Batch 3 Boundary:
 
 - Batch 0 completed docs-only / planning-only release planning.
 - Batch 1 completed docs-only / contract-only OAuth boundary and callback contract work.
@@ -85,7 +85,10 @@ Current Batch 2 Boundary:
 - Batch 2 is documented by [`decisions/0047-v1.0-oauth-state-storage-anti-replay.md`](decisions/0047-v1.0-oauth-state-storage-anti-replay.md) and [`contracts/v1.0-douyin-oauth-state-storage-contract.md`](contracts/v1.0-douyin-oauth-state-storage-contract.md).
 - Batch 2 adds an internal-only state foundation with digest-only persistence, one-time consume, expiry rejection, provider mismatch rejection, unsupported provider failure, source separation, and redaction tests.
 - Batch 2 does not implement real OAuth runtime behavior, OAuth URLs, OAuth start routes, OAuth callback routes, token exchange, token storage, credential storage, real provider calls, frontend OAuth UI, uploads, publishing, scheduling, or real metrics reads.
-- Future callback routes may rely on Batch 2 state validation, but callback routes still require a later accepted batch. Token exchange must wait for Batch 3, credential storage must wait for Batch 4, and real OAuth runtime enablement must wait for Batch 5 feature flag / kill switch controls.
+- Batch 3 is documented by [`decisions/0048-v1.0-token-exchange-boundary-fake-gated.md`](decisions/0048-v1.0-token-exchange-boundary-fake-gated.md), [`contracts/v1.0-douyin-token-exchange-boundary-contract.md`](contracts/v1.0-douyin-token-exchange-boundary-contract.md), and [`testing/v1.0-token-exchange-boundary-test-matrix.md`](testing/v1.0-token-exchange-boundary-test-matrix.md).
+- Batch 3 adds an internal-only token exchange boundary service and fake-gated simulator tests. It requires Batch 2 state validation, rejects replayed / expired / missing / malformed / mismatched state, rejects missing / malformed authorization code, blocks `douyin_real`, forbids sandbox fallback, and returns metadata-only / redacted results.
+- Batch 3 does not implement real OAuth runtime behavior, OAuth URLs, OAuth start routes, OAuth callback routes, real token exchange, token storage, credential storage, real provider calls, frontend OAuth UI, uploads, publishing, scheduling, or real metrics reads.
+- Future callback routes may rely on Batch 2 state validation, but callback routes still require a later accepted route batch. Real token exchange still requires a later accepted implementation path and credential reference / encrypted storage must wait for Batch 4. Real OAuth runtime enablement must wait for Batch 5 feature flag / kill switch controls.
 - Real implementation must wait for Douyin Open Platform app readiness, app review / approval, OAuth permission scope confirmation, callback URL confirmation, user authorization consent design, token lifecycle policy, encrypted credential storage design, platform error / rate limit policy, audit log design, and kill switch / feature flag design.
 
 Suggested Capabilities:

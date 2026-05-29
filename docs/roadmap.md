@@ -1,6 +1,6 @@
 # 路线图
 
-本路线图描述计划和 readiness target，不代表当前仓库已经具备未来版本能力。当前已发布版本是 `v0.9.0 - Douyin Provider POC / Sandbox Integration`；v1.0 已进入 Batch 2 OAuth state storage / anti-replay foundation 阶段，但真实 Douyin OAuth runtime、token exchange、credential storage、publish、metrics 能力尚未开始实现。v1.5 和 v2.0 仍是后续目标，不是当前能力声明。
+本路线图描述计划和 readiness target，不代表当前仓库已经具备未来版本能力。当前已发布版本是 `v0.9.0 - Douyin Provider POC / Sandbox Integration`；v1.0 已进入 Batch 3 token exchange boundary / fake-gated integration 阶段，但真实 Douyin OAuth runtime、真实 token exchange、credential storage、publish、metrics 能力尚未开始实现。v1.5 和 v2.0 仍是后续目标，不是当前能力声明。
 
 ## Phase 0 Documentation Foundation
 
@@ -1270,13 +1270,13 @@ v0.9 明确不做事项：
 - 任何真实 Douyin API、真实 OAuth、真实 token storage、真实指标读取、上传、发布或排期发布都已具备单独 ADR、单独测试和安全扫描。
 - 平台 API 权限风险已形成 v1.0 用户测试 checklist 的前置条件。
 - v1.0 到 v2.0 的详细 roadmap 见 [`roadmap-v1-to-v2-commercial-release.md`](roadmap-v1-to-v2-commercial-release.md)，对应 checklist 见 [`checklists/v1.0-douyin-user-test-release-readiness.md`](checklists/v1.0-douyin-user-test-release-readiness.md)、[`checklists/v1.5-minimum-production-release-readiness.md`](checklists/v1.5-minimum-production-release-readiness.md) 和 [`checklists/v2.0-multi-tenant-saas-commercial-release-readiness.md`](checklists/v2.0-multi-tenant-saas-commercial-release-readiness.md)。这些文档是未来 roadmap / readiness target，不代表当前 v0.9 已具备 v1.0、v1.5 或 v2.0 能力。
-- v0.9.0 发布后，v1.0 已完成 docs-only / planning-only 的 Batch 0 和 docs-only / contract-only 的 Batch 1，并进入 Batch 2 OAuth state storage / anti-replay foundation；任一后续真实实现方向都必须继续保持无真实 Douyin / OAuth runtime / token / publish / metrics 的边界，直到单独 ADR、平台权限、应用审核、用户授权、测试和安全门槛批准真实能力。
+- v0.9.0 发布后，v1.0 已完成 docs-only / planning-only 的 Batch 0、docs-only / contract-only 的 Batch 1、Batch 2 OAuth state storage / anti-replay foundation，并进入 Batch 3 token exchange boundary / fake-gated integration；任一后续真实实现方向都必须继续保持无真实 Douyin / OAuth runtime / real token exchange / token storage / publish / metrics 的边界，直到单独 ADR、平台权限、应用审核、用户授权、测试和安全门槛批准真实能力。
 
 ## v1.0 Douyin Integration User Test Release
 
 目标：达到可以进行用户抖音接入测试的 v1.0.0 版本，验证用户授权、账号连接状态和至少一种真实或 sandbox/manual fallback 指标回流路径。v1.0.0 是 User Test Release，不是生产级自动化运营或自动发布版本。
 
-状态：Batch 2 OAuth state storage / anti-replay foundation。当前已在 Batch 1 定义未来真实 Douyin OAuth authorization start、callback、error callback、unsupported provider、cancelled authorization、malformed callback、replayed callback 和 expired callback 的 contract 边界，并在 Batch 2 增加 internal-only digest-only OAuth state foundation；仍不实现真实 OAuth runtime、OAuth URL、OAuth start route、OAuth callback route、token exchange、token storage、credential storage、real provider API、publish workflow 或 metrics read。
+状态：Batch 3 token exchange boundary / fake-gated integration。当前已在 Batch 1 定义未来 OAuth callback contract，在 Batch 2 增加 internal-only digest-only OAuth state foundation，并在 Batch 3 增加 internal-only token exchange boundary / fake-gated simulator；仍不实现真实 OAuth runtime、OAuth URL、OAuth start route、OAuth callback route、真实 token exchange、token storage、credential storage、real provider API、publish workflow 或 metrics read。
 
 v1.0 Batch 0 允许范围：
 
@@ -1311,7 +1311,7 @@ v1.0 Batch 1 允许范围：
 - 更新 README、README.en、roadmap、architecture、product spec、development docs、v1.0 plan、v1.0 readiness checklist 和 v1-to-v2 roadmap。
 - 明确 authorization start、success callback、error callback、unsupported provider、cancelled authorization、malformed callback、missing state、replayed callback 和 expired callback 的未来 contract 边界。
 - 明确 callback contract 只是未来实现约束，不代表当前已经存在 route。
-- 明确后续 callback route 必须依赖 Batch 2 OAuth state storage / anti-replay foundation，且仍需后续单独 route 批次批准；token exchange 必须等待 Batch 3，credential storage 必须等待 Batch 4，runtime feature flag / kill switch enablement 必须等待 Batch 5。
+- 明确后续 callback route 必须依赖 Batch 2 OAuth state storage / anti-replay foundation，且仍需后续单独 route 批次批准；Batch 3 只建立 internal-only / fake-gated token exchange boundary，真实 token exchange 仍需后续单独实现和安全验收；credential storage 必须等待 Batch 4，runtime feature flag / kill switch enablement 必须等待 Batch 5。
 
 v1.0 Batch 1 明确不是：
 
@@ -1347,6 +1347,34 @@ v1.0 Batch 2 明确不是：
 - 不新增 OAuth callback route。
 - 不做 token exchange。
 - 不保存 token、secret、API key、credential、authorization code、raw OAuth state 或 OAuth state value。
+- 不新增 frontend OAuth UI。
+- 不新增真实 Provider runtime behavior。
+- 不启用 `douyin_real`。
+- 不允许 `douyin_real` fallback 到 `douyin_sandbox`。
+- 不调用 Douyin API 或业务外部服务。
+- 不上传、不发布、不排期发布。
+- 不抓取真实指标。
+- 不声明 v1.0、v1.5 或 v2.0 已完成。
+
+v1.0 Batch 3 允许范围：
+
+- 新增 v1.0 token exchange boundary / fake-gated integration ADR：[`decisions/0048-v1.0-token-exchange-boundary-fake-gated.md`](decisions/0048-v1.0-token-exchange-boundary-fake-gated.md)。
+- 新增 internal-only token exchange boundary contract：[`contracts/v1.0-douyin-token-exchange-boundary-contract.md`](contracts/v1.0-douyin-token-exchange-boundary-contract.md)。
+- 新增 token exchange boundary test matrix：[`testing/v1.0-token-exchange-boundary-test-matrix.md`](testing/v1.0-token-exchange-boundary-test-matrix.md)。
+- 新增 backend-only internal token exchange boundary service，用于校验 provider、authorization code fake gate、Batch 2 state consumption、replay / expired / provider mismatch / unsupported provider 拒绝、`douyin_real` 默认 disabled 和 sandbox fallback forbidden。
+- 新增 fake-gated exchange simulator，只返回 metadata-only / redacted result，不返回、不保存、不记录任何 token material。
+- 新增 state dependency、no token material、no external service、no OAuth route、no token storage、no credential storage 测试。
+
+v1.0 Batch 3 明确不是：
+
+- 不实现真实 OAuth runtime。
+- 不创建 OAuth URL。
+- 不新增 OAuth start route。
+- 不新增 OAuth callback route。
+- 不实现真实 token exchange。
+- 不保存 authorization code、access token、refresh token、token、secret、credential、cookie、session、raw OAuth state、raw request 或 raw response。
+- 不新增 DB schema。
+- 不新增 credential storage。
 - 不新增 frontend OAuth UI。
 - 不新增真实 Provider runtime behavior。
 - 不启用 `douyin_real`。

@@ -328,7 +328,7 @@ v1.0 Batch 1 是 docs-only contract 批次。本批只允许新增和更新 OAut
 
 - ADR 0046 和 callback contract 只定义未来实现约束，不代表当前已有 route。
 - 未来 callback route 必须依赖 Batch 2 OAuth state storage / anti-replay foundation，且仍需后续单独 route 批次批准。
-- 未来 token exchange 必须等待 Batch 3。
+- Batch 3 只建立 internal-only / fake-gated token exchange boundary；真实 token exchange 仍必须等待后续单独实现和安全验收。
 - 未来 credential storage 必须等待 Batch 4。
 - 未来 real OAuth runtime enablement 必须等待 Batch 5 feature flag / kill switch。
 - `fake_local`、`douyin_sandbox` 和 `douyin_real` 必须严格隔离，`douyin_real` 不允许 fallback 到 `douyin_sandbox`。
@@ -386,6 +386,41 @@ cd ..
 ```
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、bearer、raw request、raw response、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档、测试 deny-list 和边界说明中的敏感词只能作为禁止项、contract 类别或扫描项出现，不得包含真实值。
+
+## v1.0 Batch 3 Token Exchange Boundary / Fake-Gated Integration 验收
+
+v1.0 Batch 3 允许新增最小 backend internal-only token exchange boundary service 和 fake-gated simulator 测试，用于未来真实 token exchange 前先验证安全边界。本批新增 ADR 0048、token exchange boundary contract、token exchange boundary test matrix、internal-only token exchange boundary service 和 backend tests。
+
+本批必须依赖 Batch 2 OAuth state storage / anti-replay foundation；没有 valid consumed state，不得进入 fake-gated exchange simulation。fake-gated exchange 只能返回 metadata-only / redacted result，不得返回、保存、记录 authorization code、raw OAuth state、access token、refresh token、token、secret、credential、cookie、session、raw request 或 raw response。
+
+本批必须验证：
+
+- valid fake / sandbox-safe input 可以返回 `exchange_simulated` 或等价安全类别。
+- pending state 在 exchange simulation 前只能被 consume 一次。
+- replayed state、expired state、missing state、malformed state、provider mismatch 和 unsupported provider 必须安全失败，且不得模拟 exchange。
+- missing authorization code 和 malformed authorization code 必须安全失败，且不得 consume state。
+- `douyin_real` 默认 disabled / blocked，且不得 fallback 到 `douyin_sandbox`。
+- service result、safe message、repr、dataclass output、日志、测试 fixture 和文档示例不得包含真实 token、access_token、refresh_token、secret、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、API key、bearer、raw request 或 raw response。
+- token exchange boundary 不读取真实环境变量密钥，不调用 Douyin API，不调用 socket / requests / httpx / urllib 或任何业务外部服务。
+- 不新增 OAuth start route、OAuth callback route、OAuth URL creation route、token storage、credential storage 或 frontend OAuth UI。
+
+本批仍不允许新增 OAuth start route，不允许新增 OAuth callback route，不允许创建 OAuth URL，不允许实现真实 OAuth，不允许实现真实 token exchange，不允许保存 authorization code、access token、refresh token、secret、credential、cookie、session 或 raw OAuth state，不允许读取真实环境变量密钥，不允许调用 Douyin API 或业务外部服务，不允许上传、不发布、不排期发布，不允许抓取真实指标，不允许启用 `douyin_real`，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
+
+本批本地质量门禁从仓库根目录执行：
+
+```powershell
+git diff --check
+.\scripts\test-backend.ps1
+
+cd .\frontend
+npm.cmd test
+npm.cmd run build
+cd ..
+
+.\scripts\validate-v0.9-poc.ps1
+```
+
+安全扫描必须确认没有真实 token、access_token、refresh_token、secret、API key、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、bearer、raw request、raw response、本机绝对路径、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档、测试 deny-list、contract 类别和边界说明中的敏感词只能作为禁止项或扫描项出现，不得包含真实值。
 
 ## v0.5 Release Candidate 质量门禁
 
