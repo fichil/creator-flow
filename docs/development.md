@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 4 credential reference / encrypted storage design 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface、v1.0 Batch 2 internal-only state foundation、v1.0 Batch 3 token exchange boundary，以及 v1.0 Batch 4 internal-only credential storage boundary。当前仓库仍不接真实 Douyin API，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行真实 token exchange，不保存真实 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不新增 encrypted payload storage，不上传、不发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 5 real provider feature flag / kill switch 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface、v1.0 Batch 2 internal-only state foundation、v1.0 Batch 3 token exchange boundary、v1.0 Batch 4 internal-only credential storage boundary，以及 v1.0 Batch 5 internal-only real provider controls。当前仓库仍不接真实 Douyin API，不启用真实 provider，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行真实 token exchange，不保存真实 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不新增 encrypted payload storage，不上传、不发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -440,6 +440,42 @@ v1.0 Batch 4 允许新增最小 backend internal-only credential reference / cre
 - 不新增 OAuth start route、OAuth callback route、OAuth URL creation route、真实 token storage、真实 credential storage、encrypted payload storage 或 frontend OAuth UI。
 
 本批仍不允许新增 OAuth start route，不允许新增 OAuth callback route，不允许创建 OAuth URL，不允许实现真实 OAuth，不允许实现真实 token exchange，不允许保存 authorization code、access token、refresh token、secret、credential、cookie、session 或 raw OAuth state，不允许读取真实环境变量密钥，不允许调用 Douyin API 或业务外部服务，不允许上传、不发布、不排期发布，不允许抓取真实指标，不允许启用 `douyin_real`，不允许使用 base64 / hash / xor / 普通编码 / 自定义算法冒充 encryption，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
+
+本批本地质量门禁从仓库根目录执行：
+
+```powershell
+git diff --check
+.\scripts\test-backend.ps1
+
+cd .\frontend
+npm.cmd test
+npm.cmd run build
+cd ..
+
+.\scripts\validate-v0.9-poc.ps1
+```
+
+安全扫描必须确认没有真实 token、access_token、refresh_token、secret、client_secret、API key、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、bearer、raw request、raw response、本机绝对路径、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档、测试 deny-list、contract 类别和边界说明中的敏感词只能作为禁止项或扫描项出现，不得包含真实值。
+
+## v1.0 Batch 5 Real Provider Feature Flag / Kill Switch 验收
+
+v1.0 Batch 5 允许新增最小 backend internal-only real provider feature flag / kill switch service 和测试，用于未来真实 provider runtime enablement 前先验证安全控制。本批新增 ADR 0050、feature flag / kill switch contract、feature flag / kill switch test matrix、internal-only real provider controls service 和 backend tests。
+
+本批必须依赖 Batch 2 OAuth state storage / anti-replay foundation、Batch 3 token exchange boundary 和 Batch 4 credential storage boundary 的既有安全前置。`douyin_real` 必须继续默认 disabled / blocked，kill switch 必须默认 safe blocking，`douyin_real` 不得 fallback 到 `douyin_sandbox`。
+
+本批必须验证：
+
+- `douyin_real` 默认 blocked。
+- kill switch active 时，即使 feature flag enabled，也必须 blocked。
+- feature flag disabled、missing、malformed、revoked、expired 或 policy denied 必须 blocked。
+- unsupported provider、unsupported capability、platform preconditions missing 和 sandbox fallback attempt 必须 blocked。
+- `fake_local` / `douyin_sandbox` 不被 real provider flag 混淆，只能继续 fake-only / sandbox-only 边界。
+- OAuth、token exchange、credential storage、publish、publish status、metrics read、disconnect 和 revoke real capability 默认 blocked。
+- service result、safe message、repr、dataclass output、日志、测试 fixture 和文档示例不得包含真实 token、access_token、refresh_token、secret、client_secret、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、API key、bearer、raw request 或 raw response。
+- real provider controls 不读取真实环境变量密钥，不调用 Douyin API，不调用 socket / requests / httpx / urllib 或任何业务外部服务。
+- 不新增 OAuth start route、OAuth callback route、OAuth URL creation route、真实 token exchange、真实 token storage、真实 credential storage、真实 publish、真实 metrics 或 frontend OAuth UI。
+
+本批仍不允许新增 OAuth start route，不允许新增 OAuth callback route，不允许创建 OAuth URL，不允许实现真实 OAuth，不允许实现真实 token exchange，不允许保存 authorization code、access token、refresh token、secret、credential、cookie、session、API key、bearer 或 raw OAuth state，不允许读取真实环境变量密钥，不允许调用 Douyin API 或业务外部服务，不允许上传、不发布、不排期发布，不允许抓取真实指标，不允许启用 `douyin_real`，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
 
 本批本地质量门禁从仓库根目录执行：
 

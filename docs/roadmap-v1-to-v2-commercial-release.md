@@ -2,7 +2,7 @@
 
 This document is a planning artifact. It extends the roadmap from the released v0.9.0 Douyin Provider POC / Sandbox Integration baseline through v1.0 user testing, v1.5 Minimum Production Release, and v2.0 Multi-Tenant SaaS Commercial Release.
 
-v1.0 is now in Batch 4 credential reference / encrypted storage design work. v1.5 and v2.0 remain future roadmap targets, and the Batch 4 boundary does not make the current app production, commercial, or SaaS ready.
+v1.0 is now in Batch 5 real provider feature flag / kill switch work. v1.5 and v2.0 remain future roadmap targets, and the Batch 5 boundary does not make the current app production, commercial, or SaaS ready.
 
 ## Current Capability Boundary
 
@@ -11,14 +11,14 @@ Current v0.9.0 release capability remains POC-oriented:
 - v0.9.0 establishes provider safety boundaries, sandbox-only deterministic workflows, registry / factory routing, POC readiness documentation, sandbox-only API contract, and frontend sandbox POC review surface.
 - v0.9.0 does not provide production readiness, commercial readiness, real Douyin publish readiness, or SaaS readiness.
 - v0.9.0 does not claim real OAuth, real token exchange, real credential storage, real metrics ingestion, real upload, real publishing, or scheduled publishing.
-- v1.0 Batch 4 adds only an internal credential storage boundary with metadata-only references on top of the Batch 2 state foundation and Batch 3 token exchange boundary; it does not implement real OAuth runtime behavior, OAuth routes, real token exchange, real token storage, real credential storage, real provider calls, publishing, or metrics reads.
+- v1.0 Batch 5 adds only an internal real provider controls boundary with feature flag / kill switch decisions on top of the Batch 2 state foundation, Batch 3 token exchange boundary, and Batch 4 credential storage boundary; it does not enable real provider runtime behavior, real OAuth runtime behavior, OAuth routes, real token exchange, real token storage, real credential storage, real provider calls, publishing, or metrics reads.
 
 ## Version Summary
 
 | Version | Target | Commercial Boundary |
 | --- | --- | --- |
 | v0.9 | Douyin Provider POC / Sandbox Integration | Not commercial, not production, not SaaS |
-| v1.0 | Douyin Integration User Test Release | Batch 4 credential storage boundary started; small user test only |
+| v1.0 | Douyin Integration User Test Release | Batch 5 real provider controls started; small user test only |
 | v1.1 | Real Integration Hardening | Not commercial launch |
 | v1.2 | Publishing Workflow Beta | Controlled pilot only |
 | v1.3 | Metrics & Feedback Beta | Controlled pilot only |
@@ -76,7 +76,7 @@ Goal:
 - Validate whether real Douyin authorization, publishing, status tracking, and minimum metrics read are feasible for a small user test.
 - Require explicit user authorization and human-confirmed publishing.
 
-Current Batch 4 Boundary:
+Current Batch 5 Boundary:
 
 - Batch 0 completed docs-only / planning-only release planning.
 - Batch 1 completed docs-only / contract-only OAuth boundary and callback contract work.
@@ -91,7 +91,10 @@ Current Batch 4 Boundary:
 - Batch 4 is documented by [`decisions/0049-v1.0-credential-reference-encrypted-storage-design.md`](decisions/0049-v1.0-credential-reference-encrypted-storage-design.md), [`contracts/v1.0-douyin-credential-storage-boundary-contract.md`](contracts/v1.0-douyin-credential-storage-boundary-contract.md), and [`testing/v1.0-credential-storage-boundary-test-matrix.md`](testing/v1.0-credential-storage-boundary-test-matrix.md).
 - Batch 4 adds an internal-only credential storage boundary service and metadata-only reference tests. It requires safe Batch 3 token exchange metadata, rejects raw token / authorization code / OAuth state / secret material, blocks `douyin_real`, forbids sandbox fallback, returns encryption-provider-unavailable safely, and creates only metadata-only credential references.
 - Batch 4 does not implement real OAuth runtime behavior, OAuth URLs, OAuth start routes, OAuth callback routes, real token exchange, real token storage, real credential storage, encrypted payload storage, real provider calls, frontend OAuth UI, uploads, publishing, scheduling, or real metrics reads.
-- Future callback routes may rely on Batch 2 state validation, but callback routes still require a later accepted route batch. Real token exchange, real token storage, and real credential storage still require later accepted implementation paths. Real OAuth runtime enablement must wait for Batch 5 feature flag / kill switch controls.
+- Batch 5 is documented by [`decisions/0050-v1.0-real-provider-feature-flag-kill-switch.md`](decisions/0050-v1.0-real-provider-feature-flag-kill-switch.md), [`contracts/v1.0-real-provider-feature-flag-kill-switch-contract.md`](contracts/v1.0-real-provider-feature-flag-kill-switch-contract.md), and [`testing/v1.0-real-provider-feature-flag-kill-switch-test-matrix.md`](testing/v1.0-real-provider-feature-flag-kill-switch-test-matrix.md).
+- Batch 5 adds an internal-only real provider controls service and tests. It defaults `douyin_real` to blocked, gives kill switch precedence over feature flag, blocks missing / malformed flags, blocks missing platform preconditions, forbids sandbox fallback, and returns safe metadata only.
+- Batch 5 does not enable real provider runtime behavior, real OAuth runtime behavior, OAuth URLs, OAuth start routes, OAuth callback routes, real token exchange, real token storage, real credential storage, real provider calls, frontend OAuth UI, uploads, publishing, scheduling, or real metrics reads.
+- Future callback routes may rely on Batch 2 state validation, but callback routes still require a later accepted route batch. Real token exchange, real token storage, real credential storage, real provider enablement, real publish, and real metrics read still require later accepted implementation paths.
 - Real implementation must wait for Douyin Open Platform app readiness, app review / approval, OAuth permission scope confirmation, callback URL confirmation, user authorization consent design, token lifecycle policy, encrypted credential storage design, platform error / rate limit policy, audit log design, and kill switch / feature flag design.
 
 Suggested Capabilities:
