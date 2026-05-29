@@ -173,13 +173,19 @@ function Test-RcMarkdownFormatting {
     foreach ($path in $rcMarkdownFiles) {
         $fullPath = Join-Path $RepoRoot $path
         if (-not (Test-Path $fullPath)) {
+            $issues.Add("${path}: target RC Markdown file is missing.") | Out-Null
             continue
         }
 
+        $lines = @(Get-Content -Encoding utf8 $fullPath)
+        if ($lines.Count -lt 20) {
+            $issues.Add("${path}: document has only $($lines.Count) lines; RC docs may be compressed.") | Out-Null
+        }
+
         $inFence = $false
-        $lineNumber = 0
-        foreach ($line in Get-Content -Encoding utf8 $fullPath) {
-            $lineNumber += 1
+        for ($index = 0; $index -lt $lines.Count; $index += 1) {
+            $line = $lines[$index]
+            $lineNumber = $index + 1
             if ($line.TrimStart().StartsWith('```')) {
                 $inFence = -not $inFence
                 continue
@@ -188,14 +194,20 @@ function Test-RcMarkdownFormatting {
                 continue
             }
 
-            if ($line -match '#.+##') {
-                $issues.Add("${path}:${lineNumber}: heading appears to share a line with another heading.") | Out-Null
+            if ($line -match '^#\s+.+##\s+') {
+                $issues.Add("${path}:${lineNumber}: H1 heading appears to share a line with a later heading.") | Out-Null
             }
-            if ($line -match '##.+- \[ \]') {
-                $issues.Add("${path}:${lineNumber}: heading appears to share a line with a checklist item.") | Out-Null
+            if (($line -match '##\s+') -and ($line -match '-')) {
+                $issues.Add("${path}:${lineNumber}: H2 heading appears to share a line with a list marker.") | Out-Null
             }
-            if ($line -match '- \[ \].+- \[ \]') {
+            if ([regex]::Matches($line, '- \[ \]').Count -ge 2) {
                 $issues.Add("${path}:${lineNumber}: multiple checklist items may share one line.") | Out-Null
+            }
+            if (($line -match '^\s*[-*]\s+') -and ($line -match '\s[-*]\s+')) {
+                $issues.Add("${path}:${lineNumber}: multiple bullet items may share one line.") | Out-Null
+            }
+            if (($line -match '^\s{0,3}#{1,6}\s+') -and ($index + 1 -lt $lines.Count) -and ($lines[$index + 1].Trim() -ne '')) {
+                $issues.Add("${path}:${lineNumber}: heading is not followed by a blank line.") | Out-Null
             }
             if (($line.Length -gt 300) -and ($line -notmatch '^\s*\|') -and ($line -notmatch '^\s*$')) {
                 $issues.Add("${path}:${lineNumber}: ordinary line is longer than 300 characters.") | Out-Null
@@ -212,8 +224,7 @@ function Test-RcMarkdownFormatting {
     if ($issues.Count -gt 80) {
         Write-Host "... scan output truncated after 80 lines"
     }
-    $Warnings.Add("RC Markdown formatting scan produced matches that require human review.") | Out-Null
-    Write-Warning "RC Markdown formatting scan produced matches that require human review."
+    throw "RC Markdown formatting scan found blocking issues."
 }
 
 Push-Location $RepoRoot
@@ -265,9 +276,9 @@ try {
         Test-RcClosureReadiness
     }
 
-    Write-Host ""
-    Write-Host "== RC Markdown formatting review scan =="
-    Test-RcMarkdownFormatting
+    Invoke-ValidationStep "RC Markdown formatting checks" {
+        Test-RcMarkdownFormatting
+    }
 
     $reviewPaths = @(Get-TrackedReviewPaths)
 
