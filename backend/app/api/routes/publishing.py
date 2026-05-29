@@ -1,13 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.db.database import get_db
 from app.publishing import (
     GuardedPublishAttemptError,
     PublishIntentWorkflowError,
+    PublishStatusReconciliationError,
     create_guarded_publish_attempt,
     create_local_publish_intent,
+    create_publish_status_reconciliation,
     get_guarded_publish_attempt,
+    get_publish_status_reconciliation,
     list_guarded_publish_attempts,
+    list_publish_status_reconciliations,
+    list_publish_status_snapshots,
 )
 from app.publishers.fake_publisher import FakePublisherProvider
 from app.publishers.publisher import PublishExecutionInput
@@ -16,6 +21,9 @@ from app.schemas.publishing import (
     PublishAttemptResponse,
     PublishIntentCreate,
     PublishIntentResponse,
+    PublishStatusReconciliationCreate,
+    PublishStatusReconciliationResponse,
+    PublishStatusSnapshotResponse,
 )
 
 router = APIRouter()
@@ -131,6 +139,87 @@ def get_publish_attempt(project_id: int, publish_attempt_id: int, db=Depends(get
             publish_attempt_id=publish_attempt_id,
         )
     except GuardedPublishAttemptError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=f"{exc.category}: {exc.safe_status_message}",
+        ) from exc
+
+
+@router.post(
+    "/{project_id}/publish-attempts/{publish_attempt_id}/status-reconciliations",
+    response_model=PublishStatusReconciliationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_publish_attempt_status_reconciliation(
+    project_id: int,
+    publish_attempt_id: int,
+    response: Response,
+    payload: PublishStatusReconciliationCreate | None = None,
+    db=Depends(get_db),
+):
+    project = _get_project(db, project_id)
+    _ensure_project_mutable(project, "create local publish status reconciliations")
+    payload = payload or PublishStatusReconciliationCreate()
+    try:
+        result = create_publish_status_reconciliation(
+            db,
+            project_id=project_id,
+            publish_attempt_id=publish_attempt_id,
+            external_status_query_requested=payload.external_status_query_requested,
+            fallback_provider_id=payload.fallback_provider_id,
+            fake_status_fixture=payload.fake_status_fixture.model_dump() if payload.fake_status_fixture else None,
+        )
+    except PublishStatusReconciliationError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=f"{exc.category}: {exc.safe_status_message}",
+        ) from exc
+    if result.get("result_category") == "stale_status_ignored":
+        response.status_code = status.HTTP_200_OK
+    return result
+
+
+@router.get(
+    "/{project_id}/publish-status-reconciliations",
+    response_model=list[PublishStatusReconciliationResponse],
+)
+def list_project_publish_status_reconciliations(project_id: int, db=Depends(get_db)):
+    _get_project(db, project_id)
+    return list_publish_status_reconciliations(db, project_id=project_id)
+
+
+@router.get(
+    "/{project_id}/publish-status-reconciliations/{reconciliation_id}",
+    response_model=PublishStatusReconciliationResponse,
+)
+def get_project_publish_status_reconciliation(project_id: int, reconciliation_id: str, db=Depends(get_db)):
+    _get_project(db, project_id)
+    try:
+        return get_publish_status_reconciliation(
+            db,
+            project_id=project_id,
+            reconciliation_id=reconciliation_id,
+        )
+    except PublishStatusReconciliationError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=f"{exc.category}: {exc.safe_status_message}",
+        ) from exc
+
+
+@router.get(
+    "/{project_id}/publish-attempts/{publish_attempt_id}/status-snapshots",
+    response_model=list[PublishStatusSnapshotResponse],
+)
+def list_publish_attempt_status_snapshots(project_id: int, publish_attempt_id: int, db=Depends(get_db)):
+    _get_project(db, project_id)
+    try:
+        return list_publish_status_snapshots(
+            db,
+            project_id=project_id,
+            publish_attempt_id=publish_attempt_id,
+        )
+    except PublishStatusReconciliationError as exc:
         raise HTTPException(
             status_code=exc.status_code,
             detail=f"{exc.category}: {exc.safe_status_message}",

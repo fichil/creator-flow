@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 7 guarded real publish adapter foundation 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface、v1.0 Batch 2 internal-only state foundation、v1.0 Batch 3 token exchange boundary、v1.0 Batch 4 internal-only credential storage boundary、v1.0 Batch 5 internal-only real provider controls、v1.0 Batch 6 本地 publish intent workflow，以及 v1.0 Batch 7 guarded publish attempt foundation。当前仓库仍不接真实 Douyin API，不启用真实 provider，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行真实 token exchange，不保存真实 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不新增 encrypted payload storage，不上传、不真实发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 8 publish status reconciliation foundation 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface、v1.0 Batch 2 internal-only state foundation、v1.0 Batch 3 token exchange boundary、v1.0 Batch 4 internal-only credential storage boundary、v1.0 Batch 5 internal-only real provider controls、v1.0 Batch 6 本地 publish intent workflow、v1.0 Batch 7 guarded publish attempt foundation，以及 v1.0 Batch 8 本地 status reconciliation foundation。当前仓库仍不接真实 Douyin API，不启用真实 provider，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行真实 token exchange，不保存真实 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不新增 encrypted payload storage，不查询真实 Douyin 状态，不上传、不真实发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -675,6 +675,43 @@ v1.0 Batch 7 允许新增 guarded real publish adapter foundation、metadata-onl
 - 不新增 upload route、scheduled publish route、metrics route、OAuth start route、OAuth callback route、OAuth URL creation route、真实 token exchange、真实 token storage、真实 credential storage、真实 publish execution path 或 frontend OAuth UI。
 
 本批仍不允许调用 Douyin API 或任何业务外部服务，不允许上传视频，不允许真实发布，不允许排期发布，不允许新增 OAuth start route，不允许新增 OAuth callback route，不允许创建 OAuth URL，不允许实现真实 OAuth，不允许实现真实 token exchange，不允许保存 authorization code、access token、refresh token、secret、credential、cookie、session、API key、bearer、raw OAuth state、provider response、upload response、publish response、external response 或 Douyin response，不允许读取真实环境变量密钥，不允许抓取真实指标，不允许启用 `douyin_real`，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
+
+本批本地质量门禁从仓库根目录执行：
+
+```powershell
+git diff --check
+.\scripts\test-backend.ps1
+
+cd .\frontend
+npm.cmd test
+npm.cmd run build
+cd ..
+
+.\scripts\validate-v0.9-poc.ps1
+```
+
+## v1.0 Batch 8 Publish Status Reconciliation 验收
+
+v1.0 Batch 8 允许新增 publish status reconciliation foundation、metadata-only publish status reconciliation schema、metadata-only status snapshot schema、local-only status reconciliation API、frontend Local Status Reconciliation / Publish Status Snapshot UI、backend / frontend tests 和文档，用于在未来真实状态查询前验证 publish attempt dependency、Batch 5 controls、duplicate reconciliation prevention、stale status ignored、safe fixture validation 和 sandbox fallback forbidden。本批新增 ADR 0053、publish status reconciliation contract 和 publish status reconciliation test matrix。
+
+本批必须依赖 Batch 7 publish attempt、Batch 6 publish intent workflow 和 Batch 5 real provider controls。`douyin_real` 必须继续默认 disabled / blocked，且不得 fallback 到 `douyin_sandbox`。Status reconciliation 只能表示本地安全状态对账记录，不得触发 provider status query、Douyin status query、upload、publish、scheduled publish、真实指标读取、OAuth URL、token exchange 或 credential storage。
+
+本批必须验证：
+
+- 创建 status reconciliation 必须要求 existing publish attempt。
+- missing / blocked / cancelled / failed-safe publish attempt 必须被拒绝或按本地安全策略处理。
+- valid local fake / sandbox-safe publish attempt 只能创建 metadata-only reconciliation 和 metadata-only snapshot。
+- 同一 publish attempt 不得重复创建 active reconciliation。
+- stale status update 必须被安全忽略。
+- malformed fake / sandbox fixture 必须被安全拒绝。
+- `douyin_real` 默认 blocked，kill switch active 和 platform preconditions missing 必须阻断 reconciliation。
+- `douyin_real` 不得 fallback 到 `douyin_sandbox`。
+- unsupported provider 必须被拒绝。
+- API response、service result、safe message、repr、日志、测试 fixture 和文档示例不得包含真实 token、access_token、refresh_token、secret、client_secret、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、API key、bearer、raw request、raw response、provider response、upload response、publish response、status response、external response、Douyin response 或 metrics response。
+- status reconciliation workflow 不读取真实环境变量密钥，不调用 Douyin API，不调用 socket / requests / httpx / urllib 或任何业务外部服务。
+- 不新增 upload route、scheduled publish route、metrics route、OAuth start route、OAuth callback route、OAuth URL creation route、真实 token exchange、真实 token storage、真实 credential storage、真实 publish execution path、真实 status query path 或 frontend OAuth UI。
+
+本批仍不允许调用 Douyin API 或任何业务外部服务，不允许查询真实 Douyin 发布状态，不允许上传视频，不允许真实发布，不允许排期发布，不允许新增 OAuth start route，不允许新增 OAuth callback route，不允许创建 OAuth URL，不允许实现真实 OAuth，不允许实现真实 token exchange，不允许保存 authorization code、access token、refresh token、secret、credential、cookie、session、API key、bearer、raw OAuth state、provider response、upload response、publish response、status response、external response、Douyin response 或 metrics response，不允许读取真实环境变量密钥，不允许抓取真实指标，不允许启用 `douyin_real`，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
 
 本批本地质量门禁从仓库根目录执行：
 

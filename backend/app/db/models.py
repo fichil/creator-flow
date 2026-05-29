@@ -159,6 +159,68 @@ CREATE TABLE IF NOT EXISTS publish_attempts (
     CHECK (external_call_status IN ('not_called', 'blocked'))
 );
 
+CREATE TABLE IF NOT EXISTS publish_status_reconciliations (
+    reconciliation_id TEXT PRIMARY KEY,
+    publish_attempt_id INTEGER NOT NULL,
+    publish_intent_id INTEGER NOT NULL,
+    review_item_id INTEGER NOT NULL,
+    provider_id TEXT NOT NULL,
+    source_type TEXT NOT NULL,
+    reconciliation_status TEXT NOT NULL,
+    local_publish_status TEXT NOT NULL,
+    external_query_status TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TEXT,
+    safe_status_message TEXT NOT NULL,
+    last_status_change_reason TEXT NOT NULL,
+    FOREIGN KEY (publish_attempt_id) REFERENCES publish_attempts(id) ON DELETE CASCADE,
+    FOREIGN KEY (publish_intent_id) REFERENCES publish_intents(id) ON DELETE CASCADE,
+    FOREIGN KEY (review_item_id) REFERENCES review_drafts(id) ON DELETE CASCADE,
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (reconciliation_status IN ('created', 'blocked', 'completed_safe', 'failed_safe', 'cancelled')),
+    CHECK (
+        local_publish_status IN (
+            'local_pending',
+            'local_blocked',
+            'local_attempt_created',
+            'local_status_unknown',
+            'local_status_reconciled',
+            'local_failed_safe',
+            'local_cancelled'
+        )
+    ),
+    CHECK (external_query_status IN ('not_called', 'blocked'))
+);
+
+CREATE TABLE IF NOT EXISTS publish_status_snapshots (
+    status_snapshot_id TEXT PRIMARY KEY,
+    publish_attempt_id INTEGER NOT NULL,
+    reconciliation_id TEXT,
+    provider_id TEXT NOT NULL,
+    source_type TEXT NOT NULL,
+    local_publish_status TEXT NOT NULL,
+    status_observed_at TEXT NOT NULL,
+    status_source TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    safe_status_message TEXT NOT NULL,
+    FOREIGN KEY (publish_attempt_id) REFERENCES publish_attempts(id) ON DELETE CASCADE,
+    FOREIGN KEY (reconciliation_id) REFERENCES publish_status_reconciliations(reconciliation_id) ON DELETE SET NULL,
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (
+        local_publish_status IN (
+            'local_pending',
+            'local_blocked',
+            'local_attempt_created',
+            'local_status_unknown',
+            'local_status_reconciled',
+            'local_failed_safe',
+            'local_cancelled'
+        )
+    ),
+    CHECK (status_source IN ('local', 'fake_fixture', 'sandbox_fixture'))
+);
+
 CREATE TABLE IF NOT EXISTS publication_metric_snapshots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -784,6 +846,19 @@ ON publish_attempts (publish_intent_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_publish_attempts_active_intent
 ON publish_attempts (publish_intent_id)
 WHERE attempt_status = 'created';
+
+CREATE INDEX IF NOT EXISTS idx_publish_status_reconciliations_project_created
+ON publish_status_reconciliations (publish_intent_id, created_at DESC, reconciliation_id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_publish_status_reconciliations_attempt
+ON publish_status_reconciliations (publish_attempt_id, created_at DESC, reconciliation_id DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_publish_status_reconciliations_active_attempt
+ON publish_status_reconciliations (publish_attempt_id)
+WHERE reconciliation_status = 'created';
+
+CREATE INDEX IF NOT EXISTS idx_publish_status_snapshots_attempt_observed
+ON publish_status_snapshots (publish_attempt_id, status_observed_at DESC, status_snapshot_id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_publication_metric_snapshots_record_captured_at
 ON publication_metric_snapshots (publication_record_id, captured_at DESC, id DESC);

@@ -48,6 +48,55 @@ class PublishAttemptResponse(BaseModel):
     last_status_change_reason: str
 
 
+class PublishStatusFixture(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    local_publish_status: str
+    status_observed_at: str | None = None
+    status_source: str
+    safe_status_message: str
+
+
+class PublishStatusReconciliationCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    external_status_query_requested: StrictBool | None = False
+    fallback_provider_id: str | None = None
+    fake_status_fixture: PublishStatusFixture | None = None
+
+
+class PublishStatusReconciliationResponse(BaseModel):
+    reconciliation_id: str
+    publish_attempt_id: int
+    publish_intent_id: int
+    review_item_id: int
+    provider_id: str
+    source_type: str
+    reconciliation_status: str
+    local_publish_status: str
+    external_query_status: str
+    created_at: str
+    updated_at: str
+    completed_at: str | None = None
+    safe_status_message: str
+    last_status_change_reason: str
+    result_category: str | None = None
+
+
+class PublishStatusSnapshotResponse(BaseModel):
+    status_snapshot_id: str
+    publish_attempt_id: int
+    reconciliation_id: str | None = None
+    provider_id: str
+    source_type: str
+    local_publish_status: str
+    status_observed_at: str
+    status_source: str
+    created_at: str
+    safe_status_message: str
+    result_category: str | None = None
+
+
 class PublicationRecordResponse(BaseModel):
     id: int
     project_id: int

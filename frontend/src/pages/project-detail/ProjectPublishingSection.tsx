@@ -7,8 +7,11 @@ import {
   createFakePublicationMetric,
   createPublishAttempt,
   createPublishIntent,
+  createPublishStatusReconciliation,
   fakePublishIntent,
   getPublishAttempts,
+  getPublishStatusReconciliations,
+  getPublishStatusSnapshots,
   getPublicationRecords,
   getPublishIntents,
   getReviewDrafts,
@@ -19,6 +22,8 @@ import {
   PublicationRecord,
   PublishAttempt,
   PublishIntent,
+  PublishStatusReconciliation,
+  PublishStatusSnapshot,
   ReviewDraft,
 } from "../../api/client";
 import { formatStatus } from "./formatting";
@@ -34,6 +39,7 @@ type ProjectPublishingSectionProps = {
 type PublishingAction =
   | { type: "create"; id: number }
   | { type: "attempt"; id: number }
+  | { type: "reconcile-status"; id: number }
   | { type: "confirm"; id: number }
   | { type: "cancel"; id: number }
   | { type: "fake-publish"; id: number }
@@ -44,6 +50,10 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
   const [reviewDrafts, setReviewDrafts] = useState<ReviewDraft[]>([]);
   const [publishIntents, setPublishIntents] = useState<PublishIntent[]>([]);
   const [attemptsByIntentId, setAttemptsByIntentId] = useState<Record<number, PublishAttempt[]>>({});
+  const [reconciliationsByAttemptId, setReconciliationsByAttemptId] = useState<
+    Record<number, PublishStatusReconciliation[]>
+  >({});
+  const [snapshotsByAttemptId, setSnapshotsByAttemptId] = useState<Record<number, PublishStatusSnapshot[]>>({});
   const [recordsByIntentId, setRecordsByIntentId] = useState<Record<number, PublicationRecord[]>>({});
   const [metricsByRecordId, setMetricsByRecordId] = useState<Record<number, PublicationMetricSnapshot[]>>({});
   const [summariesByRecordId, setSummariesByRecordId] = useState<Record<number, PublicationMetricReviewSummary[]>>({});
@@ -54,11 +64,15 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
   async function reloadPublishingWorkflow() {
     setLoading(true);
     try {
-      const [drafts, intents, attempts] = await Promise.all([
+      const [drafts, intents, attempts, reconciliations] = await Promise.all([
         getReviewDrafts(projectId),
         getPublishIntents(projectId),
         getPublishAttempts(projectId),
+        getPublishStatusReconciliations(projectId),
       ]);
+      const snapshotEntries = await Promise.all(
+        attempts.map(async (attempt) => [attempt.id, await getPublishStatusSnapshots(projectId, attempt.id)] as const),
+      );
       const recordEntries = await Promise.all(
         intents.map(async (intent) => [intent.id, await getPublicationRecords(projectId, intent.id)] as const),
       );
@@ -74,6 +88,8 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
       setReviewDrafts(drafts);
       setPublishIntents(intents);
       setAttemptsByIntentId(groupAttemptsByIntent(attempts));
+      setReconciliationsByAttemptId(groupReconciliationsByAttempt(reconciliations));
+      setSnapshotsByAttemptId(Object.fromEntries(snapshotEntries));
       setRecordsByIntentId(Object.fromEntries(recordEntries));
       setMetricsByRecordId(Object.fromEntries(metricEntries));
       setSummariesByRecordId(Object.fromEntries(summaryEntries));
@@ -154,6 +170,22 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
       await reloadPublishingWorkflow();
     } catch (err) {
       setError(formatPublishingError(err, "Create guarded publish attempt failed"));
+    } finally {
+      setAction(null);
+    }
+  }
+
+  async function handleCreateStatusReconciliation(publishAttemptId: number) {
+    if (isArchived) {
+      return;
+    }
+    setAction({ type: "reconcile-status", id: publishAttemptId });
+    setError(null);
+    try {
+      await createPublishStatusReconciliation(projectId, publishAttemptId);
+      await reloadPublishingWorkflow();
+    } catch (err) {
+      setError(formatPublishingError(err, "Create local status reconciliation failed"));
     } finally {
       setAction(null);
     }
@@ -298,9 +330,12 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
                     summariesByRecordId={summariesByRecordId}
                     records={recordsByIntentId[intent.id] ?? []}
                     attempts={attemptsByIntentId[intent.id] ?? []}
+                    reconciliationsByAttemptId={reconciliationsByAttemptId}
+                    snapshotsByAttemptId={snapshotsByAttemptId}
                     onCancel={handleCancel}
                     onConfirm={handleConfirm}
                     onCreateAttempt={handleCreateAttempt}
+                    onCreateStatusReconciliation={handleCreateStatusReconciliation}
                     onFakePublish={handleFakePublish}
                     onGenerateFakeMetrics={handleCreateFakeMetrics}
                     onGenerateFakeMetricReviewSummary={handleCreateFakeMetricReviewSummary}
@@ -322,22 +357,28 @@ function PublishIntentCard({
   onCancel,
   onConfirm,
   onCreateAttempt,
+  onCreateStatusReconciliation,
   onFakePublish,
   onGenerateFakeMetrics,
   onGenerateFakeMetricReviewSummary,
   metricsByRecordId,
+  reconciliationsByAttemptId,
   summariesByRecordId,
   publishIntent,
   records,
+  snapshotsByAttemptId,
 }: {
   action: PublishingAction | null;
   attempts: PublishAttempt[];
   isArchived: boolean;
   metricsByRecordId: Record<number, PublicationMetricSnapshot[]>;
+  reconciliationsByAttemptId: Record<number, PublishStatusReconciliation[]>;
   summariesByRecordId: Record<number, PublicationMetricReviewSummary[]>;
+  snapshotsByAttemptId: Record<number, PublishStatusSnapshot[]>;
   onCancel: (publishIntentId: number) => void;
   onConfirm: (publishIntentId: number) => void;
   onCreateAttempt: (publishIntentId: number) => void;
+  onCreateStatusReconciliation: (publishAttemptId: number) => void;
   onFakePublish: (publishIntentId: number) => void;
   onGenerateFakeMetrics: (publicationRecordId: number) => void;
   onGenerateFakeMetricReviewSummary: (publicationRecordId: number) => void;
@@ -472,7 +513,15 @@ function PublishIntentCard({
           ) : (
             <div className="mt-3 space-y-2">
               {attempts.map((attempt) => (
-                <PublishAttemptItem attempt={attempt} key={attempt.id} />
+                <PublishAttemptItem
+                  action={action}
+                  attempt={attempt}
+                  isArchived={isArchived}
+                  key={attempt.id}
+                  reconciliations={reconciliationsByAttemptId[attempt.id] ?? []}
+                  snapshots={snapshotsByAttemptId[attempt.id] ?? []}
+                  onCreateStatusReconciliation={onCreateStatusReconciliation}
+                />
               ))}
             </div>
           )}
@@ -506,7 +555,34 @@ function PublishIntentCard({
   );
 }
 
-function PublishAttemptItem({ attempt }: { attempt: PublishAttempt }) {
+function PublishAttemptItem({
+  action,
+  attempt,
+  isArchived,
+  onCreateStatusReconciliation,
+  reconciliations,
+  snapshots,
+}: {
+  action: PublishingAction | null;
+  attempt: PublishAttempt;
+  isArchived: boolean;
+  onCreateStatusReconciliation: (publishAttemptId: number) => void;
+  reconciliations: PublishStatusReconciliation[];
+  snapshots: PublishStatusSnapshot[];
+}) {
+  const hasActiveReconciliation = reconciliations.some(
+    (reconciliation) => reconciliation.reconciliation_status === "created",
+  );
+  const hasExternalQueryBlocked = reconciliations.some(
+    (reconciliation) => reconciliation.external_query_status === "blocked",
+  );
+  const hasStaleIgnored = reconciliations.some(
+    (reconciliation) =>
+      reconciliation.result_category === "stale_status_ignored" ||
+      reconciliation.last_status_change_reason === "stale_status_ignored",
+  );
+  const canCreateReconciliation = attempt.attempt_status === "created" && !hasActiveReconciliation;
+
   return (
     <div
       aria-label={`PublishAttempt ${attempt.id}`}
@@ -539,6 +615,150 @@ function PublishAttemptItem({ attempt }: { attempt: PublishAttempt }) {
       </dl>
       <p className="mt-3 rounded border border-sky-100 bg-sky-50 p-2 text-sm text-sky-900">
         {attempt.safe_status_message}
+      </p>
+      <div className="mt-3 rounded border border-emerald-200 bg-emerald-50 p-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h6 className="text-xs font-semibold uppercase text-emerald-950">Local Status Reconciliation</h6>
+            <p className="mt-1 text-sm text-emerald-950">
+              Local status only. This is not real Douyin status and does not fetch metrics.
+            </p>
+          </div>
+          {!isArchived && canCreateReconciliation && (
+            <button
+              className="rounded border border-emerald-700 px-3 py-1 text-xs font-semibold text-emerald-950 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={action !== null}
+              type="button"
+              onClick={() => onCreateStatusReconciliation(attempt.id)}
+            >
+              {action?.type === "reconcile-status" && action.id === attempt.id
+                ? "Creating local status reconciliation..."
+                : "Create local status reconciliation"}
+            </button>
+          )}
+        </div>
+        {attempt.provider_id === "douyin_real" && (
+          <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
+            Real provider disabled. douyin_real status reconciliation does not fallback to douyin_sandbox.
+          </p>
+        )}
+        {hasActiveReconciliation && (
+          <p className="mt-3 rounded border border-emerald-200 bg-white p-2 text-sm text-emerald-950">
+            Duplicate reconciliation requests are blocked for this active PublishAttempt.
+          </p>
+        )}
+        {hasExternalQueryBlocked && (
+          <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
+            External status query blocked. No real Douyin status was fetched.
+          </p>
+        )}
+        {hasStaleIgnored && (
+          <p className="mt-3 rounded border border-stone-200 bg-white p-2 text-sm text-stone-800">
+            Stale status ignored safely; the newer local snapshot remains in place.
+          </p>
+        )}
+        {reconciliations.length === 0 ? (
+          <p className="mt-3 text-sm text-emerald-950">No local status reconciliations yet.</p>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {reconciliations.map((reconciliation) => (
+              <PublishStatusReconciliationItem
+                key={reconciliation.reconciliation_id}
+                reconciliation={reconciliation}
+              />
+            ))}
+          </div>
+        )}
+        <div className="mt-3">
+          <h6 className="text-xs font-semibold uppercase text-emerald-950">Publish Status Snapshot</h6>
+          {snapshots.length === 0 ? (
+            <p className="mt-2 text-sm text-emerald-950">No local status snapshots yet.</p>
+          ) : (
+            <div className="mt-2 space-y-2">
+              {snapshots.map((snapshot) => (
+                <PublishStatusSnapshotItem key={snapshot.status_snapshot_id} snapshot={snapshot} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PublishStatusReconciliationItem({
+  reconciliation,
+}: {
+  reconciliation: PublishStatusReconciliation;
+}) {
+  return (
+    <div
+      aria-label={`PublishStatusReconciliation ${reconciliation.reconciliation_id}`}
+      className="rounded border border-emerald-200 bg-white p-3"
+      data-status={reconciliation.reconciliation_status}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="break-all text-sm font-medium text-emerald-950">
+          Reconciliation {reconciliation.reconciliation_id}
+        </p>
+        <span className={getReconciliationStatusClass(reconciliation.reconciliation_status)}>
+          {formatStatus(reconciliation.reconciliation_status)}
+        </span>
+      </div>
+      <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase text-emerald-700">Local status</dt>
+          <dd className="mt-1 text-emerald-950">{formatStatus(reconciliation.local_publish_status)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-emerald-700">External query</dt>
+          <dd className="mt-1 text-emerald-950">{formatStatus(reconciliation.external_query_status)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-emerald-700">Result</dt>
+          <dd className="mt-1 text-emerald-950">
+            {reconciliation.result_category ? formatStatus(reconciliation.result_category) : "metadata only"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-emerald-700">Updated</dt>
+          <dd className="mt-1 text-emerald-950">{new Date(reconciliation.updated_at).toLocaleString()}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 rounded border border-emerald-100 bg-emerald-50 p-2 text-sm text-emerald-950">
+        {reconciliation.safe_status_message}
+      </p>
+    </div>
+  );
+}
+
+function PublishStatusSnapshotItem({ snapshot }: { snapshot: PublishStatusSnapshot }) {
+  return (
+    <div
+      aria-label={`PublishStatusSnapshot ${snapshot.status_snapshot_id}`}
+      className="rounded border border-emerald-200 bg-white p-3"
+      data-status={snapshot.local_publish_status}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="break-all text-sm font-medium text-emerald-950">
+          Snapshot {snapshot.status_snapshot_id}
+        </p>
+        <span className={getSnapshotStatusClass(snapshot.local_publish_status)}>
+          {formatStatus(snapshot.local_publish_status)}
+        </span>
+      </div>
+      <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase text-emerald-700">Status source</dt>
+          <dd className="mt-1 text-emerald-950">{formatStatus(snapshot.status_source)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-emerald-700">Observed</dt>
+          <dd className="mt-1 text-emerald-950">{new Date(snapshot.status_observed_at).toLocaleString()}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 rounded border border-emerald-100 bg-emerald-50 p-2 text-sm text-emerald-950">
+        {snapshot.safe_status_message}
       </p>
     </div>
   );
@@ -638,6 +858,26 @@ function getPublishAttemptStatusClass(status: PublishAttempt["attempt_status"]) 
   return "rounded border border-stone-300 bg-stone-50 px-3 py-1 text-xs font-semibold text-stone-800";
 }
 
+function getReconciliationStatusClass(status: PublishStatusReconciliation["reconciliation_status"]) {
+  if (status === "created" || status === "completed_safe") {
+    return "rounded border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900";
+  }
+  if (status === "blocked" || status === "failed_safe") {
+    return "rounded border border-red-300 bg-red-50 px-3 py-1 text-xs font-semibold text-red-800";
+  }
+  return "rounded border border-stone-300 bg-stone-50 px-3 py-1 text-xs font-semibold text-stone-800";
+}
+
+function getSnapshotStatusClass(status: PublishStatusSnapshot["local_publish_status"]) {
+  if (status === "local_status_reconciled" || status === "local_attempt_created") {
+    return "rounded border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900";
+  }
+  if (status === "local_blocked" || status === "local_failed_safe" || status === "local_cancelled") {
+    return "rounded border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900";
+  }
+  return "rounded border border-stone-300 bg-stone-50 px-3 py-1 text-xs font-semibold text-stone-800";
+}
+
 function getPublicationStatusClass(status: PublicationRecord["publication_status"]) {
   if (status === "succeeded") {
     return "rounded border border-teal-300 bg-white px-3 py-1 text-xs font-semibold text-teal-800";
@@ -651,6 +891,16 @@ function getPublicationStatusClass(status: PublicationRecord["publication_status
 function groupAttemptsByIntent(attempts: PublishAttempt[]) {
   return attempts.reduce<Record<number, PublishAttempt[]>>((grouped, attempt) => {
     grouped[attempt.publish_intent_id] = [...(grouped[attempt.publish_intent_id] ?? []), attempt];
+    return grouped;
+  }, {});
+}
+
+function groupReconciliationsByAttempt(reconciliations: PublishStatusReconciliation[]) {
+  return reconciliations.reduce<Record<number, PublishStatusReconciliation[]>>((grouped, reconciliation) => {
+    grouped[reconciliation.publish_attempt_id] = [
+      ...(grouped[reconciliation.publish_attempt_id] ?? []),
+      reconciliation,
+    ];
     return grouped;
   }, {});
 }

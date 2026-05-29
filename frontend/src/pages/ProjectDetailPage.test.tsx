@@ -11,6 +11,8 @@ import type {
   PublicationRecord,
   PublishAttempt,
   PublishIntent,
+  PublishStatusReconciliation,
+  PublishStatusSnapshot,
   ProjectDetail,
   RenderJob,
   ReviewDraft,
@@ -353,6 +355,60 @@ const publishAttemptCreated: PublishAttempt = {
   last_status_change_reason: "batch7_guarded_publish_attempt_created",
 };
 
+const statusReconciliationCreated: PublishStatusReconciliation = {
+  reconciliation_id: "psr_fake_1851",
+  publish_attempt_id: 1851,
+  publish_intent_id: 1702,
+  review_item_id: 1502,
+  provider_id: "fake_local",
+  source_type: "fake_local",
+  reconciliation_status: "created",
+  local_publish_status: "local_status_unknown",
+  external_query_status: "not_called",
+  created_at: "2026-05-26T08:29:50Z",
+  updated_at: "2026-05-26T08:29:50Z",
+  completed_at: null,
+  safe_status_message:
+    "Local status reconciliation recorded metadata only; no external provider status query, upload, publish, schedule, or metrics read was executed.",
+  last_status_change_reason: "batch8_status_reconciliation_created",
+  result_category: "status_reconciliation_created",
+};
+
+const statusReconciliationExternalBlocked: PublishStatusReconciliation = {
+  ...statusReconciliationCreated,
+  reconciliation_id: "psr_external_blocked",
+  reconciliation_status: "blocked",
+  external_query_status: "blocked",
+  safe_status_message: "External status query blocked. No real Douyin status was fetched.",
+  last_status_change_reason: "external_status_query_blocked",
+  result_category: "external_status_query_blocked",
+};
+
+const statusReconciliationStaleIgnored: PublishStatusReconciliation = {
+  ...statusReconciliationCreated,
+  reconciliation_id: "psr_stale_ignored",
+  reconciliation_status: "completed_safe",
+  completed_at: "2026-05-26T08:31:00Z",
+  safe_status_message: "Stale local status update ignored; existing newer metadata-only snapshot retained.",
+  last_status_change_reason: "stale_status_ignored",
+  result_category: "stale_status_ignored",
+};
+
+const statusSnapshotLocal: PublishStatusSnapshot = {
+  status_snapshot_id: "pss_fake_1851",
+  publish_attempt_id: 1851,
+  reconciliation_id: "psr_fake_1851",
+  provider_id: "fake_local",
+  source_type: "fake_local",
+  local_publish_status: "local_status_unknown",
+  status_observed_at: "2026-05-26T08:29:50Z",
+  status_source: "local",
+  created_at: "2026-05-26T08:29:50Z",
+  safe_status_message:
+    "Local publish status snapshot created from metadata-only attempt; no provider status query was called.",
+  result_category: null,
+};
+
 const metricSnapshotOne: PublicationMetricSnapshot = {
   id: 1901,
   project_id: 1,
@@ -483,6 +539,8 @@ type ServerOptions = {
   reviewDrafts?: ReviewDraft[];
   publishIntents?: PublishIntent[];
   publishAttempts?: PublishAttempt[];
+  publishStatusReconciliations?: PublishStatusReconciliation[];
+  publishStatusSnapshots?: Record<number, PublishStatusSnapshot[]>;
   publicationRecords?: Record<number, PublicationRecord[]>;
   publicationMetrics?: Record<number, PublicationMetricSnapshot[]>;
   publicationMetricReviewSummaries?: Record<number, PublicationMetricReviewSummary[]>;
@@ -496,6 +554,7 @@ type ServerOptions = {
   createSubtitleDraftError?: string;
   createPublishIntentError?: string;
   createPublishAttemptError?: string;
+  createStatusReconciliationError?: string;
   createMetricError?: string;
   createMetricReviewSummaryError?: string;
   selectError?: string;
@@ -523,6 +582,10 @@ function installFetchMock(options: ServerOptions = {}) {
   let reviewDrafts = [...(options.reviewDrafts ?? [])];
   let publishIntents = [...(options.publishIntents ?? [])];
   let publishAttempts = [...(options.publishAttempts ?? [])];
+  let publishStatusReconciliations = [...(options.publishStatusReconciliations ?? [])];
+  let publishStatusSnapshotsByAttemptId: Record<number, PublishStatusSnapshot[]> = Object.fromEntries(
+    Object.entries(options.publishStatusSnapshots ?? {}).map(([attemptId, snapshots]) => [Number(attemptId), [...snapshots]]),
+  );
   let publicationRecordsByIntentId: Record<number, PublicationRecord[]> = Object.fromEntries(
     Object.entries(options.publicationRecords ?? {}).map(([intentId, records]) => [Number(intentId), [...records]]),
   );
@@ -574,6 +637,16 @@ function installFetchMock(options: ServerOptions = {}) {
     }
     if (method === "GET" && url.pathname === "/api/projects/1/publish-attempts") {
       return jsonResponse(publishAttempts);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/publish-status-reconciliations") {
+      return jsonResponse(publishStatusReconciliations);
+    }
+    const listStatusSnapshotsMatch = url.pathname.match(
+      /^\/api\/projects\/1\/publish-attempts\/(\d+)\/status-snapshots$/,
+    );
+    if (method === "GET" && listStatusSnapshotsMatch) {
+      const publishAttemptId = Number(listStatusSnapshotsMatch[1]);
+      return jsonResponse(publishStatusSnapshotsByAttemptId[publishAttemptId] ?? []);
     }
     const listPublicationRecordsMatch = url.pathname.match(
       /^\/api\/projects\/1\/publish-intents\/(\d+)\/publication-records$/,
@@ -1017,6 +1090,43 @@ function installFetchMock(options: ServerOptions = {}) {
       publishAttempts = [createdAttempt, ...publishAttempts];
       return jsonResponse(createdAttempt, 201);
     }
+    const createStatusReconciliationMatch = url.pathname.match(
+      /^\/api\/projects\/1\/publish-attempts\/(\d+)\/status-reconciliations$/,
+    );
+    if (method === "POST" && createStatusReconciliationMatch) {
+      if (options.createStatusReconciliationError) {
+        return jsonResponse({ detail: options.createStatusReconciliationError }, 409);
+      }
+      const publishAttemptId = Number(createStatusReconciliationMatch[1]);
+      const attempt = publishAttempts.find((item) => item.id === publishAttemptId) ?? publishAttemptCreated;
+      const createdReconciliation: PublishStatusReconciliation = {
+        ...statusReconciliationCreated,
+        reconciliation_id: "psr_created_1898",
+        publish_attempt_id: publishAttemptId,
+        publish_intent_id: attempt.publish_intent_id,
+        review_item_id: attempt.review_draft_id,
+        provider_id: attempt.provider_id,
+        source_type: attempt.source_type,
+        created_at: "2026-05-26T08:29:55Z",
+        updated_at: "2026-05-26T08:29:55Z",
+      };
+      const createdSnapshot: PublishStatusSnapshot = {
+        ...statusSnapshotLocal,
+        status_snapshot_id: "pss_created_1898",
+        publish_attempt_id: publishAttemptId,
+        reconciliation_id: createdReconciliation.reconciliation_id,
+        provider_id: attempt.provider_id,
+        source_type: attempt.source_type,
+        status_observed_at: "2026-05-26T08:29:55Z",
+        created_at: "2026-05-26T08:29:55Z",
+      };
+      publishStatusReconciliations = [createdReconciliation, ...publishStatusReconciliations];
+      publishStatusSnapshotsByAttemptId = {
+        ...publishStatusSnapshotsByAttemptId,
+        [publishAttemptId]: [createdSnapshot, ...(publishStatusSnapshotsByAttemptId[publishAttemptId] ?? [])],
+      };
+      return jsonResponse(createdReconciliation, 201);
+    }
     const fakePublishIntentMatch = url.pathname.match(/^\/api\/projects\/1\/publish-intents\/(\d+)\/fake-publish$/);
     if (method === "POST" && fakePublishIntentMatch) {
       const publishIntentId = Number(fakePublishIntentMatch[1]);
@@ -1054,6 +1164,7 @@ async function renderProject(options?: ServerOptions) {
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/review-drafts"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/publish-intents"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/publish-attempts"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/publish-status-reconciliations"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/content-plans"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/generation-schedules"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/generation-runs"));
@@ -1756,6 +1867,109 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(within(intentCard).queryByRole("button", { name: "Create guarded local attempt" })).toBeNull();
   });
 
+  it("requires an existing publish attempt before showing status reconciliation actions", async () => {
+    const server = await renderProject({
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    expect(screen.queryByRole("button", { name: "Create local status reconciliation" })).toBeNull();
+    expect(server.calls.some((call) => call.includes("status-reconciliations") && call.startsWith("POST"))).toBe(false);
+  });
+
+  it("creates local status reconciliation and displays metadata-only snapshots", async () => {
+    const server = await renderProject({
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const attemptCard = screen.getByLabelText("PublishAttempt 1851");
+    fireEvent.click(within(attemptCard).getByRole("button", { name: "Create local status reconciliation" }));
+
+    expect(await within(attemptCard).findByLabelText("PublishStatusReconciliation psr_created_1898")).toBeTruthy();
+    expect(await within(attemptCard).findByLabelText("PublishStatusSnapshot pss_created_1898")).toBeTruthy();
+    expect(within(attemptCard).getByText("Local Status Reconciliation")).toBeTruthy();
+    expect(within(attemptCard).getByText("Publish Status Snapshot")).toBeTruthy();
+    expect(within(attemptCard).getByText(/Local status only/)).toBeTruthy();
+    expect(within(attemptCard).getByText(/This is not real Douyin status/)).toBeTruthy();
+    expect(within(attemptCard).getAllByText(/not_called/).length).toBeGreaterThan(0);
+    expect(server.calls).toContain("POST /api/projects/1/publish-attempts/1851/status-reconciliations");
+    expect(server.bodies["POST /api/projects/1/publish-attempts/1851/status-reconciliations"]).toBe("{}");
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/publish-status-reconciliations")).toHaveLength(
+      2,
+    );
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/publish-attempts/1851/status-snapshots")).toHaveLength(
+      2,
+    );
+    expect(screen.queryByText(/real Douyin status was fetched/i)).toBeNull();
+    expect(screen.queryByText(/real publish success was confirmed/i)).toBeNull();
+    expect(server.calls.some((call) => /oauth|authorization-url|douyin-real|metrics/.test(call))).toBe(false);
+  });
+
+  it("shows real provider disabled state for local status reconciliation safely", async () => {
+    await renderProject({
+      publishAttempts: [{ ...publishAttemptCreated, provider_id: "douyin_real", source_type: "real" }],
+      publishIntents: [{ ...publishIntentConfirmed, target_platform: "douyin_real", source_type: "real" }],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const attemptCard = screen.getByLabelText("PublishAttempt 1851");
+
+    expect(within(attemptCard).getByText(/Real provider disabled/)).toBeTruthy();
+    expect(within(attemptCard).getByText(/does not fallback to douyin_sandbox/)).toBeTruthy();
+    expect(screen.queryByText(/opened OAuth URL/i)).toBeNull();
+  });
+
+  it("shows external status query blocked and duplicate reconciliation states safely", async () => {
+    await renderProject({
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      publishStatusReconciliations: [statusReconciliationCreated, statusReconciliationExternalBlocked],
+      publishStatusSnapshots: { 1851: [statusSnapshotLocal] },
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const attemptCard = screen.getByLabelText("PublishAttempt 1851");
+
+    expect(within(attemptCard).getByText(/Duplicate reconciliation requests are blocked/)).toBeTruthy();
+    expect(within(attemptCard).getAllByText(/External status query blocked/).length).toBeGreaterThan(0);
+    expect(within(attemptCard).getAllByText(/No real Douyin status was fetched/).length).toBeGreaterThan(0);
+    expect(within(attemptCard).queryByRole("button", { name: "Create local status reconciliation" })).toBeNull();
+  });
+
+  it("shows stale status ignored safely", async () => {
+    await renderProject({
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      publishStatusReconciliations: [statusReconciliationStaleIgnored],
+      publishStatusSnapshots: { 1851: [statusSnapshotLocal] },
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const attemptCard = screen.getByLabelText("PublishAttempt 1851");
+
+    expect(within(attemptCard).getByText(/Stale status ignored safely/)).toBeTruthy();
+    expect(within(attemptCard).getByText(/newer local snapshot remains/)).toBeTruthy();
+  });
+
+  it("shows local status reconciliation API errors without implying real Douyin status", async () => {
+    await renderProject({
+      createStatusReconciliationError:
+        "external_status_query_blocked: External provider status query is blocked in Batch 8.",
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const attemptCard = screen.getByLabelText("PublishAttempt 1851");
+    fireEvent.click(within(attemptCard).getByRole("button", { name: "Create local status reconciliation" }));
+
+    expect(await screen.findByText(/external_status_query_blocked/)).toBeTruthy();
+    expect(screen.queryByText(/real Douyin status was fetched/i)).toBeNull();
+    expect(screen.queryByText(/real publish success was confirmed/i)).toBeNull();
+  });
+
   it("shows guarded attempt preflight and real provider disabled errors safely", async () => {
     await renderProject({
       createPublishAttemptError:
@@ -1772,10 +1986,12 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(screen.queryByText(/uploaded to Douyin|published to Douyin/i)).toBeNull();
   });
 
-  it("does not render token or provider response material in guarded attempt UI", async () => {
+  it("does not render token, OAuth state, provider response, status response, or metrics material", async () => {
     await renderProject({
       publishAttempts: [publishAttemptCreated],
       publishIntents: [publishIntentConfirmed],
+      publishStatusReconciliations: [statusReconciliationCreated],
+      publishStatusSnapshots: { 1851: [statusSnapshotLocal] },
       reviewDrafts: [reviewDraftApproved],
     });
 
@@ -1786,6 +2002,10 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(screen.queryByText(/fake-provider-response-value/)).toBeNull();
     expect(screen.queryByText(/fake-upload-response-value/)).toBeNull();
     expect(screen.queryByText(/fake-publish-response-value/)).toBeNull();
+    expect(screen.queryByText(/fake-status-response-value/)).toBeNull();
+    expect(screen.queryByText(/fake-external-status-response-value/)).toBeNull();
+    expect(screen.queryByText(/fake-douyin-status-response-value/)).toBeNull();
+    expect(screen.queryByText(/fake-status-metrics-response-value/)).toBeNull();
     expect(screen.queryByText(/OAuth URL/)).toBeTruthy();
     expect(screen.queryByText(/opened OAuth URL/i)).toBeNull();
   });

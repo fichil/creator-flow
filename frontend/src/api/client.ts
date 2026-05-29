@@ -256,6 +256,45 @@ export type PublishAttempt = {
   last_status_change_reason: string;
 };
 
+export type PublishStatusReconciliation = {
+  reconciliation_id: string;
+  publish_attempt_id: number;
+  publish_intent_id: number;
+  review_item_id: number;
+  provider_id: string;
+  source_type: "fake_local" | "sandbox" | "real";
+  reconciliation_status: "created" | "blocked" | "completed_safe" | "failed_safe" | "cancelled";
+  local_publish_status:
+    | "local_pending"
+    | "local_blocked"
+    | "local_attempt_created"
+    | "local_status_unknown"
+    | "local_status_reconciled"
+    | "local_failed_safe"
+    | "local_cancelled";
+  external_query_status: "not_called" | "blocked";
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  safe_status_message: string;
+  last_status_change_reason: string;
+  result_category: string | null;
+};
+
+export type PublishStatusSnapshot = {
+  status_snapshot_id: string;
+  publish_attempt_id: number;
+  reconciliation_id: string | null;
+  provider_id: string;
+  source_type: "fake_local" | "sandbox" | "real";
+  local_publish_status: PublishStatusReconciliation["local_publish_status"];
+  status_observed_at: string;
+  status_source: "local" | "fake_fixture" | "sandbox_fixture";
+  created_at: string;
+  safe_status_message: string;
+  result_category: string | null;
+};
+
 export type PublicationRecord = {
   id: number;
   project_id: number;
@@ -752,6 +791,29 @@ export function createPublishAttempt(projectId: number, publishIntentId: number)
   return request<PublishAttempt>(`/api/projects/${projectId}/publish-intents/${publishIntentId}/attempts`, {
     method: "POST",
   });
+}
+
+export function getPublishStatusReconciliations(projectId: number): Promise<PublishStatusReconciliation[]> {
+  return request<PublishStatusReconciliation[]>(`/api/projects/${projectId}/publish-status-reconciliations`);
+}
+
+export function createPublishStatusReconciliation(
+  projectId: number,
+  publishAttemptId: number,
+): Promise<PublishStatusReconciliation> {
+  return request<PublishStatusReconciliation>(
+    `/api/projects/${projectId}/publish-attempts/${publishAttemptId}/status-reconciliations`,
+    {
+      method: "POST",
+      body: JSON.stringify({}),
+    },
+  );
+}
+
+export function getPublishStatusSnapshots(projectId: number, publishAttemptId: number): Promise<PublishStatusSnapshot[]> {
+  return request<PublishStatusSnapshot[]>(
+    `/api/projects/${projectId}/publish-attempts/${publishAttemptId}/status-snapshots`,
+  );
 }
 
 export function createPublishIntent(

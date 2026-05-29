@@ -33,6 +33,10 @@ SENSITIVE_METADATA_MARKERS = (
     "provider_response",
     "upload_response",
     "publish_response",
+    "status_response",
+    "external_response",
+    "douyin_response",
+    "metrics_response",
 )
 
 
