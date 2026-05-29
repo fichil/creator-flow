@@ -179,27 +179,49 @@ function Test-RcMarkdownFormatting {
             continue
         }
 
-        $lines = @(Get-Content -Encoding utf8 $fullPath)
-        if ($lines.Count -lt $minimumLineCount) {
-            $issues.Add("${path}: document has only $($lines.Count) lines; minimum is $minimumLineCount.") | Out-Null
-        }
-
-        if ($lines.Count -eq 0) {
+        $bytes = [System.IO.File]::ReadAllBytes($fullPath)
+        if ($bytes.Length -eq 0) {
             $issues.Add("${path}: document is empty.") | Out-Null
             continue
         }
 
-        $firstLine = $lines[0]
+        $lfCount = 0
+        $crCount = 0
+        foreach ($byte in $bytes) {
+            if ($byte -eq 10) {
+                $lfCount += 1
+            }
+            if ($byte -eq 13) {
+                $crCount += 1
+            }
+        }
+
+        $realLfLineCount = $lfCount + 1
+        if ($realLfLineCount -lt $minimumLineCount) {
+            $issues.Add("${path}: document has only ${realLfLineCount} real LF lines; minimum is ${minimumLineCount}.") | Out-Null
+        }
+        if (($crCount -gt 0) -and ($lfCount -eq 0)) {
+            $issues.Add("${path}: document appears to use CR-only newlines.") | Out-Null
+        }
+
+        $text = [System.Text.Encoding]::UTF8.GetString($bytes)
+        $lines = @($text -split "`n")
+        $firstLine = $lines[0].TrimEnd("`r")
         if ($firstLine -notmatch '^#\s+\S.+$') {
             $issues.Add("${path}: first line must be a standalone H1 heading.") | Out-Null
         }
-        if ($firstLine -match '##\s+' -or $firstLine -match '- \[ \]' -or $firstLine -match '^\#\s+.+\s-\s+') {
-            $issues.Add("${path}: first line appears to include text beyond a standalone title.") | Out-Null
+        if (
+            ($firstLine -match '##\s+') -or
+            ($firstLine -match '- \[ \]') -or
+            ($firstLine -match '^\#\s+.+\s-\s+') -or
+            ($firstLine -match '^# .+\S\s+(This document|This checklist|This guide|This runbook|These notes|It does|It is|Status:)')
+        ) {
+            $issues.Add("${path}: first line appears to include paragraph text beyond a standalone title.") | Out-Null
         }
 
         $inFence = $false
         for ($index = 0; $index -lt $lines.Count; $index += 1) {
-            $line = $lines[$index]
+            $line = $lines[$index].TrimEnd("`r")
             $lineNumber = $index + 1
             if ($line.TrimStart().StartsWith('```')) {
                 $inFence = -not $inFence
