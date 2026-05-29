@@ -155,6 +155,67 @@ function Test-RcClosureReadiness {
     }
 }
 
+function Test-RcMarkdownFormatting {
+    $rcMarkdownFiles = @(
+        "docs/releases/v1.0-rc-closure-audit.md",
+        "docs/releases/v1.0-tag-readiness-checklist.md",
+        "docs/releases/v1.0-merge-readiness-checklist.md",
+        "docs/releases/v1.0-user-test-rc-checklist.md",
+        "docs/releases/v1.0-user-test-release-notes-draft.md",
+        "docs/releases/v1.0-pr-description-draft.md",
+        "docs/testing/v1.0-user-test-guide.md",
+        "docs/testing/v1.0-user-test-rc-test-matrix.md",
+        "docs/operations/v1.0-user-test-rollback-disablement.md",
+        "docs/decisions/0055-v1.0-user-test-readiness-release-candidate.md"
+    )
+    $issues = New-Object System.Collections.Generic.List[string]
+
+    foreach ($path in $rcMarkdownFiles) {
+        $fullPath = Join-Path $RepoRoot $path
+        if (-not (Test-Path $fullPath)) {
+            continue
+        }
+
+        $inFence = $false
+        $lineNumber = 0
+        foreach ($line in Get-Content -Encoding utf8 $fullPath) {
+            $lineNumber += 1
+            if ($line.TrimStart().StartsWith('```')) {
+                $inFence = -not $inFence
+                continue
+            }
+            if ($inFence) {
+                continue
+            }
+
+            if ($line -match '#.+##') {
+                $issues.Add("${path}:${lineNumber}: heading appears to share a line with another heading.") | Out-Null
+            }
+            if ($line -match '##.+- \[ \]') {
+                $issues.Add("${path}:${lineNumber}: heading appears to share a line with a checklist item.") | Out-Null
+            }
+            if ($line -match '- \[ \].+- \[ \]') {
+                $issues.Add("${path}:${lineNumber}: multiple checklist items may share one line.") | Out-Null
+            }
+            if (($line.Length -gt 300) -and ($line -notmatch '^\s*\|') -and ($line -notmatch '^\s*$')) {
+                $issues.Add("${path}:${lineNumber}: ordinary line is longer than 300 characters.") | Out-Null
+            }
+        }
+    }
+
+    if ($issues.Count -eq 0) {
+        Write-Host "No RC Markdown formatting issues found."
+        return
+    }
+
+    $issues | Select-Object -First 80 | ForEach-Object { Write-Host $_ }
+    if ($issues.Count -gt 80) {
+        Write-Host "... scan output truncated after 80 lines"
+    }
+    $Warnings.Add("RC Markdown formatting scan produced matches that require human review.") | Out-Null
+    Write-Warning "RC Markdown formatting scan produced matches that require human review."
+}
+
 Push-Location $RepoRoot
 try {
     Write-Host "Validating v1.0 user test release candidate package"
@@ -203,6 +264,10 @@ try {
     Invoke-ValidationStep "RC closure readiness checks" {
         Test-RcClosureReadiness
     }
+
+    Write-Host ""
+    Write-Host "== RC Markdown formatting review scan =="
+    Test-RcMarkdownFormatting
 
     $reviewPaths = @(Get-TrackedReviewPaths)
 
