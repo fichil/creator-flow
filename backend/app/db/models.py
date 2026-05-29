@@ -221,6 +221,46 @@ CREATE TABLE IF NOT EXISTS publish_status_snapshots (
     CHECK (status_source IN ('local', 'fake_fixture', 'sandbox_fixture'))
 );
 
+CREATE TABLE IF NOT EXISTS publish_metrics_snapshots (
+    metrics_snapshot_id TEXT PRIMARY KEY,
+    status_snapshot_id TEXT NOT NULL,
+    publish_attempt_id INTEGER NOT NULL,
+    publish_intent_id INTEGER NOT NULL,
+    review_item_id INTEGER NOT NULL,
+    provider_id TEXT NOT NULL,
+    source_type TEXT NOT NULL,
+    metrics_source TEXT NOT NULL,
+    metrics_freshness_status TEXT NOT NULL,
+    metrics_observed_at TEXT,
+    views_count INTEGER,
+    likes_count INTEGER,
+    comments_count INTEGER,
+    shares_count INTEGER,
+    favorites_count INTEGER,
+    completion_rate_basis_points INTEGER,
+    external_query_status TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    safe_status_message TEXT NOT NULL,
+    last_status_change_reason TEXT NOT NULL,
+    FOREIGN KEY (status_snapshot_id) REFERENCES publish_status_snapshots(status_snapshot_id) ON DELETE CASCADE,
+    FOREIGN KEY (publish_attempt_id) REFERENCES publish_attempts(id) ON DELETE CASCADE,
+    FOREIGN KEY (publish_intent_id) REFERENCES publish_intents(id) ON DELETE CASCADE,
+    FOREIGN KEY (review_item_id) REFERENCES review_drafts(id) ON DELETE CASCADE,
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (metrics_source IN ('local', 'fake_fixture', 'sandbox_fixture')),
+    CHECK (metrics_freshness_status IN ('fresh', 'stale', 'unknown', 'not_available')),
+    CHECK (external_query_status IN ('not_called', 'blocked')),
+    CHECK (views_count IS NULL OR views_count >= 0),
+    CHECK (likes_count IS NULL OR likes_count >= 0),
+    CHECK (comments_count IS NULL OR comments_count >= 0),
+    CHECK (shares_count IS NULL OR shares_count >= 0),
+    CHECK (favorites_count IS NULL OR favorites_count >= 0),
+    CHECK (
+        completion_rate_basis_points IS NULL
+        OR (completion_rate_basis_points >= 0 AND completion_rate_basis_points <= 10000)
+    )
+);
+
 CREATE TABLE IF NOT EXISTS publication_metric_snapshots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -859,6 +899,12 @@ WHERE reconciliation_status = 'created';
 
 CREATE INDEX IF NOT EXISTS idx_publish_status_snapshots_attempt_observed
 ON publish_status_snapshots (publish_attempt_id, status_observed_at DESC, status_snapshot_id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_publish_metrics_snapshots_project_created
+ON publish_metrics_snapshots (publish_intent_id, created_at DESC, metrics_snapshot_id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_publish_metrics_snapshots_status_snapshot
+ON publish_metrics_snapshots (status_snapshot_id, created_at DESC, metrics_snapshot_id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_publication_metric_snapshots_record_captured_at
 ON publication_metric_snapshots (publication_record_id, captured_at DESC, id DESC);

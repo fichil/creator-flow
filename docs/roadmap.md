@@ -1,6 +1,6 @@
 # 路线图
 
-本路线图描述计划和 readiness target，不代表当前仓库已经具备未来版本能力。当前已发布版本是 `v0.9.0 - Douyin Provider POC / Sandbox Integration`；v1.0 已进入 Batch 8 publish status reconciliation foundation 阶段，但真实 Douyin provider 仍未启用，真实 OAuth runtime、真实 token exchange、真实 token storage、真实 credential storage、真实 Douyin 调用、真实上传、真实发布、排期发布、真实状态查询、metrics 能力尚未开始实现。v1.5 和 v2.0 仍是后续目标，不是当前能力声明。
+本路线图描述计划和 readiness target，不代表当前仓库已经具备未来版本能力。当前已发布版本是 `v0.9.0 - Douyin Provider POC / Sandbox Integration`；v1.0 已进入 Batch 9 limited metrics read guarded foundation 阶段，但真实 Douyin provider 仍未启用，真实 OAuth runtime、真实 token exchange、真实 token storage、真实 credential storage、真实 Douyin 调用、真实上传、真实发布、排期发布、真实状态查询、真实指标读取能力尚未开始实现。v1.5 和 v2.0 仍是后续目标，不是当前能力声明。
 
 ## Phase 0 Documentation Foundation
 
@@ -1270,13 +1270,13 @@ v0.9 明确不做事项：
 - 任何真实 Douyin API、真实 OAuth、真实 token storage、真实指标读取、上传、发布或排期发布都已具备单独 ADR、单独测试和安全扫描。
 - 平台 API 权限风险已形成 v1.0 用户测试 checklist 的前置条件。
 - v1.0 到 v2.0 的详细 roadmap 见 [`roadmap-v1-to-v2-commercial-release.md`](roadmap-v1-to-v2-commercial-release.md)，对应 checklist 见 [`checklists/v1.0-douyin-user-test-release-readiness.md`](checklists/v1.0-douyin-user-test-release-readiness.md)、[`checklists/v1.5-minimum-production-release-readiness.md`](checklists/v1.5-minimum-production-release-readiness.md) 和 [`checklists/v2.0-multi-tenant-saas-commercial-release-readiness.md`](checklists/v2.0-multi-tenant-saas-commercial-release-readiness.md)。这些文档是未来 roadmap / readiness target，不代表当前 v0.9 已具备 v1.0、v1.5 或 v2.0 能力。
-- v0.9.0 发布后，v1.0 已完成 docs-only / planning-only 的 Batch 0、docs-only / contract-only 的 Batch 1、Batch 2 OAuth state storage / anti-replay foundation、Batch 3 token exchange boundary / fake-gated integration、Batch 4 credential reference / encrypted storage design、Batch 5 real provider feature flag / kill switch、Batch 6 user-confirmed publish intent workflow、Batch 7 guarded real publish adapter foundation，并进入 Batch 8 publish status reconciliation foundation；任一后续真实实现方向都必须继续保持无真实 Douyin / OAuth runtime / real token exchange / real token storage / real credential storage / real upload / real publish / scheduled publish / real status query / metrics 的边界，直到单独 ADR、平台权限、应用审核、用户授权、测试和安全门槛批准真实能力。
+- v0.9.0 发布后，v1.0 已完成 docs-only / planning-only 的 Batch 0、docs-only / contract-only 的 Batch 1、Batch 2 OAuth state storage / anti-replay foundation、Batch 3 token exchange boundary / fake-gated integration、Batch 4 credential reference / encrypted storage design、Batch 5 real provider feature flag / kill switch、Batch 6 user-confirmed publish intent workflow、Batch 7 guarded real publish adapter foundation、Batch 8 publish status reconciliation foundation，并进入 Batch 9 limited metrics read guarded foundation；任一后续真实实现方向都必须继续保持无真实 Douyin / OAuth runtime / real token exchange / real token storage / real credential storage / real upload / real publish / scheduled publish / real status query / real metrics read 的边界，直到单独 ADR、平台权限、应用审核、用户授权、测试和安全门槛批准真实能力。
 
 ## v1.0 Douyin Integration User Test Release
 
 目标：达到可以进行用户抖音接入测试的 v1.0.0 版本，验证用户授权、账号连接状态和至少一种真实或 sandbox/manual fallback 指标回流路径。v1.0.0 是 User Test Release，不是生产级自动化运营或自动发布版本。
 
-状态：Batch 8 publish status reconciliation foundation。当前已在 Batch 1 定义未来 OAuth callback contract，在 Batch 2 增加 internal-only digest-only OAuth state foundation，在 Batch 3 增加 internal-only token exchange boundary / fake-gated simulator，在 Batch 4 增加 internal-only credential storage boundary，在 Batch 5 增加 internal-only real provider controls，在 Batch 6 增加本地 publish intent workflow、显式确认、preflight validation 和 duplicate prevention，在 Batch 7 增加 metadata-only guarded publish attempt、guarded adapter boundary、preflight guard 和 duplicate attempt prevention，并在 Batch 8 增加 metadata-only publish status reconciliation、status snapshot、local-only reconciliation API/UI、duplicate reconciliation prevention 和 stale status ignored；仍不启用真实 provider，也不实现真实 OAuth runtime、OAuth URL、OAuth start route、OAuth callback route、真实 token exchange、真实 token storage、真实 credential storage、real provider API、真实上传、真实发布、排期发布、真实 Douyin 状态查询或 metrics read。
+状态：Batch 9 limited metrics read guarded foundation。当前已在 Batch 1 定义未来 OAuth callback contract，在 Batch 2 增加 internal-only digest-only OAuth state foundation，在 Batch 3 增加 internal-only token exchange boundary / fake-gated simulator，在 Batch 4 增加 internal-only credential storage boundary，在 Batch 5 增加 internal-only real provider controls，在 Batch 6 增加本地 publish intent workflow、显式确认、preflight validation 和 duplicate prevention，在 Batch 7 增加 metadata-only guarded publish attempt、guarded adapter boundary、preflight guard 和 duplicate attempt prevention，在 Batch 8 增加 metadata-only publish status reconciliation、status snapshot、local-only reconciliation API/UI、duplicate reconciliation prevention 和 stale status ignored，并在 Batch 9 增加 metadata-only metrics snapshot、local-only metrics API/UI、freshness visibility、metrics permission / platform limitation safe message；仍不启用真实 provider，也不实现真实 OAuth runtime、OAuth URL、OAuth start route、OAuth callback route、真实 token exchange、真实 token storage、真实 credential storage、real provider API、真实上传、真实发布、排期发布、真实 Douyin 状态查询或真实指标读取。
 
 v1.0 Batch 0 允许范围：
 
@@ -1539,7 +1539,39 @@ v1.0 Batch 8 明确不是：
 - 不允许 `douyin_real` fallback 到 `douyin_sandbox`。
 - 不声明 v1.0、v1.5 或 v2.0 已完成。
 
-范围（v1.0 目标，不代表当前 Batch 8 已实现）：
+v1.0 Batch 9 允许范围：
+
+- 新增 v1.0 limited metrics read guarded foundation ADR：[`decisions/0054-v1.0-limited-metrics-read-guarded-foundation.md`](decisions/0054-v1.0-limited-metrics-read-guarded-foundation.md)。
+- 新增 limited metrics read guarded contract：[`contracts/v1.0-limited-metrics-read-guarded-contract.md`](contracts/v1.0-limited-metrics-read-guarded-contract.md)。
+- 新增 limited metrics read guarded test matrix：[`testing/v1.0-limited-metrics-read-guarded-test-matrix.md`](testing/v1.0-limited-metrics-read-guarded-test-matrix.md)。
+- 新增 metadata-only `publish_metrics_snapshots` schema，记录 status snapshot、publish attempt、publish intent、review item、provider、source type、metrics source、freshness status、safe counts、external query status、安全状态说明和本地状态变更原因；不保存 provider response、upload response、publish response、status response、metrics response、external response、Douyin response 或任何 credential material。
+- 新增 internal metrics read guard service 和 local-only backend API，用于基于 existing Batch 8 publish status snapshot 创建本地安全 metrics snapshot；不触发 provider metrics query。
+- 新增 frontend Limited Metrics Snapshot UI，用于展示本地 / fake / sandbox-safe metrics snapshot、freshness、permission / platform limitation safe message，并明确这不是来自真实 Douyin 的指标。
+- 新增 status snapshot required、metadata-only metrics snapshot、freshness visible、permission missing handled safely、malformed fixture rejected、real provider disabled、kill switch active、platform preconditions missing、sandbox fallback forbidden、no external service、no real metrics query、no real status query、no upload 和 no real publish tests。
+
+v1.0 Batch 9 明确不是：
+
+- 不调用 Douyin API 或业务外部服务。
+- 不查询真实 Douyin metrics。
+- 不查询真实 Douyin 发布状态。
+- 不上传视频。
+- 不发布视频。
+- 不排期发布。
+- 不新增真实外部 metrics query path 默认启用。
+- 不新增 OAuth start route。
+- 不新增 OAuth callback route。
+- 不创建 OAuth URL。
+- 不实现真实 OAuth。
+- 不实现真实 token exchange。
+- 不保存 authorization code、access token、refresh token、token、secret、credential、cookie、session、API key、bearer、raw OAuth state、raw request、raw response、provider response、upload response、publish response、status response、metrics response、external response 或 Douyin response。
+- 不新增真实 token storage。
+- 不新增真实 credential storage。
+- 不新增 frontend OAuth UI。
+- 不启用 `douyin_real`。
+- 不允许 `douyin_real` fallback 到 `douyin_sandbox`。
+- 不声明 v1.0、v1.5 或 v2.0 已完成。
+
+范围（v1.0 目标，不代表当前 Batch 9 已实现）：
 
 - 用户可以配置 Douyin provider，前提是平台应用配置和权限满足用户测试要求。
 - 用户可以完成 OAuth 授权，所有真实平台能力都必须经过用户授权。

@@ -11,6 +11,7 @@ import type {
   PublicationRecord,
   PublishAttempt,
   PublishIntent,
+  PublishMetricsSnapshot,
   PublishStatusReconciliation,
   PublishStatusSnapshot,
   ProjectDetail,
@@ -409,6 +410,55 @@ const statusSnapshotLocal: PublishStatusSnapshot = {
   result_category: null,
 };
 
+const statusSnapshotReconciled: PublishStatusSnapshot = {
+  ...statusSnapshotLocal,
+  status_snapshot_id: "pss_reconciled_1851",
+  local_publish_status: "local_status_reconciled",
+  status_source: "fake_fixture",
+  safe_status_message: "Fake fixture local status snapshot; not real Douyin status.",
+};
+
+const limitedMetricsSnapshotFresh: PublishMetricsSnapshot = {
+  metrics_snapshot_id: "pms_fake_1851",
+  status_snapshot_id: "pss_reconciled_1851",
+  publish_attempt_id: 1851,
+  publish_intent_id: 1702,
+  review_item_id: 1502,
+  provider_id: "fake_local",
+  source_type: "fake_local",
+  metrics_source: "fake_fixture",
+  metrics_freshness_status: "fresh",
+  metrics_observed_at: "2026-05-26T08:33:00Z",
+  views_count: 120,
+  likes_count: 12,
+  comments_count: 4,
+  shares_count: 3,
+  favorites_count: 8,
+  completion_rate_basis_points: 6200,
+  external_query_status: "not_called",
+  created_at: "2026-05-26T08:33:00Z",
+  safe_status_message: "Fake fixture metrics for local guarded foundation; not real Douyin metrics.",
+  last_status_change_reason: "batch9_limited_metrics_snapshot_created",
+  result_category: "metrics_snapshot_created",
+};
+
+const limitedMetricsSnapshotExternalBlocked: PublishMetricsSnapshot = {
+  ...limitedMetricsSnapshotFresh,
+  metrics_snapshot_id: "pms_external_blocked",
+  external_query_status: "blocked",
+  safe_status_message: "External metrics query blocked. No real Douyin metrics query ran.",
+  last_status_change_reason: "external_metrics_query_blocked",
+  result_category: "external_metrics_query_blocked",
+};
+
+const limitedMetricsSnapshotMalformedFixture: PublishMetricsSnapshot = {
+  ...limitedMetricsSnapshotFresh,
+  metrics_snapshot_id: "pms_fixture_invalid",
+  safe_status_message: "Metrics fixture invalid. Raw provider or metrics responses are not shown.",
+  last_status_change_reason: "metrics_fixture_invalid",
+  result_category: "metrics_fixture_invalid",
+};
+
 const metricSnapshotOne: PublicationMetricSnapshot = {
   id: 1901,
   project_id: 1,
@@ -541,6 +591,7 @@ type ServerOptions = {
   publishAttempts?: PublishAttempt[];
   publishStatusReconciliations?: PublishStatusReconciliation[];
   publishStatusSnapshots?: Record<number, PublishStatusSnapshot[]>;
+  publishMetricsSnapshots?: PublishMetricsSnapshot[];
   publicationRecords?: Record<number, PublicationRecord[]>;
   publicationMetrics?: Record<number, PublicationMetricSnapshot[]>;
   publicationMetricReviewSummaries?: Record<number, PublicationMetricReviewSummary[]>;
@@ -555,6 +606,7 @@ type ServerOptions = {
   createPublishIntentError?: string;
   createPublishAttemptError?: string;
   createStatusReconciliationError?: string;
+  createLimitedMetricsError?: string;
   createMetricError?: string;
   createMetricReviewSummaryError?: string;
   selectError?: string;
@@ -586,6 +638,7 @@ function installFetchMock(options: ServerOptions = {}) {
   let publishStatusSnapshotsByAttemptId: Record<number, PublishStatusSnapshot[]> = Object.fromEntries(
     Object.entries(options.publishStatusSnapshots ?? {}).map(([attemptId, snapshots]) => [Number(attemptId), [...snapshots]]),
   );
+  let publishMetricsSnapshots = [...(options.publishMetricsSnapshots ?? [])];
   let publicationRecordsByIntentId: Record<number, PublicationRecord[]> = Object.fromEntries(
     Object.entries(options.publicationRecords ?? {}).map(([intentId, records]) => [Number(intentId), [...records]]),
   );
@@ -641,12 +694,53 @@ function installFetchMock(options: ServerOptions = {}) {
     if (method === "GET" && url.pathname === "/api/projects/1/publish-status-reconciliations") {
       return jsonResponse(publishStatusReconciliations);
     }
+    if (method === "GET" && url.pathname === "/api/projects/1/metrics-snapshots") {
+      return jsonResponse(publishMetricsSnapshots);
+    }
     const listStatusSnapshotsMatch = url.pathname.match(
       /^\/api\/projects\/1\/publish-attempts\/(\d+)\/status-snapshots$/,
     );
     if (method === "GET" && listStatusSnapshotsMatch) {
       const publishAttemptId = Number(listStatusSnapshotsMatch[1]);
       return jsonResponse(publishStatusSnapshotsByAttemptId[publishAttemptId] ?? []);
+    }
+    const createLimitedMetricsMatch = url.pathname.match(
+      /^\/api\/projects\/1\/publish-status-snapshots\/([^/]+)\/metrics-snapshots$/,
+    );
+    if (method === "POST" && createLimitedMetricsMatch) {
+      if (options.createLimitedMetricsError) {
+        return jsonResponse({ detail: options.createLimitedMetricsError }, 409);
+      }
+      const statusSnapshotId = createLimitedMetricsMatch[1];
+      const statusSnapshot = Object.values(publishStatusSnapshotsByAttemptId)
+        .flat()
+        .find((snapshot) => snapshot.status_snapshot_id === statusSnapshotId);
+      const createdMetrics: PublishMetricsSnapshot = {
+        ...limitedMetricsSnapshotFresh,
+        metrics_snapshot_id: "pms_created_1898",
+        status_snapshot_id: statusSnapshotId,
+        publish_attempt_id: statusSnapshot?.publish_attempt_id ?? 1851,
+        publish_intent_id: 1702,
+        review_item_id: 1502,
+        provider_id: statusSnapshot?.provider_id ?? "fake_local",
+        source_type: statusSnapshot?.source_type ?? "fake_local",
+        metrics_source: "local",
+        metrics_freshness_status: "unknown",
+        metrics_observed_at: null,
+        views_count: null,
+        likes_count: null,
+        comments_count: null,
+        shares_count: null,
+        favorites_count: null,
+        completion_rate_basis_points: null,
+        created_at: "2026-05-26T08:34:00Z",
+        safe_status_message:
+          "Local limited metrics snapshot created with freshness unknown; no external provider metrics query was called.",
+        last_status_change_reason: "batch9_limited_metrics_snapshot_created",
+        result_category: "metrics_freshness_unknown",
+      };
+      publishMetricsSnapshots = [createdMetrics, ...publishMetricsSnapshots];
+      return jsonResponse(createdMetrics, 201);
     }
     const listPublicationRecordsMatch = url.pathname.match(
       /^\/api\/projects\/1\/publish-intents\/(\d+)\/publication-records$/,
@@ -1165,6 +1259,7 @@ async function renderProject(options?: ServerOptions) {
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/publish-intents"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/publish-attempts"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/publish-status-reconciliations"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/metrics-snapshots"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/content-plans"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/generation-schedules"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/generation-runs"));
@@ -1904,7 +1999,9 @@ describe("ProjectDetailPage publishing workflow", () => {
     );
     expect(screen.queryByText(/real Douyin status was fetched/i)).toBeNull();
     expect(screen.queryByText(/real publish success was confirmed/i)).toBeNull();
-    expect(server.calls.some((call) => /oauth|authorization-url|douyin-real|metrics/.test(call))).toBe(false);
+    expect(server.calls.some((call) => /oauth|authorization-url|douyin-real|publication-records\/\d+\/metrics/.test(call))).toBe(
+      false,
+    );
   });
 
   it("shows real provider disabled state for local status reconciliation safely", async () => {
@@ -1953,6 +2050,127 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(within(attemptCard).getByText(/newer local snapshot remains/)).toBeTruthy();
   });
 
+  it("requires an existing status snapshot before showing limited metrics actions", async () => {
+    await renderProject({
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const attemptCard = screen.getByLabelText("PublishAttempt 1851");
+
+    expect(within(attemptCard).getByText(/Limited metrics snapshot action requires an existing Publish Status Snapshot/)).toBeTruthy();
+    expect(within(attemptCard).queryByRole("button", { name: "Create local limited metrics snapshot" })).toBeNull();
+  });
+
+  it("creates local limited metrics snapshots and displays freshness", async () => {
+    const server = await renderProject({
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      publishStatusReconciliations: [statusReconciliationCreated],
+      publishStatusSnapshots: { 1851: [statusSnapshotReconciled] },
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const snapshotCard = screen.getByLabelText("PublishStatusSnapshot pss_reconciled_1851");
+    fireEvent.click(within(snapshotCard).getByRole("button", { name: "Create local limited metrics snapshot" }));
+
+    expect(await within(snapshotCard).findByLabelText("PublishMetricsSnapshot pms_created_1898")).toBeTruthy();
+    expect(within(snapshotCard).getByText("Limited Metrics Snapshot")).toBeTruthy();
+    expect(within(snapshotCard).getByText(/Local \/ fake or sandbox-safe metrics only/)).toBeTruthy();
+    expect(within(snapshotCard).getByText(/not real Douyin metrics/)).toBeTruthy();
+    expect(within(snapshotCard).getAllByText("unknown").length).toBeGreaterThan(0);
+    expect(within(snapshotCard).getByText(/Metrics permission \/ platform limitation/)).toBeTruthy();
+    expect(server.calls).toContain(
+      "POST /api/projects/1/publish-status-snapshots/pss_reconciled_1851/metrics-snapshots",
+    );
+    expect(server.bodies["POST /api/projects/1/publish-status-snapshots/pss_reconciled_1851/metrics-snapshots"]).toBe(
+      "{}",
+    );
+    expect(screen.queryByText(/real Douyin metrics were fetched/i)).toBeNull();
+    expect(screen.queryByText(/real performance was validated/i)).toBeNull();
+  });
+
+  it("shows limited metrics snapshots with fake labels and fresh freshness", async () => {
+    await renderProject({
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      publishMetricsSnapshots: [limitedMetricsSnapshotFresh],
+      publishStatusReconciliations: [statusReconciliationCreated],
+      publishStatusSnapshots: { 1851: [statusSnapshotReconciled] },
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const snapshotCard = screen.getByLabelText("PublishStatusSnapshot pss_reconciled_1851");
+    const metricsCard = within(snapshotCard).getByLabelText("PublishMetricsSnapshot pms_fake_1851");
+
+    expect(within(metricsCard).getAllByText("fresh").length).toBeGreaterThan(0);
+    expect(within(metricsCard).getByText("fake_fixture")).toBeTruthy();
+    expect(within(metricsCard).getByText("120")).toBeTruthy();
+    expect(within(metricsCard).getByText("6200 bp")).toBeTruthy();
+    expect(within(metricsCard).getByText(/not real Douyin metrics/)).toBeTruthy();
+  });
+
+  it("shows permission missing, external metrics blocked, and malformed fixture states safely", async () => {
+    await renderProject({
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      publishMetricsSnapshots: [
+        { ...limitedMetricsSnapshotFresh, result_category: "metrics_permission_missing", last_status_change_reason: "metrics_permission_missing" },
+        limitedMetricsSnapshotExternalBlocked,
+        limitedMetricsSnapshotMalformedFixture,
+      ],
+      publishStatusReconciliations: [statusReconciliationCreated],
+      publishStatusSnapshots: { 1851: [statusSnapshotReconciled] },
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const snapshotCard = screen.getByLabelText("PublishStatusSnapshot pss_reconciled_1851");
+
+    expect(within(snapshotCard).getByText(/Metrics permission missing/)).toBeTruthy();
+    expect(within(snapshotCard).getAllByText(/External metrics query blocked/).length).toBeGreaterThan(0);
+    expect(within(snapshotCard).getAllByText(/Metrics fixture invalid/).length).toBeGreaterThan(0);
+    expect(
+      within(snapshotCard).getAllByText(/Raw provider or metrics responses are not shown/).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("shows limited metrics API errors without implying real Douyin metrics", async () => {
+    await renderProject({
+      createLimitedMetricsError: "metrics_permission_missing: Metrics permission metadata is missing.",
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      publishStatusReconciliations: [statusReconciliationCreated],
+      publishStatusSnapshots: { 1851: [statusSnapshotReconciled] },
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const snapshotCard = screen.getByLabelText("PublishStatusSnapshot pss_reconciled_1851");
+    fireEvent.click(within(snapshotCard).getByRole("button", { name: "Create local limited metrics snapshot" }));
+
+    expect(await screen.findByText(/metrics_permission_missing/)).toBeTruthy();
+    expect(screen.queryByText(/real Douyin metrics were fetched/i)).toBeNull();
+    expect(screen.queryByText(/real performance was validated/i)).toBeNull();
+    expect(screen.queryByText(/opened OAuth URL/i)).toBeNull();
+  });
+
+  it("shows real provider disabled state for limited metrics safely", async () => {
+    await renderProject({
+      publishAttempts: [{ ...publishAttemptCreated, provider_id: "douyin_real", source_type: "real" }],
+      publishIntents: [{ ...publishIntentConfirmed, target_platform: "douyin_real", source_type: "real" }],
+      publishStatusReconciliations: [{ ...statusReconciliationCreated, provider_id: "douyin_real", source_type: "real" }],
+      publishStatusSnapshots: {
+        1851: [{ ...statusSnapshotReconciled, provider_id: "douyin_real", source_type: "real" }],
+      },
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const snapshotCard = screen.getByLabelText("PublishStatusSnapshot pss_reconciled_1851");
+
+    expect(within(snapshotCard).getByText(/Real provider disabled/)).toBeTruthy();
+    expect(within(snapshotCard).getByText(/does not fallback to douyin_sandbox/)).toBeTruthy();
+  });
+
   it("shows local status reconciliation API errors without implying real Douyin status", async () => {
     await renderProject({
       createStatusReconciliationError:
@@ -1990,8 +2208,9 @@ describe("ProjectDetailPage publishing workflow", () => {
     await renderProject({
       publishAttempts: [publishAttemptCreated],
       publishIntents: [publishIntentConfirmed],
+      publishMetricsSnapshots: [limitedMetricsSnapshotFresh],
       publishStatusReconciliations: [statusReconciliationCreated],
-      publishStatusSnapshots: { 1851: [statusSnapshotLocal] },
+      publishStatusSnapshots: { 1851: [statusSnapshotReconciled] },
       reviewDrafts: [reviewDraftApproved],
     });
 
@@ -2006,6 +2225,7 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(screen.queryByText(/fake-external-status-response-value/)).toBeNull();
     expect(screen.queryByText(/fake-douyin-status-response-value/)).toBeNull();
     expect(screen.queryByText(/fake-status-metrics-response-value/)).toBeNull();
+    expect(screen.queryByText(/fake-metrics-response-value/)).toBeNull();
     expect(screen.queryByText(/OAuth URL/)).toBeTruthy();
     expect(screen.queryByText(/opened OAuth URL/i)).toBeNull();
   });

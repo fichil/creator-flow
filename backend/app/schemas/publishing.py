@@ -97,6 +97,54 @@ class PublishStatusSnapshotResponse(BaseModel):
     result_category: str | None = None
 
 
+class MetricsFixture(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    metrics_source: str
+    metrics_freshness_status: str
+    metrics_observed_at: str | None = None
+    views_count: int | None = None
+    likes_count: int | None = None
+    comments_count: int | None = None
+    shares_count: int | None = None
+    favorites_count: int | None = None
+    completion_rate_basis_points: int | None = None
+    safe_status_message: str
+
+
+class MetricsSnapshotCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    external_metrics_query_requested: StrictBool | None = False
+    fallback_provider_id: str | None = None
+    metrics_permission_status: str | None = "available"
+    fake_metrics_fixture: MetricsFixture | None = None
+
+
+class PublishMetricsSnapshotResponse(BaseModel):
+    metrics_snapshot_id: str
+    status_snapshot_id: str
+    publish_attempt_id: int
+    publish_intent_id: int
+    review_item_id: int
+    provider_id: str
+    source_type: str
+    metrics_source: str
+    metrics_freshness_status: str
+    metrics_observed_at: str | None = None
+    views_count: int | None = None
+    likes_count: int | None = None
+    comments_count: int | None = None
+    shares_count: int | None = None
+    favorites_count: int | None = None
+    completion_rate_basis_points: int | None = None
+    external_query_status: str
+    created_at: str
+    safe_status_message: str
+    last_status_change_reason: str
+    result_category: str | None = None
+
+
 class PublicationRecordResponse(BaseModel):
     id: int
     project_id: int

@@ -3,24 +3,30 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from app.db.database import get_db
 from app.publishing import (
     GuardedPublishAttemptError,
+    LimitedMetricsReadError,
     PublishIntentWorkflowError,
     PublishStatusReconciliationError,
     create_guarded_publish_attempt,
+    create_limited_metrics_snapshot,
     create_local_publish_intent,
     create_publish_status_reconciliation,
     get_guarded_publish_attempt,
+    get_limited_metrics_snapshot,
     get_publish_status_reconciliation,
     list_guarded_publish_attempts,
+    list_limited_metrics_snapshots,
     list_publish_status_reconciliations,
     list_publish_status_snapshots,
 )
 from app.publishers.fake_publisher import FakePublisherProvider
 from app.publishers.publisher import PublishExecutionInput
 from app.schemas.publishing import (
+    MetricsSnapshotCreate,
     PublicationRecordResponse,
     PublishAttemptResponse,
     PublishIntentCreate,
     PublishIntentResponse,
+    PublishMetricsSnapshotResponse,
     PublishStatusReconciliationCreate,
     PublishStatusReconciliationResponse,
     PublishStatusSnapshotResponse,
@@ -220,6 +226,67 @@ def list_publish_attempt_status_snapshots(project_id: int, publish_attempt_id: i
             publish_attempt_id=publish_attempt_id,
         )
     except PublishStatusReconciliationError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=f"{exc.category}: {exc.safe_status_message}",
+        ) from exc
+
+
+@router.post(
+    "/{project_id}/publish-status-snapshots/{status_snapshot_id}/metrics-snapshots",
+    response_model=PublishMetricsSnapshotResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_publish_status_metrics_snapshot(
+    project_id: int,
+    status_snapshot_id: str,
+    payload: MetricsSnapshotCreate | None = None,
+    db=Depends(get_db),
+):
+    project = _get_project(db, project_id)
+    _ensure_project_mutable(project, "create local limited metrics snapshots")
+    payload = payload or MetricsSnapshotCreate()
+    try:
+        return create_limited_metrics_snapshot(
+            db,
+            project_id=project_id,
+            status_snapshot_id=status_snapshot_id,
+            external_metrics_query_requested=payload.external_metrics_query_requested,
+            fallback_provider_id=payload.fallback_provider_id,
+            metrics_permission_status=payload.metrics_permission_status,
+            fake_metrics_fixture=payload.fake_metrics_fixture.model_dump()
+            if payload.fake_metrics_fixture
+            else None,
+        )
+    except LimitedMetricsReadError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=f"{exc.category}: {exc.safe_status_message}",
+        ) from exc
+
+
+@router.get(
+    "/{project_id}/metrics-snapshots",
+    response_model=list[PublishMetricsSnapshotResponse],
+)
+def list_project_metrics_snapshots(project_id: int, db=Depends(get_db)):
+    _get_project(db, project_id)
+    return list_limited_metrics_snapshots(db, project_id=project_id)
+
+
+@router.get(
+    "/{project_id}/metrics-snapshots/{metrics_snapshot_id}",
+    response_model=PublishMetricsSnapshotResponse,
+)
+def get_project_metrics_snapshot(project_id: int, metrics_snapshot_id: str, db=Depends(get_db)):
+    _get_project(db, project_id)
+    try:
+        return get_limited_metrics_snapshot(
+            db,
+            project_id=project_id,
+            metrics_snapshot_id=metrics_snapshot_id,
+        )
+    except LimitedMetricsReadError as exc:
         raise HTTPException(
             status_code=exc.status_code,
             detail=f"{exc.category}: {exc.safe_status_message}",

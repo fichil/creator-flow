@@ -295,6 +295,30 @@ export type PublishStatusSnapshot = {
   result_category: string | null;
 };
 
+export type PublishMetricsSnapshot = {
+  metrics_snapshot_id: string;
+  status_snapshot_id: string;
+  publish_attempt_id: number;
+  publish_intent_id: number;
+  review_item_id: number;
+  provider_id: string;
+  source_type: "fake_local" | "sandbox" | "real";
+  metrics_source: "local" | "fake_fixture" | "sandbox_fixture";
+  metrics_freshness_status: "fresh" | "stale" | "unknown" | "not_available";
+  metrics_observed_at: string | null;
+  views_count: number | null;
+  likes_count: number | null;
+  comments_count: number | null;
+  shares_count: number | null;
+  favorites_count: number | null;
+  completion_rate_basis_points: number | null;
+  external_query_status: "not_called" | "blocked";
+  created_at: string;
+  safe_status_message: string;
+  last_status_change_reason: string;
+  result_category: string | null;
+};
+
 export type PublicationRecord = {
   id: number;
   project_id: number;
@@ -813,6 +837,23 @@ export function createPublishStatusReconciliation(
 export function getPublishStatusSnapshots(projectId: number, publishAttemptId: number): Promise<PublishStatusSnapshot[]> {
   return request<PublishStatusSnapshot[]>(
     `/api/projects/${projectId}/publish-attempts/${publishAttemptId}/status-snapshots`,
+  );
+}
+
+export function getPublishMetricsSnapshots(projectId: number): Promise<PublishMetricsSnapshot[]> {
+  return request<PublishMetricsSnapshot[]>(`/api/projects/${projectId}/metrics-snapshots`);
+}
+
+export function createPublishMetricsSnapshot(
+  projectId: number,
+  statusSnapshotId: string,
+): Promise<PublishMetricsSnapshot> {
+  return request<PublishMetricsSnapshot>(
+    `/api/projects/${projectId}/publish-status-snapshots/${statusSnapshotId}/metrics-snapshots`,
+    {
+      method: "POST",
+      body: JSON.stringify({}),
+    },
   );
 }
 

@@ -727,6 +727,43 @@ cd ..
 .\scripts\validate-v0.9-poc.ps1
 ```
 
+## v1.0 Batch 9 Limited Metrics Read Guarded Foundation 验收
+
+v1.0 Batch 9 允许新增 limited metrics read guarded foundation、metadata-only metrics snapshot schema、local-only metrics snapshot API、frontend Limited Metrics Snapshot UI、backend / frontend tests 和文档，用于在未来真实指标读取前验证 Batch 8 publish status snapshot dependency、Batch 7 publish attempt / Batch 6 publish intent chain、Batch 5 controls、freshness visibility、metrics permission / platform limitation visibility、safe fixture validation 和 sandbox fallback forbidden。本批新增 ADR 0054、limited metrics read guarded contract 和 limited metrics read guarded test matrix。
+
+本批必须依赖 Batch 8 publish status snapshot，并通过该 snapshot 间接依赖 Batch 7 publish attempt、Batch 6 publish intent workflow 和 Batch 5 real provider controls。`douyin_real` 必须继续默认 disabled / blocked，且不得 fallback 到 `douyin_sandbox`。Metrics snapshot 只能表示本地 / fake / sandbox-safe metadata，不得触发 provider metrics query、Douyin metrics query、Douyin status query、upload、publish、scheduled publish、OAuth URL、token exchange 或 credential storage。
+
+本批必须验证：
+
+- 创建 metrics snapshot 必须要求 existing publish status snapshot。
+- missing publish status snapshot 和不符合条件的 publish status 必须被安全拒绝。
+- valid local fake / sandbox-safe status snapshot 只能创建 metadata-only metrics snapshot。
+- metrics snapshot 必须展示 freshness，例如 `fresh`、`stale`、`unknown` 或 `not_available`。
+- metrics permission missing 必须以安全 metadata 表示。
+- malformed fake / sandbox fixture 必须被安全拒绝。
+- `douyin_real` 默认 blocked，kill switch active 和 platform preconditions missing 必须阻断 metrics read foundation。
+- `douyin_real` 不得 fallback 到 `douyin_sandbox`。
+- unsupported provider 必须被拒绝。
+- API response、service result、safe message、repr、日志、测试 fixture 和文档示例不得包含真实 token、access_token、refresh_token、secret、client_secret、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、API key、bearer、raw request、raw response、provider response、upload response、publish response、status response、metrics response、external response 或 Douyin response。
+- metrics snapshot workflow 不读取真实环境变量密钥，不调用 Douyin API，不调用 socket / requests / httpx / urllib 或任何业务外部服务。
+- 不新增 upload route、scheduled publish route、真实 metrics query route、OAuth start route、OAuth callback route、OAuth URL creation route、真实 token exchange、真实 token storage、真实 credential storage、真实 publish execution path、真实 status query path 或 frontend OAuth UI。
+
+本批仍不允许调用 Douyin API 或任何业务外部服务，不允许查询真实 Douyin metrics，不允许查询真实 Douyin 发布状态，不允许上传视频，不允许真实发布，不允许排期发布，不允许新增 OAuth start route，不允许新增 OAuth callback route，不允许创建 OAuth URL，不允许实现真实 OAuth，不允许实现真实 token exchange，不允许保存 authorization code、access token、refresh token、secret、credential、cookie、session、API key、bearer、raw OAuth state、provider response、upload response、publish response、status response、metrics response、external response 或 Douyin response，不允许读取真实环境变量密钥，不允许启用 `douyin_real`，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
+
+本批本地质量门禁从仓库根目录执行：
+
+```powershell
+git diff --check
+.\scripts\test-backend.ps1
+
+cd .\frontend
+npm.cmd test
+npm.cmd run build
+cd ..
+
+.\scripts\validate-v0.9-poc.ps1
+```
+
 ## v0.8 Batch 1 Provider & Credential Security documentation foundation 验收
 
 v0.8 Batch 1 只做文档和 ADR，用于建立 Provider registry、provider capability metadata、Credential boundary、secret boundary、OAuth state/callback security、token lifecycle、audit log、connection status 和 fake/sandbox/real source separation 的安全边界。本批不新增业务代码、不新增 API、不新增数据库表、不新增后端代码、不新增前端 UI、不实现真实 OAuth、不保存 token、不接真实 Douyin API、不抓取真实指标、不上传、不发布、不排期发布，也不调用外部服务。

@@ -5,11 +5,13 @@ import {
   createFakePublicationMetricReviewSummary,
   confirmPublishIntent,
   createFakePublicationMetric,
+  createPublishMetricsSnapshot,
   createPublishAttempt,
   createPublishIntent,
   createPublishStatusReconciliation,
   fakePublishIntent,
   getPublishAttempts,
+  getPublishMetricsSnapshots,
   getPublishStatusReconciliations,
   getPublishStatusSnapshots,
   getPublicationRecords,
@@ -22,6 +24,7 @@ import {
   PublicationRecord,
   PublishAttempt,
   PublishIntent,
+  PublishMetricsSnapshot,
   PublishStatusReconciliation,
   PublishStatusSnapshot,
   ReviewDraft,
@@ -39,6 +42,7 @@ type ProjectPublishingSectionProps = {
 type PublishingAction =
   | { type: "create"; id: number }
   | { type: "attempt"; id: number }
+  | { type: "limited-metrics"; id: string }
   | { type: "reconcile-status"; id: number }
   | { type: "confirm"; id: number }
   | { type: "cancel"; id: number }
@@ -54,6 +58,9 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
     Record<number, PublishStatusReconciliation[]>
   >({});
   const [snapshotsByAttemptId, setSnapshotsByAttemptId] = useState<Record<number, PublishStatusSnapshot[]>>({});
+  const [limitedMetricsByStatusSnapshotId, setLimitedMetricsByStatusSnapshotId] = useState<
+    Record<string, PublishMetricsSnapshot[]>
+  >({});
   const [recordsByIntentId, setRecordsByIntentId] = useState<Record<number, PublicationRecord[]>>({});
   const [metricsByRecordId, setMetricsByRecordId] = useState<Record<number, PublicationMetricSnapshot[]>>({});
   const [summariesByRecordId, setSummariesByRecordId] = useState<Record<number, PublicationMetricReviewSummary[]>>({});
@@ -64,11 +71,12 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
   async function reloadPublishingWorkflow() {
     setLoading(true);
     try {
-      const [drafts, intents, attempts, reconciliations] = await Promise.all([
+      const [drafts, intents, attempts, reconciliations, limitedMetricsSnapshots] = await Promise.all([
         getReviewDrafts(projectId),
         getPublishIntents(projectId),
         getPublishAttempts(projectId),
         getPublishStatusReconciliations(projectId),
+        getPublishMetricsSnapshots(projectId),
       ]);
       const snapshotEntries = await Promise.all(
         attempts.map(async (attempt) => [attempt.id, await getPublishStatusSnapshots(projectId, attempt.id)] as const),
@@ -90,6 +98,7 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
       setAttemptsByIntentId(groupAttemptsByIntent(attempts));
       setReconciliationsByAttemptId(groupReconciliationsByAttempt(reconciliations));
       setSnapshotsByAttemptId(Object.fromEntries(snapshotEntries));
+      setLimitedMetricsByStatusSnapshotId(groupLimitedMetricsByStatusSnapshot(limitedMetricsSnapshots));
       setRecordsByIntentId(Object.fromEntries(recordEntries));
       setMetricsByRecordId(Object.fromEntries(metricEntries));
       setSummariesByRecordId(Object.fromEntries(summaryEntries));
@@ -186,6 +195,22 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
       await reloadPublishingWorkflow();
     } catch (err) {
       setError(formatPublishingError(err, "Create local status reconciliation failed"));
+    } finally {
+      setAction(null);
+    }
+  }
+
+  async function handleCreateLimitedMetricsSnapshot(statusSnapshotId: string) {
+    if (isArchived) {
+      return;
+    }
+    setAction({ type: "limited-metrics", id: statusSnapshotId });
+    setError(null);
+    try {
+      await createPublishMetricsSnapshot(projectId, statusSnapshotId);
+      await reloadPublishingWorkflow();
+    } catch (err) {
+      setError(formatPublishingError(err, "Create local limited metrics snapshot failed"));
     } finally {
       setAction(null);
     }
@@ -331,11 +356,13 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
                     records={recordsByIntentId[intent.id] ?? []}
                     attempts={attemptsByIntentId[intent.id] ?? []}
                     reconciliationsByAttemptId={reconciliationsByAttemptId}
+                    limitedMetricsByStatusSnapshotId={limitedMetricsByStatusSnapshotId}
                     snapshotsByAttemptId={snapshotsByAttemptId}
                     onCancel={handleCancel}
                     onConfirm={handleConfirm}
                     onCreateAttempt={handleCreateAttempt}
                     onCreateStatusReconciliation={handleCreateStatusReconciliation}
+                    onCreateLimitedMetricsSnapshot={handleCreateLimitedMetricsSnapshot}
                     onFakePublish={handleFakePublish}
                     onGenerateFakeMetrics={handleCreateFakeMetrics}
                     onGenerateFakeMetricReviewSummary={handleCreateFakeMetricReviewSummary}
@@ -358,10 +385,12 @@ function PublishIntentCard({
   onConfirm,
   onCreateAttempt,
   onCreateStatusReconciliation,
+  onCreateLimitedMetricsSnapshot,
   onFakePublish,
   onGenerateFakeMetrics,
   onGenerateFakeMetricReviewSummary,
   metricsByRecordId,
+  limitedMetricsByStatusSnapshotId,
   reconciliationsByAttemptId,
   summariesByRecordId,
   publishIntent,
@@ -372,6 +401,7 @@ function PublishIntentCard({
   attempts: PublishAttempt[];
   isArchived: boolean;
   metricsByRecordId: Record<number, PublicationMetricSnapshot[]>;
+  limitedMetricsByStatusSnapshotId: Record<string, PublishMetricsSnapshot[]>;
   reconciliationsByAttemptId: Record<number, PublishStatusReconciliation[]>;
   summariesByRecordId: Record<number, PublicationMetricReviewSummary[]>;
   snapshotsByAttemptId: Record<number, PublishStatusSnapshot[]>;
@@ -379,6 +409,7 @@ function PublishIntentCard({
   onConfirm: (publishIntentId: number) => void;
   onCreateAttempt: (publishIntentId: number) => void;
   onCreateStatusReconciliation: (publishAttemptId: number) => void;
+  onCreateLimitedMetricsSnapshot: (statusSnapshotId: string) => void;
   onFakePublish: (publishIntentId: number) => void;
   onGenerateFakeMetrics: (publicationRecordId: number) => void;
   onGenerateFakeMetricReviewSummary: (publicationRecordId: number) => void;
@@ -520,6 +551,8 @@ function PublishIntentCard({
                   key={attempt.id}
                   reconciliations={reconciliationsByAttemptId[attempt.id] ?? []}
                   snapshots={snapshotsByAttemptId[attempt.id] ?? []}
+                  limitedMetricsByStatusSnapshotId={limitedMetricsByStatusSnapshotId}
+                  onCreateLimitedMetricsSnapshot={onCreateLimitedMetricsSnapshot}
                   onCreateStatusReconciliation={onCreateStatusReconciliation}
                 />
               ))}
@@ -560,12 +593,16 @@ function PublishAttemptItem({
   attempt,
   isArchived,
   onCreateStatusReconciliation,
+  onCreateLimitedMetricsSnapshot,
   reconciliations,
+  limitedMetricsByStatusSnapshotId,
   snapshots,
 }: {
   action: PublishingAction | null;
   attempt: PublishAttempt;
   isArchived: boolean;
+  limitedMetricsByStatusSnapshotId: Record<string, PublishMetricsSnapshot[]>;
+  onCreateLimitedMetricsSnapshot: (statusSnapshotId: string) => void;
   onCreateStatusReconciliation: (publishAttemptId: number) => void;
   reconciliations: PublishStatusReconciliation[];
   snapshots: PublishStatusSnapshot[];
@@ -672,11 +709,21 @@ function PublishAttemptItem({
         <div className="mt-3">
           <h6 className="text-xs font-semibold uppercase text-emerald-950">Publish Status Snapshot</h6>
           {snapshots.length === 0 ? (
-            <p className="mt-2 text-sm text-emerald-950">No local status snapshots yet.</p>
+            <p className="mt-2 text-sm text-emerald-950">
+              No local status snapshots yet. Limited metrics snapshot action requires an existing Publish Status
+              Snapshot.
+            </p>
           ) : (
             <div className="mt-2 space-y-2">
               {snapshots.map((snapshot) => (
-                <PublishStatusSnapshotItem key={snapshot.status_snapshot_id} snapshot={snapshot} />
+                <PublishStatusSnapshotItem
+                  action={action}
+                  isArchived={isArchived}
+                  key={snapshot.status_snapshot_id}
+                  limitedMetrics={limitedMetricsByStatusSnapshotId[snapshot.status_snapshot_id] ?? []}
+                  snapshot={snapshot}
+                  onCreateLimitedMetricsSnapshot={onCreateLimitedMetricsSnapshot}
+                />
               ))}
             </div>
           )}
@@ -732,7 +779,32 @@ function PublishStatusReconciliationItem({
   );
 }
 
-function PublishStatusSnapshotItem({ snapshot }: { snapshot: PublishStatusSnapshot }) {
+function PublishStatusSnapshotItem({
+  action,
+  isArchived,
+  limitedMetrics,
+  onCreateLimitedMetricsSnapshot,
+  snapshot,
+}: {
+  action: PublishingAction | null;
+  isArchived: boolean;
+  limitedMetrics: PublishMetricsSnapshot[];
+  onCreateLimitedMetricsSnapshot: (statusSnapshotId: string) => void;
+  snapshot: PublishStatusSnapshot;
+}) {
+  const canCreateLimitedMetrics = snapshot.local_publish_status === "local_status_reconciled";
+  const hasExternalMetricsBlocked = limitedMetrics.some((metric) => metric.external_query_status === "blocked");
+  const hasPermissionMissing = limitedMetrics.some(
+    (metric) =>
+      metric.result_category === "metrics_permission_missing" ||
+      metric.last_status_change_reason === "metrics_permission_missing",
+  );
+  const hasMalformedFixture = limitedMetrics.some(
+    (metric) =>
+      metric.result_category === "metrics_fixture_invalid" ||
+      metric.last_status_change_reason === "metrics_fixture_invalid",
+  );
+
   return (
     <div
       aria-label={`PublishStatusSnapshot ${snapshot.status_snapshot_id}`}
@@ -760,6 +832,125 @@ function PublishStatusSnapshotItem({ snapshot }: { snapshot: PublishStatusSnapsh
       <p className="mt-3 rounded border border-emerald-100 bg-emerald-50 p-2 text-sm text-emerald-950">
         {snapshot.safe_status_message}
       </p>
+      <div className="mt-3 rounded border border-indigo-200 bg-indigo-50 p-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h6 className="text-xs font-semibold uppercase text-indigo-950">Limited Metrics Snapshot</h6>
+            <p className="mt-1 text-sm text-indigo-950">
+              Local / fake or sandbox-safe metrics only. These are not real Douyin metrics and do not validate real
+              performance.
+            </p>
+            <p className="mt-1 text-xs text-indigo-900">
+              Metrics permission / platform limitation: visible as safe metadata; real platform permission is not used
+              in this local foundation.
+            </p>
+          </div>
+          {!isArchived && canCreateLimitedMetrics && (
+            <button
+              className="rounded border border-indigo-700 px-3 py-1 text-xs font-semibold text-indigo-950 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={action !== null}
+              type="button"
+              onClick={() => onCreateLimitedMetricsSnapshot(snapshot.status_snapshot_id)}
+            >
+              {action?.type === "limited-metrics" && action.id === snapshot.status_snapshot_id
+                ? "Creating local limited metrics..."
+                : "Create local limited metrics snapshot"}
+            </button>
+          )}
+        </div>
+        {!canCreateLimitedMetrics && (
+          <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
+            Publish status is not eligible for limited metrics foundation yet.
+          </p>
+        )}
+        {snapshot.provider_id === "douyin_real" && (
+          <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
+            Real provider disabled. douyin_real metrics read does not fallback to douyin_sandbox.
+          </p>
+        )}
+        {hasExternalMetricsBlocked && (
+          <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
+            External metrics query blocked. No real Douyin metrics query ran.
+          </p>
+        )}
+        {hasPermissionMissing && (
+          <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
+            Metrics permission missing. The UI keeps this as a safe local limitation.
+          </p>
+        )}
+        {hasMalformedFixture && (
+          <p className="mt-3 rounded border border-red-200 bg-red-50 p-2 text-sm text-red-800">
+            Metrics fixture invalid. Raw provider or metrics responses are not shown.
+          </p>
+        )}
+        {limitedMetrics.length === 0 ? (
+          <p className="mt-3 text-sm text-indigo-950">No limited metrics snapshots yet.</p>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {limitedMetrics.map((metric) => (
+              <PublishMetricsSnapshotItem key={metric.metrics_snapshot_id} metric={metric} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PublishMetricsSnapshotItem({ metric }: { metric: PublishMetricsSnapshot }) {
+  return (
+    <div
+      aria-label={`PublishMetricsSnapshot ${metric.metrics_snapshot_id}`}
+      className="rounded border border-indigo-200 bg-white p-3"
+      data-status={metric.metrics_freshness_status}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="break-all text-sm font-medium text-indigo-950">Metrics {metric.metrics_snapshot_id}</p>
+        <span className={getMetricsFreshnessClass(metric.metrics_freshness_status)}>
+          {formatStatus(metric.metrics_freshness_status)}
+        </span>
+      </div>
+      <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase text-indigo-700">Metrics source</dt>
+          <dd className="mt-1 text-indigo-950">{formatStatus(metric.metrics_source)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-indigo-700">Freshness</dt>
+          <dd className="mt-1 text-indigo-950">{formatStatus(metric.metrics_freshness_status)}</dd>
+        </div>
+        <MetricValue label="Views" value={metric.views_count} />
+        <MetricValue label="Likes" value={metric.likes_count} />
+        <MetricValue label="Comments" value={metric.comments_count} />
+        <MetricValue label="Shares" value={metric.shares_count} />
+        <MetricValue label="Favorites" value={metric.favorites_count} />
+        <MetricValue
+          label="Completion"
+          value={metric.completion_rate_basis_points === null ? null : `${metric.completion_rate_basis_points} bp`}
+        />
+        <div>
+          <dt className="text-xs font-semibold uppercase text-indigo-700">Observed</dt>
+          <dd className="mt-1 text-indigo-950">
+            {metric.metrics_observed_at ? new Date(metric.metrics_observed_at).toLocaleString() : "unknown"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-indigo-700">External query</dt>
+          <dd className="mt-1 text-indigo-950">{formatStatus(metric.external_query_status)}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 rounded border border-indigo-100 bg-indigo-50 p-2 text-sm text-indigo-950">
+        {metric.safe_status_message}
+      </p>
+    </div>
+  );
+}
+
+function MetricValue({ label, value }: { label: string; value: number | string | null }) {
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase text-indigo-700">{label}</dt>
+      <dd className="mt-1 text-indigo-950">{value === null ? "not available" : value}</dd>
     </div>
   );
 }
@@ -878,6 +1069,16 @@ function getSnapshotStatusClass(status: PublishStatusSnapshot["local_publish_sta
   return "rounded border border-stone-300 bg-stone-50 px-3 py-1 text-xs font-semibold text-stone-800";
 }
 
+function getMetricsFreshnessClass(status: PublishMetricsSnapshot["metrics_freshness_status"]) {
+  if (status === "fresh") {
+    return "rounded border border-indigo-300 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-900";
+  }
+  if (status === "stale" || status === "unknown") {
+    return "rounded border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900";
+  }
+  return "rounded border border-stone-300 bg-stone-50 px-3 py-1 text-xs font-semibold text-stone-800";
+}
+
 function getPublicationStatusClass(status: PublicationRecord["publication_status"]) {
   if (status === "succeeded") {
     return "rounded border border-teal-300 bg-white px-3 py-1 text-xs font-semibold text-teal-800";
@@ -901,6 +1102,13 @@ function groupReconciliationsByAttempt(reconciliations: PublishStatusReconciliat
       ...(grouped[reconciliation.publish_attempt_id] ?? []),
       reconciliation,
     ];
+    return grouped;
+  }, {});
+}
+
+function groupLimitedMetricsByStatusSnapshot(metrics: PublishMetricsSnapshot[]) {
+  return metrics.reduce<Record<string, PublishMetricsSnapshot[]>>((grouped, metric) => {
+    grouped[metric.status_snapshot_id] = [...(grouped[metric.status_snapshot_id] ?? []), metric];
     return grouped;
   }, {});
 }
