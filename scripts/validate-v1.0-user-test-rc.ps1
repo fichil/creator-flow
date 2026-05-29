@@ -156,21 +156,23 @@ function Test-RcClosureReadiness {
 }
 
 function Test-RcMarkdownFormatting {
-    $rcMarkdownFiles = @(
-        "docs/releases/v1.0-rc-closure-audit.md",
-        "docs/releases/v1.0-tag-readiness-checklist.md",
-        "docs/releases/v1.0-merge-readiness-checklist.md",
-        "docs/releases/v1.0-user-test-rc-checklist.md",
-        "docs/releases/v1.0-user-test-release-notes-draft.md",
-        "docs/releases/v1.0-pr-description-draft.md",
-        "docs/testing/v1.0-user-test-guide.md",
-        "docs/testing/v1.0-user-test-rc-test-matrix.md",
-        "docs/operations/v1.0-user-test-rollback-disablement.md",
-        "docs/decisions/0055-v1.0-user-test-readiness-release-candidate.md"
-    )
+    $rcMarkdownFiles = [ordered]@{
+        "docs/releases/v1.0-rc-closure-audit.md" = 35
+        "docs/releases/v1.0-tag-readiness-checklist.md" = 30
+        "docs/releases/v1.0-merge-readiness-checklist.md" = 30
+        "docs/releases/v1.0-user-test-rc-checklist.md" = 80
+        "docs/releases/v1.0-user-test-release-notes-draft.md" = 40
+        "docs/releases/v1.0-pr-description-draft.md" = 50
+        "docs/testing/v1.0-user-test-guide.md" = 50
+        "docs/testing/v1.0-user-test-rc-test-matrix.md" = 50
+        "docs/operations/v1.0-user-test-rollback-disablement.md" = 50
+        "docs/decisions/0055-v1.0-user-test-readiness-release-candidate.md" = 40
+    }
     $issues = New-Object System.Collections.Generic.List[string]
 
-    foreach ($path in $rcMarkdownFiles) {
+    foreach ($entry in $rcMarkdownFiles.GetEnumerator()) {
+        $path = $entry.Key
+        $minimumLineCount = $entry.Value
         $fullPath = Join-Path $RepoRoot $path
         if (-not (Test-Path $fullPath)) {
             $issues.Add("${path}: target RC Markdown file is missing.") | Out-Null
@@ -178,8 +180,21 @@ function Test-RcMarkdownFormatting {
         }
 
         $lines = @(Get-Content -Encoding utf8 $fullPath)
-        if ($lines.Count -lt 20) {
-            $issues.Add("${path}: document has only $($lines.Count) lines; RC docs may be compressed.") | Out-Null
+        if ($lines.Count -lt $minimumLineCount) {
+            $issues.Add("${path}: document has only $($lines.Count) lines; minimum is $minimumLineCount.") | Out-Null
+        }
+
+        if ($lines.Count -eq 0) {
+            $issues.Add("${path}: document is empty.") | Out-Null
+            continue
+        }
+
+        $firstLine = $lines[0]
+        if ($firstLine -notmatch '^#\s+\S.+$') {
+            $issues.Add("${path}: first line must be a standalone H1 heading.") | Out-Null
+        }
+        if ($firstLine -match '##\s+' -or $firstLine -match '- \[ \]' -or $firstLine -match '^\#\s+.+\s-\s+') {
+            $issues.Add("${path}: first line appears to include text beyond a standalone title.") | Out-Null
         }
 
         $inFence = $false
@@ -209,7 +224,12 @@ function Test-RcMarkdownFormatting {
             if (($line -match '^\s{0,3}#{1,6}\s+') -and ($index + 1 -lt $lines.Count) -and ($lines[$index + 1].Trim() -ne '')) {
                 $issues.Add("${path}:${lineNumber}: heading is not followed by a blank line.") | Out-Null
             }
-            if (($line.Length -gt 300) -and ($line -notmatch '^\s*\|') -and ($line -notmatch '^\s*$')) {
+            $isLinkOrTableLine = (
+                ($line -match 'https?://') -or
+                ($line -match '\[[^\]]+\]\([^)]+\)') -or
+                ($line -match '^\s*\|')
+            )
+            if (($line.Length -gt 300) -and (-not $isLinkOrTableLine) -and ($line -notmatch '^\s*$')) {
                 $issues.Add("${path}:${lineNumber}: ordinary line is longer than 300 characters.") | Out-Null
             }
         }
