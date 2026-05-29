@@ -101,14 +101,22 @@ CREATE TABLE IF NOT EXISTS publish_intents (
     project_id INTEGER NOT NULL,
     review_draft_id INTEGER NOT NULL,
     target_platform TEXT NOT NULL,
+    source_type TEXT NOT NULL DEFAULT 'fake_local',
     title TEXT NOT NULL,
     caption TEXT NOT NULL,
     publish_status TEXT NOT NULL DEFAULT 'pending_confirmation',
+    confirmation_status TEXT NOT NULL DEFAULT 'missing',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TEXT,
+    cancelled_at TEXT,
+    safe_status_message TEXT NOT NULL DEFAULT 'Local publish intent metadata only.',
+    last_status_change_reason TEXT NOT NULL DEFAULT 'initial_publish_intent_created',
     FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
     FOREIGN KEY (review_draft_id) REFERENCES review_drafts(id) ON DELETE CASCADE,
-    CHECK (publish_status IN ('pending_confirmation', 'confirmed', 'cancelled'))
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (publish_status IN ('pending_confirmation', 'confirmed', 'blocked', 'cancelled')),
+    CHECK (confirmation_status IN ('confirmed', 'missing', 'invalid'))
 );
 
 CREATE TABLE IF NOT EXISTS publication_records (

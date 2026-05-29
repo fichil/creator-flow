@@ -36,16 +36,26 @@ def prepare_review_draft(client: TestClient, project_id: int | None = None) -> t
 
 
 def create_publish_intent(client: TestClient, project_id: int, review_draft_id: int) -> dict:
-    response = client.post(
-        f"/api/projects/{project_id}/publish-intents",
-        json={
-            "review_draft_id": review_draft_id,
-            "target_platform": "douyin",
-            "title": "Human confirmed publishing draft",
-            "caption": "Backend-only publish intent metadata.",
-        },
-    )
-    return response.json()
+    with sqlite3.connect(get_settings().database_path) as connection:
+        connection.row_factory = sqlite3.Row
+        row = connection.execute(
+            """
+            INSERT INTO publish_intents (
+                project_id, review_draft_id, target_platform, source_type, title, caption,
+                publish_status, confirmation_status, safe_status_message, last_status_change_reason
+            )
+            VALUES (
+                ?, ?, 'fake_local', 'fake_local', 'Legacy pending publish intent',
+                'Pending local publish intent metadata.', 'pending_confirmation', 'missing',
+                'Legacy pending metric review intent metadata only.', 'legacy_metric_review_test_fixture'
+            )
+            RETURNING id, project_id, review_draft_id, target_platform, source_type, title, caption,
+                      publish_status, confirmation_status, created_at, updated_at, confirmed_at,
+                      cancelled_at, safe_status_message, last_status_change_reason
+            """,
+            (project_id, review_draft_id),
+        ).fetchone()
+    return dict(row)
 
 
 def prepare_publication_record(client: TestClient, project_id: int | None = None) -> tuple[int, dict, dict]:

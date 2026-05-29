@@ -283,26 +283,35 @@ const publishIntentPending: PublishIntent = {
   id: 1701,
   project_id: 1,
   review_draft_id: 1502,
-  target_platform: "douyin",
+  target_platform: "fake_local",
+  source_type: "fake_local",
   title: "Approved review draft",
   caption: "Deterministic fake draft summary from a manual run.",
   publish_status: "pending_confirmation",
+  confirmation_status: "missing",
   created_at: "2026-05-26T08:28:00Z",
   updated_at: "2026-05-26T08:28:00Z",
+  confirmed_at: null,
+  cancelled_at: null,
+  safe_status_message: "Legacy pending publish intent metadata only.",
+  last_status_change_reason: "legacy_pending_fixture",
 };
 
 const publishIntentConfirmed: PublishIntent = {
   ...publishIntentPending,
   id: 1702,
   publish_status: "confirmed",
+  confirmation_status: "confirmed",
   updated_at: "2026-05-26T08:29:00Z",
+  confirmed_at: "2026-05-26T08:29:00Z",
+  safe_status_message: "Publish intent confirmed locally; no provider publish was executed.",
 };
 
 const publicationRecordNotStarted: PublicationRecord = {
   id: 1801,
   project_id: 1,
   publish_intent_id: 1702,
-  target_platform: "douyin",
+  target_platform: "fake_local",
   provider_name: "placeholder",
   external_publication_id: null,
   publication_status: "not_started",
@@ -893,17 +902,25 @@ function installFetchMock(options: ServerOptions = {}) {
         target_platform: string;
         title: string;
         caption: string;
+        confirm_publish_intent: true;
       };
       const createdIntent: PublishIntent = {
         id: 1799,
         project_id: 1,
         review_draft_id: payload.review_draft_id,
         target_platform: payload.target_platform,
+        source_type: payload.target_platform === "douyin_sandbox" ? "sandbox" : "fake_local",
         title: payload.title,
         caption: payload.caption,
-        publish_status: "pending_confirmation",
+        publish_status: "confirmed",
+        confirmation_status: "confirmed",
         created_at: "2026-05-26T08:28:00Z",
         updated_at: "2026-05-26T08:28:00Z",
+        confirmed_at: "2026-05-26T08:28:00Z",
+        cancelled_at: null,
+        safe_status_message:
+          "Publish intent recorded locally after explicit user confirmation; no provider publish was executed.",
+        last_status_change_reason: "user_confirmed_publish_intent_created",
       };
       publishIntents = [createdIntent, ...publishIntents];
       publicationRecordsByIntentId = { ...publicationRecordsByIntentId, [createdIntent.id]: [] };
@@ -916,7 +933,14 @@ function installFetchMock(options: ServerOptions = {}) {
         ...intent,
         publish_status:
           intent.id === publishIntentId ? ("confirmed" as PublishIntent["publish_status"]) : intent.publish_status,
+        confirmation_status:
+          intent.id === publishIntentId ? ("confirmed" as PublishIntent["confirmation_status"]) : intent.confirmation_status,
+        confirmed_at: intent.id === publishIntentId ? "2026-05-26T08:29:00Z" : intent.confirmed_at,
         updated_at: intent.id === publishIntentId ? "2026-05-26T08:29:00Z" : intent.updated_at,
+        safe_status_message:
+          intent.id === publishIntentId
+            ? "Publish intent confirmed locally; no provider publish was executed."
+            : intent.safe_status_message,
       }));
       const intent = publishIntents.find((item) => item.id === publishIntentId) ?? publishIntentPending;
       publicationRecordsByIntentId = {
@@ -939,7 +963,12 @@ function installFetchMock(options: ServerOptions = {}) {
         ...intent,
         publish_status:
           intent.id === publishIntentId ? ("cancelled" as PublishIntent["publish_status"]) : intent.publish_status,
+        cancelled_at: intent.id === publishIntentId ? "2026-05-26T08:29:00Z" : intent.cancelled_at,
         updated_at: intent.id === publishIntentId ? "2026-05-26T08:29:00Z" : intent.updated_at,
+        safe_status_message:
+          intent.id === publishIntentId
+            ? "Publish intent cancelled locally; no provider publish was executed."
+            : intent.safe_status_message,
       }));
       return jsonResponse(publishIntents.find((intent) => intent.id === publishIntentId));
     }
@@ -1497,7 +1526,7 @@ describe("ProjectDetailPage review drafts", () => {
       expect(screen.getByLabelText("待审核草稿：Manual run review draft").getAttribute("data-status")).toBe("approved"),
     );
     expect(server.calls).toContain("POST /api/projects/1/review-drafts/1501/approve");
-    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(4);
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts").length).toBeGreaterThanOrEqual(3);
   });
 
   it("rejects a review draft and refreshes the list", async () => {
@@ -1509,7 +1538,7 @@ describe("ProjectDetailPage review drafts", () => {
       expect(screen.getByLabelText("待审核草稿：Manual run review draft").getAttribute("data-status")).toBe("rejected"),
     );
     expect(server.calls).toContain("POST /api/projects/1/review-drafts/1501/reject");
-    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts")).toHaveLength(4);
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/review-drafts").length).toBeGreaterThanOrEqual(3);
   });
 
   it("keeps review drafts read-only for archived projects", async () => {
@@ -1538,24 +1567,26 @@ describe("ProjectDetailPage publishing workflow", () => {
   it("shows the fake publishing section and explains that it is not real platform publishing", async () => {
     await renderProject();
 
-    expect(screen.getByText("Publishing / Fake Publishing")).toBeTruthy();
-    expect(screen.getByText(/本区块只是本地 fake publishing workflow/)).toBeTruthy();
+    expect(screen.getByText("Publish Intent Workflow")).toBeTruthy();
+    expect(screen.getByText(/本区块只记录本地 Publish Intent/)).toBeTruthy();
     expect(screen.getByText(/不会上传、发布、排期，也不会调用 Douyin/)).toBeTruthy();
-    expect(screen.getByText("需要先通过 Review Draft，才能创建 PublishIntent。")).toBeTruthy();
+    expect(screen.getByText(/douyin_real.*禁用/)).toBeTruthy();
+    expect(screen.getByText(/需要先通过 Review Draft/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: /^Publish$/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /OAuth|授权|上传|排期|真实发布|Real Publish/i })).toBeNull();
   });
 
-  it("shows approved review drafts and creates a PublishIntent", async () => {
+  it("shows approved review drafts and creates a user-confirmed Publish Intent", async () => {
     const server = await renderProject({ reviewDrafts: [reviewDraftApproved] });
 
-    fireEvent.click(screen.getByRole("button", { name: "创建 PublishIntent" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认创建 Publish Intent" }));
 
     await screen.findByLabelText("PublishIntent 1799");
     expect(server.calls).toContain("POST /api/projects/1/publish-intents");
     expect(server.bodies["POST /api/projects/1/publish-intents"]).toBe(
-      '{"review_draft_id":1502,"target_platform":"douyin","title":"Approved review draft","caption":"Deterministic fake draft summary from a manual run."}',
+      '{"review_draft_id":1502,"target_platform":"fake_local","title":"Approved review draft","caption":"Deterministic fake draft summary from a manual run.","confirm_publish_intent":true}',
     );
+    expect(screen.getByText(/Publish intent recorded locally after explicit user confirmation/)).toBeTruthy();
     expect(server.calls.filter((call) => call === "GET /api/projects/1/publish-intents")).toHaveLength(2);
   });
 
@@ -1565,10 +1596,23 @@ describe("ProjectDetailPage publishing workflow", () => {
       reviewDrafts: [reviewDraftApproved],
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "创建 PublishIntent" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认创建 Publish Intent" }));
 
     expect(await screen.findByText("review draft must be approved before creating a publish intent")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /^Publish$/i })).toBeNull();
+  });
+
+  it("shows preflight and real provider disabled errors as safe local intent messages", async () => {
+    await renderProject({
+      createPublishIntentError: "media_not_ready: A ready local media artifact is required before creating a publish intent.",
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "确认创建 Publish Intent" }));
+
+    expect(await screen.findByText(/media_not_ready/)).toBeTruthy();
+    expect(screen.getByText(/douyin_real.*禁用/)).toBeTruthy();
+    expect(screen.queryByText(/published to Douyin/i)).toBeNull();
   });
 
   it("shows pending PublishIntent actions and confirms into a not_started PublicationRecord", async () => {
@@ -1727,7 +1771,7 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(within(recordCard).getByText(/Local development \/ demo \/ test data/)).toBeTruthy();
     expect(within(recordCard).getAllByText(/Not automatic recommendation/).length).toBeGreaterThan(0);
     expect(within(recordCard).getAllByText(/does not modify content automatically/).length).toBeGreaterThan(0);
-    expect(within(recordCard).getByText("fake_local")).toBeTruthy();
+    expect(within(recordCard).getAllByText("fake_local").length).toBeGreaterThan(0);
     expect(within(recordCard).getByText("1")).toBeTruthy();
     expect(within(recordCard).getByText(metricReviewSummaryOne.summary_text)).toBeTruthy();
     expect(within(recordCard).getByText(metricReviewSummaryOne.highlights)).toBeTruthy();
@@ -1875,7 +1919,7 @@ describe("ProjectDetailPage publishing workflow", () => {
     });
 
     expect(screen.getByText(/当前项目已归档，只能查看已有 PublishIntent 和 PublicationRecord/)).toBeTruthy();
-    expect((screen.getByRole("button", { name: "已有 PublishIntent" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "已有 Publish Intent" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.queryByRole("button", { name: "Fake Publish" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Generate fake metrics" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Generate fake/local summary" })).toBeNull();

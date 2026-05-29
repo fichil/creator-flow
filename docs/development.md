@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 5 real provider feature flag / kill switch 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface、v1.0 Batch 2 internal-only state foundation、v1.0 Batch 3 token exchange boundary、v1.0 Batch 4 internal-only credential storage boundary，以及 v1.0 Batch 5 internal-only real provider controls。当前仓库仍不接真实 Douyin API，不启用真实 provider，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行真实 token exchange，不保存真实 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不新增 encrypted payload storage，不上传、不发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 6 user-confirmed publish intent workflow 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface、v1.0 Batch 2 internal-only state foundation、v1.0 Batch 3 token exchange boundary、v1.0 Batch 4 internal-only credential storage boundary、v1.0 Batch 5 internal-only real provider controls，以及 v1.0 Batch 6 本地 publish intent workflow。当前仓库仍不接真实 Douyin API，不启用真实 provider，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行真实 token exchange，不保存真实 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不新增 encrypted payload storage，不上传、不真实发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -492,6 +492,44 @@ cd ..
 ```
 
 安全扫描必须确认没有真实 token、access_token、refresh_token、secret、client_secret、API key、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、bearer、raw request、raw response、本机绝对路径、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档、测试 deny-list、contract 类别和边界说明中的敏感词只能作为禁止项或扫描项出现，不得包含真实值。
+
+## v1.0 Batch 6 User-Confirmed Publish Intent Workflow 验收
+
+v1.0 Batch 6 允许新增本地 user-confirmed publish intent workflow、metadata-only publish intent schema extension、local-only backend API、frontend Publish Intent UI、backend / frontend tests 和文档，用于在未来真实发布前验证用户显式确认、review state 关联、preflight validation 和 duplicate prevention。本批新增 ADR 0051、publish intent contract 和 publish intent test matrix。
+
+本批必须依赖 Batch 5 real provider controls，`douyin_real` 必须继续默认 disabled / blocked，且不得 fallback 到 `douyin_sandbox`。Publish intent 只能表示本地意图记录，不得触发 provider publish call、upload、scheduled publish、真实指标读取、OAuth URL、token exchange 或 credential storage。
+
+本批必须验证：
+
+- 创建 publish intent 必须要求 `confirm_publish_intent: true`。
+- missing / malformed confirmation 必须被拒绝。
+- publish intent 必须关联同一项目内 approved / ready review item。
+- review item missing、not approved / not ready、media artifact missing / not ready、caption / metadata invalid 必须被安全拒绝。
+- 同一 review item + provider + source type 不得重复创建 active publish intent。
+- valid local fake / sandbox-safe review item 只能创建 metadata-only 本地 publish intent。
+- `douyin_real` 默认 blocked，且不得 fallback 到 `douyin_sandbox`。
+- unsupported provider 必须被拒绝。
+- API response、service result、safe message、repr、日志、测试 fixture 和文档示例不得包含真实 token、access_token、refresh_token、secret、client_secret、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、API key、bearer、raw request、raw response、provider response、upload response 或 publish response。
+- publish intent workflow 不读取真实环境变量密钥，不调用 Douyin API，不调用 socket / requests / httpx / urllib 或任何业务外部服务。
+- 不新增真实 publish adapter、upload route、OAuth start route、OAuth callback route、OAuth URL creation route、真实 token exchange、真实 token storage、真实 credential storage、真实 metrics read 或 frontend OAuth UI。
+
+本批仍不允许调用 Douyin API 或任何业务外部服务，不允许上传视频，不允许真实发布，不允许排期发布，不允许新增 OAuth start route，不允许新增 OAuth callback route，不允许创建 OAuth URL，不允许实现真实 OAuth，不允许实现真实 token exchange，不允许保存 authorization code、access token、refresh token、secret、credential、cookie、session、API key、bearer、raw OAuth state、provider response、upload response 或 publish response，不允许读取真实环境变量密钥，不允许抓取真实指标，不允许启用 `douyin_real`，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
+
+本批本地质量门禁从仓库根目录执行：
+
+```powershell
+git diff --check
+.\scripts\test-backend.ps1
+
+cd .\frontend
+npm.cmd test
+npm.cmd run build
+cd ..
+
+.\scripts\validate-v0.9-poc.ps1
+```
+
+安全扫描必须确认没有真实 token、access_token、refresh_token、secret、client_secret、API key、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、bearer、raw request、raw response、provider response、upload response、publish response、本机绝对路径、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档、测试 deny-list、contract 类别和边界说明中的敏感词只能作为禁止项或扫描项出现，不得包含真实值。
 
 ## v0.5 Release Candidate 质量门禁
 

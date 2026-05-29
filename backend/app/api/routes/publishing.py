@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.db.database import get_db
+from app.publishing import PublishIntentWorkflowError, create_local_publish_intent
 from app.publishers.fake_publisher import FakePublisherProvider
 from app.publishers.publisher import PublishExecutionInput
 from app.schemas.publishing import (
@@ -16,32 +17,21 @@ router = APIRouter()
 def create_publish_intent(project_id: int, payload: PublishIntentCreate, db=Depends(get_db)):
     project = _get_project(db, project_id)
     _ensure_project_mutable(project, "create publish intents")
-    review_draft = _get_review_draft(db, project_id, payload.review_draft_id)
-    if review_draft["review_status"] != "approved":
+    try:
+        return create_local_publish_intent(
+            db,
+            project_id=project_id,
+            review_draft_id=payload.review_draft_id,
+            provider_id=payload.target_platform,
+            title=payload.title,
+            caption=payload.caption,
+            confirm_publish_intent=payload.confirm_publish_intent,
+        )
+    except PublishIntentWorkflowError as exc:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="review draft must be approved before creating a publish intent",
-        )
-
-    row = db.execute(
-        """
-        INSERT INTO publish_intents (
-            project_id, review_draft_id, target_platform, title, caption, publish_status
-        )
-        VALUES (?, ?, ?, ?, ?, 'pending_confirmation')
-        RETURNING id, project_id, review_draft_id, target_platform, title, caption,
-                  publish_status, created_at, updated_at
-        """,
-        (
-            project_id,
-            review_draft["id"],
-            _required_text(payload.target_platform, "target_platform"),
-            _required_text(payload.title, "title"),
-            _required_text(payload.caption, "caption"),
-        ),
-    ).fetchone()
-    db.commit()
-    return dict(row)
+            status_code=exc.status_code,
+            detail=f"{exc.category}: {exc.safe_status_message}",
+        ) from exc
 
 
 @router.get("/{project_id}/publish-intents", response_model=list[PublishIntentResponse])
@@ -50,7 +40,8 @@ def list_publish_intents(project_id: int, db=Depends(get_db)):
     rows = db.execute(
         """
         SELECT id, project_id, review_draft_id, target_platform, title, caption,
-               publish_status, created_at, updated_at
+               source_type, publish_status, confirmation_status, created_at, updated_at,
+               confirmed_at, cancelled_at, safe_status_message, last_status_change_reason
         FROM publish_intents
         WHERE project_id = ?
         ORDER BY created_at DESC, id DESC
@@ -73,16 +64,20 @@ def cancel_publish_intent(project_id: int, publish_intent_id: int, db=Depends(ge
     publish_intent = _get_publish_intent(db, project_id, publish_intent_id)
     if publish_intent["publish_status"] == "cancelled":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="publish intent is already cancelled")
-    if publish_intent["publish_status"] != "pending_confirmation":
+    if publish_intent["publish_status"] not in {"pending_confirmation", "confirmed"}:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="only pending publish intents can be cancelled",
+            detail="only active publish intents can be cancelled",
         )
 
     db.execute(
         """
         UPDATE publish_intents
-        SET publish_status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+        SET publish_status = 'cancelled',
+            cancelled_at = CURRENT_TIMESTAMP,
+            safe_status_message = 'Publish intent cancelled locally; no provider publish was executed.',
+            last_status_change_reason = 'publish_intent_cancelled',
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = ? AND project_id = ?
         """,
         (publish_intent_id, project_id),
@@ -109,7 +104,12 @@ def confirm_publish_intent(project_id: int, publish_intent_id: int, db=Depends(g
     db.execute(
         """
         UPDATE publish_intents
-        SET publish_status = 'confirmed', updated_at = CURRENT_TIMESTAMP
+        SET publish_status = 'confirmed',
+            confirmation_status = 'confirmed',
+            confirmed_at = CURRENT_TIMESTAMP,
+            safe_status_message = 'Publish intent confirmed locally; no provider publish was executed.',
+            last_status_change_reason = 'legacy_pending_publish_intent_confirmed',
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = ? AND project_id = ?
         """,
         (publish_intent_id, project_id),
@@ -217,25 +217,12 @@ def _ensure_project_mutable(project, action: str) -> None:
         )
 
 
-def _get_review_draft(db, project_id: int, review_draft_id: int) -> dict:
-    row = db.execute(
-        """
-        SELECT id, project_id, review_status
-        FROM review_drafts
-        WHERE id = ? AND project_id = ?
-        """,
-        (review_draft_id, project_id),
-    ).fetchone()
-    if row is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="review draft not found")
-    return dict(row)
-
-
 def _get_publish_intent(db, project_id: int, publish_intent_id: int) -> dict:
     row = db.execute(
         """
         SELECT id, project_id, review_draft_id, target_platform, title, caption,
-               publish_status, created_at, updated_at
+               source_type, publish_status, confirmation_status, created_at, updated_at,
+               confirmed_at, cancelled_at, safe_status_message, last_status_change_reason
         FROM publish_intents
         WHERE id = ? AND project_id = ?
         """,
@@ -295,9 +282,3 @@ def _get_publication_record(db, project_id: int, publication_record_id: int) -> 
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="publication record not found")
     return dict(row)
-
-
-def _required_text(value: str | None, field_name: str) -> str:
-    if value is None or not value.strip():
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{field_name} is required")
-    return value.strip()

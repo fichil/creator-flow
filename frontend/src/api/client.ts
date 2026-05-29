@@ -226,11 +226,17 @@ export type PublishIntent = {
   project_id: number;
   review_draft_id: number;
   target_platform: string;
+  source_type: "fake_local" | "sandbox" | "real";
   title: string;
   caption: string;
-  publish_status: "pending_confirmation" | "confirmed" | "cancelled";
+  publish_status: "pending_confirmation" | "confirmed" | "blocked" | "cancelled";
+  confirmation_status: "confirmed" | "missing" | "invalid";
   created_at: string;
   updated_at: string;
+  confirmed_at: string | null;
+  cancelled_at: string | null;
+  safe_status_message: string;
+  last_status_change_reason: string;
 };
 
 export type PublicationRecord = {
@@ -723,7 +729,13 @@ export function getPublishIntents(projectId: number): Promise<PublishIntent[]> {
 
 export function createPublishIntent(
   projectId: number,
-  payload: { review_draft_id: number; target_platform: string; title: string; caption: string },
+  payload: {
+    review_draft_id: number;
+    target_platform: string;
+    title: string;
+    caption: string;
+    confirm_publish_intent: true;
+  },
 ): Promise<PublishIntent> {
   return request<PublishIntent>(`/api/projects/${projectId}/publish-intents`, {
     method: "POST",

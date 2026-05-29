@@ -88,13 +88,14 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
     try {
       await createPublishIntent(projectId, {
         review_draft_id: reviewDraft.id,
-        target_platform: "douyin",
+        target_platform: "fake_local",
         title: reviewDraft.title,
         caption: reviewDraft.draft_summary,
+        confirm_publish_intent: true,
       });
       await reloadPublishingWorkflow();
     } catch (err) {
-      setError(formatPublishingError(err, "创建 PublishIntent 失败"));
+      setError(formatPublishingError(err, "创建 Publish Intent 失败"));
     } finally {
       setAction(null);
     }
@@ -195,16 +196,16 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
   return (
     <section className="mt-8">
       <div>
-        <h2 className="text-lg font-semibold text-stone-950">Publishing / Fake Publishing</h2>
+        <h2 className="text-lg font-semibold text-stone-950">Publish Intent Workflow</h2>
         <p className="mt-1 text-sm text-stone-600">
-          本区块只是本地 fake publishing workflow；不会上传、发布、排期，也不会调用 Douyin。Succeeded
-          仅表示本地 fake execution 成功，不代表真实平台发布成功。
+          本区块只记录本地 Publish Intent；不会上传、发布、排期，也不会调用 Douyin。用户点击确认创建后，
+          系统只保存安全元数据，`douyin_real` 仍保持禁用。
         </p>
       </div>
 
       {isArchived && (
         <p className="mt-3 rounded border border-stone-200 bg-stone-100 p-3 text-sm text-stone-700">
-          当前项目已归档，只能查看已有 PublishIntent 和 PublicationRecord，不能继续创建、确认、取消或 Fake Publish。
+          当前项目已归档，只能查看已有 PublishIntent 和 PublicationRecord，不能继续创建、确认、取消或本地 fake action。
         </p>
       )}
       {error && <p className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -216,7 +217,7 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
             <h3 className="text-sm font-semibold text-stone-950">Approved Review Drafts</h3>
             {approvedDrafts.length === 0 ? (
               <p className="mt-3 rounded border border-dashed border-stone-300 bg-stone-50 p-3 text-sm text-stone-600">
-                需要先通过 Review Draft，才能创建 PublishIntent。
+                需要先通过 Review Draft，并由后端通过本地 media preflight，才能创建 Publish Intent。
               </p>
             ) : (
               <div className="mt-3 space-y-3">
@@ -240,7 +241,11 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
                         type="button"
                         onClick={() => handleCreate(draft)}
                       >
-                        {hasActiveIntent ? "已有 PublishIntent" : creating ? "创建中..." : "创建 PublishIntent"}
+                        {hasActiveIntent
+                          ? "已有 Publish Intent"
+                          : creating
+                            ? "创建中..."
+                            : "确认创建 Publish Intent"}
                       </button>
                     </div>
                   );
@@ -338,8 +343,16 @@ function PublishIntentCard({
           <dd className="mt-1 text-stone-800">{publishIntent.target_platform}</dd>
         </div>
         <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Source type</dt>
+          <dd className="mt-1 text-stone-800">{publishIntent.source_type}</dd>
+        </div>
+        <div>
           <dt className="text-xs font-semibold uppercase text-stone-500">Publish status</dt>
           <dd className="mt-1 text-stone-800">{formatStatus(publishIntent.publish_status)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-stone-500">Confirmation</dt>
+          <dd className="mt-1 text-stone-800">{formatStatus(publishIntent.confirmation_status)}</dd>
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase text-stone-500">更新时间</dt>
@@ -351,6 +364,9 @@ function PublishIntentCard({
         <p className="text-xs font-semibold uppercase text-stone-500">Caption</p>
         <p className="mt-1 whitespace-pre-wrap text-stone-800">{publishIntent.caption}</p>
       </div>
+      <p className="mt-3 rounded border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700">
+        {publishIntent.safe_status_message}
+      </p>
 
       {!isArchived && pending && (
         <div className="mt-4 flex flex-wrap gap-2">
@@ -386,7 +402,7 @@ function PublishIntentCard({
 
       {confirmed && records.length === 0 && (
         <p className="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          已确认，但尚未找到 PublicationRecord；请先通过后端 confirm workflow 创建占位记录。
+          已确认本地 Publish Intent，但尚未执行任何 provider publish；Batch 6 不自动创建发布执行记录。
         </p>
       )}
 
@@ -495,7 +511,7 @@ function getPublishStatusClass(status: PublishIntent["publish_status"]) {
   if (status === "confirmed") {
     return "rounded border border-teal-300 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800";
   }
-  if (status === "cancelled") {
+  if (status === "cancelled" || status === "blocked") {
     return "rounded border border-red-300 bg-red-50 px-3 py-1 text-xs font-semibold text-red-800";
   }
   return "rounded border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800";

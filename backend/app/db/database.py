@@ -13,6 +13,7 @@ def init_db(settings: Settings) -> None:
         connection.executescript(SCHEMA_SQL)
         _ensure_archived_status(connection)
         _ensure_preview_artifact_columns(connection)
+        _ensure_publish_intent_workflow_columns(connection)
 
 
 def _ensure_archived_status(connection: sqlite3.Connection) -> None:
@@ -108,6 +109,29 @@ def _ensure_preview_artifact_columns(connection: sqlite3.Connection) -> None:
         """
     )
     connection.execute("PRAGMA foreign_keys = ON")
+
+
+def _ensure_publish_intent_workflow_columns(connection: sqlite3.Connection) -> None:
+    table = connection.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'publish_intents'"
+    ).fetchone()
+    if table is None:
+        return
+
+    columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(publish_intents)").fetchall()
+    }
+    column_definitions = {
+        "source_type": "TEXT NOT NULL DEFAULT 'fake_local'",
+        "confirmation_status": "TEXT NOT NULL DEFAULT 'missing'",
+        "confirmed_at": "TEXT",
+        "cancelled_at": "TEXT",
+        "safe_status_message": "TEXT NOT NULL DEFAULT 'Local publish intent metadata only.'",
+        "last_status_change_reason": "TEXT NOT NULL DEFAULT 'legacy_publish_intent_metadata'",
+    }
+    for column_name, definition in column_definitions.items():
+        if column_name not in columns:
+            connection.execute(f"ALTER TABLE publish_intents ADD COLUMN {column_name} {definition}")
 
 
 def connect_db(settings: Settings) -> sqlite3.Connection:
