@@ -124,6 +124,37 @@ function Test-LocalOnlySchemaForbiddenColumns {
     }
 }
 
+function Test-RcClosureReadiness {
+    $requiredFiles = @(
+        "docs/releases/v1.0-rc-closure-audit.md",
+        "docs/releases/v1.0-tag-readiness-checklist.md",
+        "docs/releases/v1.0-merge-readiness-checklist.md"
+    )
+
+    foreach ($path in $requiredFiles) {
+        $fullPath = Join-Path $RepoRoot $path
+        if (-not (Test-Path $fullPath)) {
+            throw "Required RC closure artifact missing: $path"
+        }
+    }
+
+    $rcChecklistPath = Join-Path $RepoRoot "docs/releases/v1.0-user-test-rc-checklist.md"
+    $rcChecklist = Get-Content -Raw -Encoding utf8 $rcChecklistPath
+    if ($rcChecklist -notmatch "7b70ae6bf647c15018a29fbc040dcd4ceeac50e9") {
+        throw "RC checklist does not contain the Batch 10 commit SHA."
+    }
+
+    $finalTag = git tag --list "v1.0.0"
+    if ($finalTag) {
+        throw "Forbidden final tag exists: v1.0.0"
+    }
+
+    $rcTags = git tag --list "v1.0.0-rc*"
+    if ($rcTags) {
+        throw "Forbidden RC tag exists for this closure task."
+    }
+}
+
 Push-Location $RepoRoot
 try {
     Write-Host "Validating v1.0 user test release candidate package"
@@ -169,6 +200,10 @@ try {
         Test-LocalOnlySchemaForbiddenColumns
     }
 
+    Invoke-ValidationStep "RC closure readiness checks" {
+        Test-RcClosureReadiness
+    }
+
     $reviewPaths = @(Get-TrackedReviewPaths)
 
     Invoke-RgReviewScan `
@@ -209,7 +244,7 @@ try {
 
     Invoke-RgReviewScan `
         -Name "required RC artifact scan" `
-        -Pattern "(0055-v1\.0-user-test-readiness-release-candidate|v1\.0-user-test-rc-checklist|v1\.0-user-test-release-notes-draft|v1\.0-pr-description-draft|v1\.0-user-test-guide|v1\.0-user-test-rollback-disablement|v1\.0-user-test-rc-test-matrix)" `
+        -Pattern "(0055-v1\.0-user-test-readiness-release-candidate|v1\.0-user-test-rc-checklist|v1\.0-rc-closure-audit|v1\.0-tag-readiness-checklist|v1\.0-merge-readiness-checklist|v1\.0-user-test-release-notes-draft|v1\.0-pr-description-draft|v1\.0-user-test-guide|v1\.0-user-test-rollback-disablement|v1\.0-user-test-rc-test-matrix)" `
         -Paths @("README.md", "README.en.md", "docs", "scripts") `
         -WarnOnHit
 
