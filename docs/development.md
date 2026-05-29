@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 8 publish status reconciliation foundation 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface、v1.0 Batch 2 internal-only state foundation、v1.0 Batch 3 token exchange boundary、v1.0 Batch 4 internal-only credential storage boundary、v1.0 Batch 5 internal-only real provider controls、v1.0 Batch 6 本地 publish intent workflow、v1.0 Batch 7 guarded publish attempt foundation，以及 v1.0 Batch 8 本地 status reconciliation foundation。当前仓库仍不接真实 Douyin API，不启用真实 provider，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行真实 token exchange，不保存真实 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不新增 encrypted payload storage，不查询真实 Douyin 状态，不上传、不真实发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 10 user test readiness / release candidate package 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface、v1.0 Batch 2 internal-only state foundation、v1.0 Batch 3 token exchange boundary、v1.0 Batch 4 internal-only credential storage boundary、v1.0 Batch 5 internal-only real provider controls、v1.0 Batch 6 本地 publish intent workflow、v1.0 Batch 7 guarded publish attempt foundation、v1.0 Batch 8 本地 status reconciliation foundation、v1.0 Batch 9 limited metrics snapshot foundation，以及 v1.0 Batch 10 RC readiness package。当前仓库仍不接真实 Douyin API，不启用真实 provider，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行真实 token exchange，不保存真实 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不新增 encrypted payload storage，不查询真实 Douyin 状态，不上传、不真实发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -762,6 +762,35 @@ npm.cmd run build
 cd ..
 
 .\scripts\validate-v0.9-poc.ps1
+```
+
+## v1.0 Batch 10 User Test Readiness / Release Candidate 验收
+
+v1.0 Batch 10 只允许新增和更新 user test readiness / release candidate package：ADR 0055、RC checklist、release notes draft、PR description draft、user test guide、rollback / disablement runbook、RC test matrix、文档一致性更新，以及可选本地验证脚本。本批不新增业务平台能力，不新增 DB schema，不新增 API route，不创建正式 v1.0 tag，也不创建或修改 `v1.0.0` tag。
+
+本批必须确认 Batch 0-9 的 local-only / metadata-only / guarded foundation 已有验收材料，并且所有真实外部能力仍默认 blocked。`douyin_real` 必须继续 disabled / blocked，且不得 fallback 到 `douyin_sandbox`。所有本地 schema、API response、UI、日志、fixtures、文档示例和测试输出都不得保存或展示真实 token、access_token、refresh_token、secret、client_secret、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、API key、bearer、raw request、raw response、provider response、upload response、publish response、status response、metrics response、external response 或 Douyin response。
+
+本批必须验证：
+
+- ADR 0055、RC checklist、release notes draft、PR draft、user test guide、rollback / disablement runbook 和 RC test matrix 均存在。
+- README、README.en、roadmap、architecture、product spec、development docs、v1.0 plan、v1-to-v2 roadmap、Batch 9 contract / test matrix 和 readiness checklist 均声明 Batch 10 是 RC readiness package，不是正式 release tag。
+- 文档仍明确没有真实 OAuth、OAuth URL、OAuth start route、OAuth callback route、真实 token exchange、真实 token storage、真实 credential storage、真实 Douyin API call、真实上传、真实发布、排期发布、真实状态查询或真实指标读取。
+- 文案不得暗示真实 Douyin 授权、真实发布、真实状态查询或真实指标读取已经可用。
+- 安全扫描、schema forbidden column scan、UI wording scan、external service call scan 和 forbidden completion wording scan 通过或只有已解释的非阻塞提示。
+
+本批本地质量门禁从仓库根目录执行：
+
+```powershell
+git diff --check
+.\scripts\test-backend.ps1
+
+cd .\frontend
+npm.cmd test
+npm.cmd run build
+cd ..
+
+.\scripts\validate-v0.9-poc.ps1
+.\scripts\validate-v1.0-user-test-rc.ps1
 ```
 
 ## v0.8 Batch 1 Provider & Credential Security documentation foundation 验收

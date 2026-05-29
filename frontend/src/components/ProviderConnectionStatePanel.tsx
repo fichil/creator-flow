@@ -67,8 +67,8 @@ export function ProviderConnectionStatePanel() {
           <h2 className="text-lg font-semibold text-stone-950">Provider Connection State</h2>
           <p className="mt-1 max-w-3xl text-sm text-stone-600">
             Read-only Provider Connection State metadata for connection_status, authorization_status, and
-            sensitive_storage_status. It does not mean real Douyin is connected, OAuth is implemented, token, secret,
-            API key, or credential material is stored, real metrics are fetched, or upload / publish / scheduling is
+            sensitive_storage_status. It does not mean real Douyin is connected, OAuth runtime exists, token, secret,
+            API key, or credential material is stored, real metrics read exists, or upload / publish / scheduling is
             available. Connection, authorization, refresh, revoke, and disconnect actions are not provided here.
           </p>
         </div>

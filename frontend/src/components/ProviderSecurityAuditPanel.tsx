@@ -74,8 +74,8 @@ export function ProviderSecurityAuditPanel() {
           <p className="mt-1 max-w-3xl text-sm text-stone-600">
             Read-only Provider Security Audit Event metadata. This panel only displays redacted / safe audit metadata
             for event_type, event_status, event_severity, actor_type, redaction_status, safe_event_message,
-            safe_metadata, and boundary_notes. It does not mean real Douyin is connected, OAuth or an OAuth callback is
-            implemented, token, secret, API key, authorization code, OAuth client secret, or credential material is
+            safe_metadata, and boundary_notes. It does not mean real Douyin is connected, OAuth runtime or an OAuth
+            callback exists, token, secret, API key, authorization code, OAuth client secret, or credential material is
             stored, or raw request, raw response, or raw payload is stored or displayed. Production SIEM, compliance
             archive, external log shipping, connection, authorization, refresh, revoke, disconnect, upload, publish, and
             scheduling actions are not provided here.

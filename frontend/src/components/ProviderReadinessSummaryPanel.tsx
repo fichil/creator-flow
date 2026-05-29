@@ -110,8 +110,8 @@ export function ProviderReadinessSummaryPanel() {
           <p className="mt-1 max-w-3xl text-sm text-stone-600">
             Read-only Provider Integration Readiness Summary metadata. This panel only displays non-sensitive readiness
             metadata aggregated from Provider Registry, Connection State, Credential Reference, Security Audit, OAuth
-            Boundary, and Token Lifecycle Boundary. It does not mean real Douyin is connected, v0.9 POC is complete,
-            OAuth or an OAuth callback route is implemented, OAuth state storage or token exchange exists, or a real
+            Boundary, and Token Lifecycle Boundary. It does not mean real Douyin is connected, v0.9 POC readiness is
+            certified, OAuth runtime or an OAuth callback route exists, OAuth state storage or token exchange exists, or a real
             provider authorization URL can be generated.
           </p>
           <p className="mt-2 max-w-3xl text-xs text-stone-500">

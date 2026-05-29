@@ -1,0 +1,237 @@
+param(
+    [switch]$SkipTests
+)
+
+$ErrorActionPreference = "Stop"
+
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$Warnings = New-Object System.Collections.Generic.List[string]
+
+function Invoke-ValidationStep {
+    param(
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][scriptblock]$ScriptBlock
+    )
+
+    Write-Host ""
+    Write-Host "== $Name =="
+    Set-Location $RepoRoot
+    try {
+        & $ScriptBlock
+    } finally {
+        Set-Location $RepoRoot
+    }
+    if ($LASTEXITCODE -ne 0) {
+        throw "Validation step failed: $Name"
+    }
+    Write-Host "PASS $Name"
+}
+
+function Invoke-RgReviewScan {
+    param(
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Pattern,
+        [Parameter(Mandatory = $true)][string[]]$Paths,
+        [switch]$WarnOnHit,
+        [switch]$FailOnHit
+    )
+
+    Write-Host ""
+    Write-Host "== $Name =="
+    $output = & rg -n --pcre2 $Pattern @Paths 2>$null
+    $exitCode = $LASTEXITCODE
+
+    if ($exitCode -eq 0) {
+        $output | Select-Object -First 120 | ForEach-Object { Write-Host $_ }
+        if ($output.Count -gt 120) {
+            Write-Host "... scan output truncated after 120 lines"
+        }
+        if ($FailOnHit) {
+            throw "$Name found forbidden matches."
+        }
+        if ($WarnOnHit) {
+            $Warnings.Add("$Name produced matches that require human review.") | Out-Null
+            Write-Warning "$Name produced matches that require human review."
+        }
+        return
+    }
+
+    if ($exitCode -eq 1) {
+        Write-Host "No matches."
+        return
+    }
+
+    throw "$Name failed to run rg."
+}
+
+function Get-TrackedReviewPaths {
+    $paths = @(git ls-files) + @(git ls-files --others --exclude-standard)
+    return $paths | Where-Object {
+        $_ -and
+        (Test-Path $_) -and
+        ($_ -notmatch '(^|/)(node_modules|dist|\.venv|uploads|runtime)(/|$)') -and
+        ($_ -notmatch '\.(sqlite|sqlite3|db)$')
+    }
+}
+
+function Test-LocalOnlySchemaForbiddenColumns {
+    $modelsPath = Join-Path $RepoRoot "backend/app/db/models.py"
+    $content = Get-Content -Raw -Encoding utf8 $modelsPath
+    $tables = @(
+        "provider_oauth_states",
+        "provider_credential_references",
+        "publish_intents",
+        "publish_attempts",
+        "publish_status_reconciliations",
+        "publish_status_snapshots",
+        "publish_metrics_snapshots"
+    )
+    $forbidden = @(
+        "raw_authorization_code",
+        "authorization_code",
+        "raw_state",
+        "state_value",
+        "oauth_state",
+        "access_token",
+        "refresh_token",
+        "client_secret",
+        "api_key",
+        "cookie",
+        "session",
+        "bearer",
+        "raw_request",
+        "raw_response",
+        "provider_response",
+        "upload_response",
+        "publish_response",
+        "status_response",
+        "metrics_response",
+        "external_response",
+        "douyin_response"
+    )
+
+    foreach ($table in $tables) {
+        $pattern = "CREATE TABLE IF NOT EXISTS $table \((?s).*?\n\);"
+        $match = [regex]::Match($content, $pattern)
+        if (-not $match.Success) {
+            throw "Schema table not found: $table"
+        }
+        foreach ($term in $forbidden) {
+            if ($match.Value -match "(?m)^\s*$term\s") {
+                throw "Forbidden column '$term' found in $table"
+            }
+        }
+    }
+}
+
+Push-Location $RepoRoot
+try {
+    Write-Host "Validating v1.0 user test release candidate package"
+    Write-Host "Repository: $RepoRoot"
+
+    Invoke-ValidationStep "git diff --check" {
+        git diff --check
+    }
+
+    if ($SkipTests) {
+        $Warnings.Add("Automated tests were skipped by request.") | Out-Null
+        Write-Warning "Automated tests were skipped by request."
+    } else {
+        Invoke-ValidationStep "backend tests" {
+            Push-Location ".\backend"
+            try {
+                .\.venv\Scripts\python.exe -m pytest -q
+            } finally {
+                Pop-Location
+            }
+        }
+
+        Invoke-ValidationStep "frontend tests" {
+            Push-Location ".\frontend"
+            try {
+                npm.cmd run test -- --run
+            } finally {
+                Pop-Location
+            }
+        }
+
+        Invoke-ValidationStep "frontend build" {
+            Push-Location ".\frontend"
+            try {
+                npm.cmd run build
+            } finally {
+                Pop-Location
+            }
+        }
+    }
+
+    Invoke-ValidationStep "local-only schema forbidden column scan" {
+        Test-LocalOnlySchemaForbiddenColumns
+    }
+
+    $reviewPaths = @(Get-TrackedReviewPaths)
+
+    Invoke-RgReviewScan `
+        -Name "high-confidence sensitive value scan" `
+        -Pattern "(sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY-----|Bearer\s+[A-Za-z0-9._~+/=-]{20,}|api[_-]?key\s*[:=]\s*['""][A-Za-z0-9._-]{16,}|access[_-]?token\s*[:=]\s*['""][A-Za-z0-9._-]{16,}|refresh[_-]?token\s*[:=]\s*['""][A-Za-z0-9._-]{16,}|client[_-]?secret\s*[:=]\s*['""][A-Za-z0-9._-]{16,})" `
+        -Paths $reviewPaths `
+        -FailOnHit
+
+    $forbiddenCapabilityPattern = @(
+        "v1\.0\s+final\s+released",
+        "v1\.0\.0\s+released",
+        "v1\.0\s+is\s+complete",
+        "v1\.0\s+completed",
+        "real\s+Douyin\s+OAuth\s+implemented",
+        "real\s+Douyin\s+publish\s+is\s+available",
+        "real\s+Douyin\s+metrics\s+fetched",
+        "real\s+status\s+query\s+enabled",
+        "OAuth\s+is\s+implemented"
+    ) -join "|"
+
+    Invoke-RgReviewScan `
+        -Name "forbidden affirmative capability wording scan" `
+        -Pattern "($forbiddenCapabilityPattern)" `
+        -Paths @("README.md", "README.en.md", "docs", "frontend", "backend") `
+        -FailOnHit
+
+    Invoke-RgReviewScan `
+        -Name "readiness wording review scan" `
+        -Pattern "(production[-]ready|commercial[-]ready|SaaS[-]ready)" `
+        -Paths @("README.md", "README.en.md", "docs", "frontend", "backend") `
+        -WarnOnHit
+
+    Invoke-RgReviewScan `
+        -Name "business external call route review scan" `
+        -Pattern "(oauth/start|oauth/callback|authorization-url|oauth-url|token-exchange|credential-storage|scheduled-publish|metrics-query|status-query|douyin_real/.*/publish|douyin_real/.*/metrics)" `
+        -Paths @("backend/app/api/routes", "frontend/src", "docs") `
+        -WarnOnHit
+
+    Invoke-RgReviewScan `
+        -Name "required RC artifact scan" `
+        -Pattern "(0055-v1\.0-user-test-readiness-release-candidate|v1\.0-user-test-rc-checklist|v1\.0-user-test-release-notes-draft|v1\.0-pr-description-draft|v1\.0-user-test-guide|v1\.0-user-test-rollback-disablement|v1\.0-user-test-rc-test-matrix)" `
+        -Paths @("README.md", "README.en.md", "docs", "scripts") `
+        -WarnOnHit
+
+    Write-Host ""
+    Write-Host "== git status --short =="
+    $status = git status --short
+    if ($status) {
+        $status | ForEach-Object { Write-Host $_ }
+        $Warnings.Add("git status --short is not empty; this is expected before committing intended Batch 10 files but must be clean after commit.") | Out-Null
+        Write-Warning "git status --short is not empty; ensure only intended Batch 10 files are staged and committed."
+    } else {
+        Write-Host "Clean working tree."
+    }
+
+    Write-Host ""
+    Write-Host "== verification summary =="
+    if ($Warnings.Count -gt 0) {
+        Write-Host "Completed with warnings that require human review:"
+        $Warnings | ForEach-Object { Write-Host "- $_" }
+    } else {
+        Write-Host "Completed with no warnings."
+    }
+} finally {
+    Pop-Location
+}

@@ -86,7 +86,7 @@ export function ProviderTokenLifecyclePanel() {
           <p className="mt-1 max-w-3xl text-sm text-stone-600">
             Read-only Provider Token Lifecycle Boundary metadata. This panel only displays token lifecycle / token
             storage / refresh / expiry / revoke / disconnect / rotation / error redaction / audit event policy and
-            status metadata. It does not mean real Douyin is connected, OAuth or an OAuth callback route is implemented,
+            status metadata. It does not mean real Douyin is connected, OAuth runtime or an OAuth callback route exists,
             OAuth state storage or token exchange exists, or a real provider authorization URL can be generated. It does
             not store access token, refresh token, token value, secret, API key, authorization code, OAuth client
             secret, OAuth state value, credential material, raw request, raw response, raw payload, token expiry value,

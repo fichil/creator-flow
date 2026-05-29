@@ -135,7 +135,7 @@ try {
 
     Invoke-RgScan `
         -Name "completion wording scan" `
-        -Pattern "v0\.9 POC completed|v1\.0 completed|v1\.5 completed|v2\.0 completed|production-ready|commercial-ready|SaaS-ready" `
+        -Pattern "v0\.9 POC completed|v1\.0 completed|v1\.5 completed|v2\.0 completed|production[-]ready|commercial[-]ready|SaaS[-]ready" `
         -Paths @("README.md", "README.en.md", "docs", "frontend", "backend") `
         -WarnOnHit
 

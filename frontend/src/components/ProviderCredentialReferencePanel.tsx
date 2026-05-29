@@ -74,7 +74,7 @@ export function ProviderCredentialReferencePanel() {
           <h2 className="text-lg font-semibold text-stone-950">Provider Credential References</h2>
           <p className="mt-1 max-w-3xl text-sm text-stone-600">
             Read-only Provider Credential Reference metadata for reference_status, storage_status, and
-            redaction_policy_status. It does not mean real Douyin is connected, OAuth is implemented, token, secret,
+            redaction_policy_status. It does not mean real Douyin is connected, OAuth runtime exists, token, secret,
             API key, authorization code, OAuth client secret, or credential material is stored. Secret input, token
             viewer, credential management, connection, authorization, refresh, revoke, disconnect, upload, publish, and
             scheduling actions are not provided here.

@@ -85,7 +85,7 @@ export function ProviderOAuthBoundaryPanel() {
           <p className="mt-1 max-w-3xl text-sm text-stone-600">
             Read-only Provider OAuth Boundary metadata. This panel only displays OAuth state / callback / CSRF /
             redirect / token exchange / token storage / error redaction / audit event policy and status metadata. It
-            does not mean real Douyin is connected, OAuth or an OAuth callback route is implemented, OAuth state storage
+            does not mean real Douyin is connected, OAuth runtime or an OAuth callback route exists, OAuth state storage
             or token exchange exists, or a real provider authorization URL can be generated. It does not store token,
             secret, API key, authorization code, OAuth client secret, OAuth state value, credential material, raw
             request, raw response, or raw payload. Connection, authorization, OAuth start, callback, token exchange,
