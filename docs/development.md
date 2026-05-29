@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 1 OAuth boundary / callback contract 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface，以及 v1.0 Batch 1 docs-only contract 边界。当前仓库仍不接真实 Douyin API，不实现 OAuth，不新增 OAuth callback route，不新增 OAuth state storage，不执行 token exchange，不保存 token / secret / API key / credential / authorization code / OAuth state，不上传、不发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 2 OAuth state storage / anti-replay foundation 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface，以及 v1.0 Batch 2 internal-only state foundation 边界。当前仓库仍不接真实 Douyin API，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行 token exchange，不保存 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不上传、不发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -327,7 +327,7 @@ v1.0 Batch 1 是 docs-only contract 批次。本批只允许新增和更新 OAut
 本批必须明确：
 
 - ADR 0046 和 callback contract 只定义未来实现约束，不代表当前已有 route。
-- 未来 callback route 必须等待 Batch 2 OAuth state storage / anti-replay foundation。
+- 未来 callback route 必须依赖 Batch 2 OAuth state storage / anti-replay foundation，且仍需后续单独 route 批次批准。
 - 未来 token exchange 必须等待 Batch 3。
 - 未来 credential storage 必须等待 Batch 4。
 - 未来 real OAuth runtime enablement 必须等待 Batch 5 feature flag / kill switch。
@@ -349,6 +349,43 @@ cd ..
 ```
 
 安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、OAuth state、cookie、session、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档中的敏感字段只能作为边界说明、禁止项、contract 类别或扫描项出现，不得包含真实值。
+
+## v1.0 Batch 2 OAuth State Storage / Anti-Replay Foundation 验收
+
+v1.0 Batch 2 允许新增最小 backend foundation 和 digest-only 数据库 schema，用于未来 OAuth callback route 的 state storage / anti-replay 前置安全依赖。本批新增 ADR 0047、state storage contract、state storage test matrix、`provider_oauth_states` 表、internal-only OAuth state foundation service 和 backend tests。
+
+本批只允许保存 state digest 和 provider_id、source_type、state_status、purpose、created_at、expires_at、consumed_at、updated_at、safe_status_message、last_status_change_reason 等安全元数据。raw state 只能在内部创建流程中一次性返回给未来 handoff 使用，不得持久化、记录日志、进入 audit、进入 fixture、进入错误响应或通过 API / UI 暴露。
+
+本批必须验证：
+
+- `provider_oauth_states` 表存在且不包含 raw state、authorization code、token、secret、credential、cookie、session、raw request 或 raw response 字段。
+- pending state 只能 consume 一次。
+- consumed state 重复 consume 必须被拒绝为 replayed / invalid。
+- expired state 必须被拒绝并安全标记。
+- missing / malformed state 必须安全失败。
+- provider mismatch 和 unsupported provider 必须安全失败。
+- `fake_local`、`douyin_sandbox` 和 `douyin_real` source separation 不能混淆。
+- `douyin_real` 不允许 fallback 到 `douyin_sandbox`。
+- 日志、audit、error response、safe status message 和测试 fixture 不得出现真实 token、secret、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、API key 或平台原始 payload。
+- state service 不读取真实环境变量密钥，不调用 Douyin API 或任何业务外部服务。
+
+本批仍不允许新增 OAuth start route，不允许新增 OAuth callback route，不允许创建 OAuth URL，不允许实现真实 OAuth runtime，不允许 token exchange，不允许 token storage，不允许 credential storage，不允许新增 frontend OAuth UI，不允许调用 Douyin API 或业务外部服务，不允许上传、不发布、不排期发布，不允许抓取真实指标，不允许启用 `douyin_real`，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
+
+本批本地质量门禁从仓库根目录执行：
+
+```powershell
+git diff --check
+.\scripts\test-backend.ps1
+
+cd .\frontend
+npm.cmd test
+npm.cmd run build
+cd ..
+
+.\scripts\validate-v0.9-poc.ps1
+```
+
+安全扫描必须确认没有真实 token、secret、API key、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、bearer、raw request、raw response、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档、测试 deny-list 和边界说明中的敏感词只能作为禁止项、contract 类别或扫描项出现，不得包含真实值。
 
 ## v0.5 Release Candidate 质量门禁
 

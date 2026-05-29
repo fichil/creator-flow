@@ -380,6 +380,24 @@ CREATE TABLE IF NOT EXISTS provider_oauth_boundaries (
     CHECK (audit_event_policy_status IN ('metadata_only', 'planned', 'not_required'))
 );
 
+CREATE TABLE IF NOT EXISTS provider_oauth_states (
+    oauth_state_id TEXT PRIMARY KEY,
+    provider_id TEXT NOT NULL,
+    source_type TEXT NOT NULL,
+    state_digest TEXT NOT NULL UNIQUE,
+    state_status TEXT NOT NULL,
+    purpose TEXT NOT NULL DEFAULT 'authorization',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TEXT NOT NULL,
+    consumed_at TEXT,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    safe_status_message TEXT NOT NULL,
+    last_status_change_reason TEXT NOT NULL DEFAULT 'initial_state_created',
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (state_status IN ('pending', 'consumed', 'expired', 'revoked')),
+    CHECK (purpose IN ('authorization'))
+);
+
 CREATE TABLE IF NOT EXISTS provider_token_lifecycle_boundaries (
     provider_id TEXT PRIMARY KEY,
     source_type TEXT NOT NULL,
@@ -736,6 +754,15 @@ ON publication_metric_review_summaries (publication_record_id, created_at DESC, 
 
 CREATE INDEX IF NOT EXISTS idx_publication_metric_review_summaries_project_id_created_at
 ON publication_metric_review_summaries (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_provider_oauth_states_provider_status_expires
+ON provider_oauth_states (provider_id, state_status, expires_at);
+
+CREATE INDEX IF NOT EXISTS idx_provider_oauth_states_state_digest
+ON provider_oauth_states (state_digest);
+
+CREATE INDEX IF NOT EXISTS idx_provider_oauth_states_expires_at
+ON provider_oauth_states (expires_at);
 
 CREATE INDEX IF NOT EXISTS idx_topic_generation_runs_project_id_created_at
 ON topic_generation_runs (project_id, created_at DESC, id DESC);
