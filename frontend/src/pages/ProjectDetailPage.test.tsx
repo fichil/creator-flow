@@ -9,6 +9,7 @@ import type {
   PublicationMetricReviewSummary,
   PublicationMetricSnapshot,
   PublicationRecord,
+  PublishAttempt,
   PublishIntent,
   ProjectDetail,
   RenderJob,
@@ -334,6 +335,24 @@ const publicationRecordSecondSucceeded: PublicationRecord = {
   external_publication_id: "fake-publication-1802",
 };
 
+const publishAttemptCreated: PublishAttempt = {
+  id: 1851,
+  project_id: 1,
+  publish_intent_id: 1702,
+  review_draft_id: 1502,
+  provider_id: "fake_local",
+  source_type: "fake_local",
+  attempt_status: "created",
+  guard_status: "passed_simulated",
+  external_call_status: "not_called",
+  created_at: "2026-05-26T08:29:30Z",
+  updated_at: "2026-05-26T08:29:30Z",
+  completed_at: null,
+  safe_status_message:
+    "Guarded publish attempt recorded locally; no upload, external publish, scheduled publish, or provider response was executed.",
+  last_status_change_reason: "batch7_guarded_publish_attempt_created",
+};
+
 const metricSnapshotOne: PublicationMetricSnapshot = {
   id: 1901,
   project_id: 1,
@@ -463,6 +482,7 @@ type ServerOptions = {
   subtitleDrafts?: SubtitleDraft[];
   reviewDrafts?: ReviewDraft[];
   publishIntents?: PublishIntent[];
+  publishAttempts?: PublishAttempt[];
   publicationRecords?: Record<number, PublicationRecord[]>;
   publicationMetrics?: Record<number, PublicationMetricSnapshot[]>;
   publicationMetricReviewSummaries?: Record<number, PublicationMetricReviewSummary[]>;
@@ -475,6 +495,7 @@ type ServerOptions = {
   createRenderError?: string;
   createSubtitleDraftError?: string;
   createPublishIntentError?: string;
+  createPublishAttemptError?: string;
   createMetricError?: string;
   createMetricReviewSummaryError?: string;
   selectError?: string;
@@ -501,6 +522,7 @@ function installFetchMock(options: ServerOptions = {}) {
   let subtitleDrafts = [...(options.subtitleDrafts ?? [])];
   let reviewDrafts = [...(options.reviewDrafts ?? [])];
   let publishIntents = [...(options.publishIntents ?? [])];
+  let publishAttempts = [...(options.publishAttempts ?? [])];
   let publicationRecordsByIntentId: Record<number, PublicationRecord[]> = Object.fromEntries(
     Object.entries(options.publicationRecords ?? {}).map(([intentId, records]) => [Number(intentId), [...records]]),
   );
@@ -549,6 +571,9 @@ function installFetchMock(options: ServerOptions = {}) {
     }
     if (method === "GET" && url.pathname === "/api/projects/1/publish-intents") {
       return jsonResponse(publishIntents);
+    }
+    if (method === "GET" && url.pathname === "/api/projects/1/publish-attempts") {
+      return jsonResponse(publishAttempts);
     }
     const listPublicationRecordsMatch = url.pathname.match(
       /^\/api\/projects\/1\/publish-intents\/(\d+)\/publication-records$/,
@@ -972,6 +997,26 @@ function installFetchMock(options: ServerOptions = {}) {
       }));
       return jsonResponse(publishIntents.find((intent) => intent.id === publishIntentId));
     }
+    const createPublishAttemptMatch = url.pathname.match(/^\/api\/projects\/1\/publish-intents\/(\d+)\/attempts$/);
+    if (method === "POST" && createPublishAttemptMatch) {
+      if (options.createPublishAttemptError) {
+        return jsonResponse({ detail: options.createPublishAttemptError }, 409);
+      }
+      const publishIntentId = Number(createPublishAttemptMatch[1]);
+      const intent = publishIntents.find((item) => item.id === publishIntentId) ?? publishIntentConfirmed;
+      const createdAttempt: PublishAttempt = {
+        ...publishAttemptCreated,
+        id: 1898,
+        publish_intent_id: publishIntentId,
+        review_draft_id: intent.review_draft_id,
+        provider_id: intent.target_platform,
+        source_type: intent.source_type,
+        created_at: "2026-05-26T08:29:45Z",
+        updated_at: "2026-05-26T08:29:45Z",
+      };
+      publishAttempts = [createdAttempt, ...publishAttempts];
+      return jsonResponse(createdAttempt, 201);
+    }
     const fakePublishIntentMatch = url.pathname.match(/^\/api\/projects\/1\/publish-intents\/(\d+)\/fake-publish$/);
     if (method === "POST" && fakePublishIntentMatch) {
       const publishIntentId = Number(fakePublishIntentMatch[1]);
@@ -1008,6 +1053,7 @@ async function renderProject(options?: ServerOptions) {
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/subtitle-drafts"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/review-drafts"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/publish-intents"));
+  await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/publish-attempts"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/content-plans"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/generation-schedules"));
   await waitFor(() => expect(server.calls).toContain("GET /api/projects/1/generation-runs"));
@@ -1675,6 +1721,73 @@ describe("ProjectDetailPage publishing workflow", () => {
     expect(within(intentCard).getByText("fake-publication-1801")).toBeTruthy();
     expect(within(intentCard).queryByRole("button", { name: "Fake Publish" })).toBeNull();
     expect(within(intentCard).getByText("Fake execution succeeded. Not a real platform publication.")).toBeTruthy();
+  });
+
+  it("creates a guarded local publish attempt without claiming real upload or publish", async () => {
+    const server = await renderProject({
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const intentCard = screen.getByLabelText("PublishIntent 1702");
+    fireEvent.click(within(intentCard).getByRole("button", { name: "Create guarded local attempt" }));
+
+    expect(await within(intentCard).findByLabelText("PublishAttempt 1898")).toBeTruthy();
+    expect(server.calls).toContain("POST /api/projects/1/publish-intents/1702/attempts");
+    expect(server.calls.filter((call) => call === "GET /api/projects/1/publish-attempts")).toHaveLength(2);
+    expect(within(intentCard).getByText("Guarded Publish Attempt")).toBeTruthy();
+    expect(within(intentCard).getByText("not_called")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Publish$/i })).toBeNull();
+    expect(screen.queryByText(/uploaded to Douyin|published to Douyin|scheduled publish succeeded/i)).toBeNull();
+    expect(server.calls.some((call) => /oauth|authorization-url|upload|douyin-real/i.test(call))).toBe(false);
+  });
+
+  it("shows duplicate guarded attempt state safely", async () => {
+    await renderProject({
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const intentCard = screen.getByLabelText("PublishIntent 1702");
+
+    expect(within(intentCard).getByLabelText("PublishAttempt 1851")).toBeTruthy();
+    expect(within(intentCard).getByText(/Duplicate guarded attempts are blocked/)).toBeTruthy();
+    expect(within(intentCard).queryByRole("button", { name: "Create guarded local attempt" })).toBeNull();
+  });
+
+  it("shows guarded attempt preflight and real provider disabled errors safely", async () => {
+    await renderProject({
+      createPublishAttemptError:
+        "real_provider_disabled: Real provider publish remains disabled by feature flag / kill switch controls.",
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    const intentCard = screen.getByLabelText("PublishIntent 1702");
+    fireEvent.click(within(intentCard).getByRole("button", { name: "Create guarded local attempt" }));
+
+    expect(await screen.findByText(/real_provider_disabled/)).toBeTruthy();
+    expect(screen.queryByText(/provider response raw/i)).toBeNull();
+    expect(screen.queryByText(/uploaded to Douyin|published to Douyin/i)).toBeNull();
+  });
+
+  it("does not render token or provider response material in guarded attempt UI", async () => {
+    await renderProject({
+      publishAttempts: [publishAttemptCreated],
+      publishIntents: [publishIntentConfirmed],
+      reviewDrafts: [reviewDraftApproved],
+    });
+
+    expect(screen.queryByText(/fake-access-token-value/)).toBeNull();
+    expect(screen.queryByText(/fake-refresh-token-value/)).toBeNull();
+    expect(screen.queryByText(/fake-credential-value/)).toBeNull();
+    expect(screen.queryByText(/fake-raw-oauth-state-value/)).toBeNull();
+    expect(screen.queryByText(/fake-provider-response-value/)).toBeNull();
+    expect(screen.queryByText(/fake-upload-response-value/)).toBeNull();
+    expect(screen.queryByText(/fake-publish-response-value/)).toBeNull();
+    expect(screen.queryByText(/OAuth URL/)).toBeTruthy();
+    expect(screen.queryByText(/opened OAuth URL/i)).toBeNull();
   });
 
   it("shows PublicationRecord metrics snapshots with fake/local labels", async () => {

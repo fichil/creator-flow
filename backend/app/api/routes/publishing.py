@@ -1,11 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.db.database import get_db
-from app.publishing import PublishIntentWorkflowError, create_local_publish_intent
+from app.publishing import (
+    GuardedPublishAttemptError,
+    PublishIntentWorkflowError,
+    create_guarded_publish_attempt,
+    create_local_publish_intent,
+    get_guarded_publish_attempt,
+    list_guarded_publish_attempts,
+)
 from app.publishers.fake_publisher import FakePublisherProvider
 from app.publishers.publisher import PublishExecutionInput
 from app.schemas.publishing import (
     PublicationRecordResponse,
+    PublishAttemptResponse,
     PublishIntentCreate,
     PublishIntentResponse,
 )
@@ -84,6 +92,49 @@ def cancel_publish_intent(project_id: int, publish_intent_id: int, db=Depends(ge
     )
     db.commit()
     return _get_publish_intent(db, project_id, publish_intent_id)
+
+
+@router.post(
+    "/{project_id}/publish-intents/{publish_intent_id}/attempts",
+    response_model=PublishAttemptResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_publish_attempt(project_id: int, publish_intent_id: int, db=Depends(get_db)):
+    project = _get_project(db, project_id)
+    _ensure_project_mutable(project, "create guarded publish attempts")
+    try:
+        return create_guarded_publish_attempt(
+            db,
+            project_id=project_id,
+            publish_intent_id=publish_intent_id,
+        )
+    except GuardedPublishAttemptError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=f"{exc.category}: {exc.safe_status_message}",
+        ) from exc
+
+
+@router.get("/{project_id}/publish-attempts", response_model=list[PublishAttemptResponse])
+def list_publish_attempts(project_id: int, db=Depends(get_db)):
+    _get_project(db, project_id)
+    return list_guarded_publish_attempts(db, project_id=project_id)
+
+
+@router.get("/{project_id}/publish-attempts/{publish_attempt_id}", response_model=PublishAttemptResponse)
+def get_publish_attempt(project_id: int, publish_attempt_id: int, db=Depends(get_db)):
+    _get_project(db, project_id)
+    try:
+        return get_guarded_publish_attempt(
+            db,
+            project_id=project_id,
+            publish_attempt_id=publish_attempt_id,
+        )
+    except GuardedPublishAttemptError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=f"{exc.category}: {exc.safe_status_message}",
+        ) from exc
 
 
 @router.post("/{project_id}/publish-intents/{publish_intent_id}/confirm", response_model=PublishIntentResponse)

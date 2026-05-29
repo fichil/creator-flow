@@ -31,6 +31,23 @@ class PublishIntentResponse(BaseModel):
     last_status_change_reason: str
 
 
+class PublishAttemptResponse(BaseModel):
+    id: int
+    project_id: int
+    publish_intent_id: int
+    review_draft_id: int
+    provider_id: str
+    source_type: str
+    attempt_status: str
+    guard_status: str
+    external_call_status: str
+    created_at: str
+    updated_at: str
+    completed_at: str | None = None
+    safe_status_message: str
+    last_status_change_reason: str
+
+
 class PublicationRecordResponse(BaseModel):
     id: int
     project_id: int

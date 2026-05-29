@@ -2,7 +2,7 @@
 
 This document is a planning artifact. It extends the roadmap from the released v0.9.0 Douyin Provider POC / Sandbox Integration baseline through v1.0 user testing, v1.5 Minimum Production Release, and v2.0 Multi-Tenant SaaS Commercial Release.
 
-v1.0 is now in Batch 6 user-confirmed publish intent workflow work. v1.5 and v2.0 remain future roadmap targets, and the Batch 6 boundary does not make the current app production, commercial, or SaaS ready.
+v1.0 is now in Batch 7 guarded real publish adapter foundation work. v1.5 and v2.0 remain future roadmap targets, and the Batch 7 boundary does not make the current app production, commercial, or SaaS ready.
 
 ## Current Capability Boundary
 
@@ -11,14 +11,14 @@ Current v0.9.0 release capability remains POC-oriented:
 - v0.9.0 establishes provider safety boundaries, sandbox-only deterministic workflows, registry / factory routing, POC readiness documentation, sandbox-only API contract, and frontend sandbox POC review surface.
 - v0.9.0 does not provide production readiness, commercial readiness, real Douyin publish readiness, or SaaS readiness.
 - v0.9.0 does not claim real OAuth, real token exchange, real credential storage, real metrics ingestion, real upload, real publishing, or scheduled publishing.
-- v1.0 Batch 6 adds only a local user-confirmed publish intent workflow on top of the Batch 5 real provider controls boundary; it does not enable real provider runtime behavior, real OAuth runtime behavior, OAuth routes, real token exchange, real token storage, real credential storage, real provider calls, upload, real publishing, scheduled publishing, or metrics reads.
+- v1.0 Batch 7 adds only a guarded local publish attempt foundation on top of the Batch 6 publish intent workflow and Batch 5 real provider controls boundary; it does not enable real provider runtime behavior, real OAuth runtime behavior, OAuth routes, real token exchange, real token storage, real credential storage, real provider calls, upload, real publishing, scheduled publishing, metrics reads, or provider / upload / publish response persistence.
 
 ## Version Summary
 
 | Version | Target | Commercial Boundary |
 | --- | --- | --- |
 | v0.9 | Douyin Provider POC / Sandbox Integration | Not commercial, not production, not SaaS |
-| v1.0 | Douyin Integration User Test Release | Batch 6 user-confirmed publish intent workflow started; small user test only |
+| v1.0 | Douyin Integration User Test Release | Batch 7 guarded real publish adapter foundation started; small user test only |
 | v1.1 | Real Integration Hardening | Not commercial launch |
 | v1.2 | Publishing Workflow Beta | Controlled pilot only |
 | v1.3 | Metrics & Feedback Beta | Controlled pilot only |
@@ -76,7 +76,7 @@ Goal:
 - Validate whether real Douyin authorization, publishing, status tracking, and minimum metrics read are feasible for a small user test.
 - Require explicit user authorization and human-confirmed publishing.
 
-Current Batch 6 Boundary:
+Current Batch 7 Boundary:
 
 - Batch 0 completed docs-only / planning-only release planning.
 - Batch 1 completed docs-only / contract-only OAuth boundary and callback contract work.
@@ -97,7 +97,10 @@ Current Batch 6 Boundary:
 - Batch 6 is documented by [`decisions/0051-v1.0-user-confirmed-publish-intent-workflow.md`](decisions/0051-v1.0-user-confirmed-publish-intent-workflow.md), [`contracts/v1.0-user-confirmed-publish-intent-contract.md`](contracts/v1.0-user-confirmed-publish-intent-contract.md), and [`testing/v1.0-user-confirmed-publish-intent-test-matrix.md`](testing/v1.0-user-confirmed-publish-intent-test-matrix.md).
 - Batch 6 adds a local-only publish intent workflow, metadata-only publish intent schema extension, local-only backend API, frontend Publish Intent UI, and tests. It requires explicit user confirmation, approved review state linkage, local media / metadata preflight, duplicate active intent prevention, real provider blocking, sandbox fallback prohibition, and safe metadata-only responses.
 - Batch 6 does not enable real provider runtime behavior, real OAuth runtime behavior, OAuth URLs, OAuth start routes, OAuth callback routes, real token exchange, real token storage, real credential storage, real provider calls, frontend OAuth UI, uploads, real publishing, scheduled publishing, or real metrics reads.
-- Future callback routes may rely on Batch 2 state validation, but callback routes still require a later accepted route batch. Real token exchange, real token storage, real credential storage, real provider enablement, real publish adapter, upload, scheduled publishing, and real metrics read still require later accepted implementation paths.
+- Batch 7 is documented by [`decisions/0052-v1.0-real-publish-adapter-guarded-implementation.md`](decisions/0052-v1.0-real-publish-adapter-guarded-implementation.md), [`contracts/v1.0-real-publish-adapter-guarded-contract.md`](contracts/v1.0-real-publish-adapter-guarded-contract.md), and [`testing/v1.0-real-publish-adapter-guarded-test-matrix.md`](testing/v1.0-real-publish-adapter-guarded-test-matrix.md).
+- Batch 7 adds a guarded publish adapter foundation, metadata-only publish attempt schema, local-only guarded attempt API, frontend guarded attempt UI, and tests. It requires confirmed publish intent dependency, review / media / metadata / credential reference preflight, duplicate attempt prevention, real provider blocking, kill switch / platform precondition blocking, sandbox fallback prohibition, and safe metadata-only responses.
+- Batch 7 does not enable real provider runtime behavior, real OAuth runtime behavior, OAuth URLs, OAuth start routes, OAuth callback routes, real token exchange, real token storage, real credential storage, real provider calls, frontend OAuth UI, uploads, real publishing, scheduled publishing, real metrics reads, or provider / upload / publish response persistence.
+- Future callback routes may rely on Batch 2 state validation, but callback routes still require a later accepted route batch. Real token exchange, real token storage, real credential storage, real provider enablement, actual real publish execution, upload, scheduled publishing, and real metrics read still require later accepted implementation paths.
 - Real implementation must wait for Douyin Open Platform app readiness, app review / approval, OAuth permission scope confirmation, callback URL confirmation, user authorization consent design, token lifecycle policy, encrypted credential storage design, platform error / rate limit policy, audit log design, and kill switch / feature flag design.
 
 Suggested Capabilities:

@@ -135,6 +135,30 @@ CREATE TABLE IF NOT EXISTS publication_records (
     CHECK (publication_status IN ('not_started', 'succeeded', 'failed'))
 );
 
+CREATE TABLE IF NOT EXISTS publish_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    publish_intent_id INTEGER NOT NULL,
+    review_draft_id INTEGER NOT NULL,
+    provider_id TEXT NOT NULL,
+    source_type TEXT NOT NULL,
+    attempt_status TEXT NOT NULL,
+    guard_status TEXT NOT NULL,
+    external_call_status TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TEXT,
+    safe_status_message TEXT NOT NULL,
+    last_status_change_reason TEXT NOT NULL,
+    FOREIGN KEY (project_id) REFERENCES content_projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (publish_intent_id) REFERENCES publish_intents(id) ON DELETE CASCADE,
+    FOREIGN KEY (review_draft_id) REFERENCES review_drafts(id) ON DELETE CASCADE,
+    CHECK (source_type IN ('fake_local', 'sandbox', 'real')),
+    CHECK (attempt_status IN ('created', 'blocked', 'cancelled', 'failed_safe')),
+    CHECK (guard_status IN ('passed_simulated', 'blocked')),
+    CHECK (external_call_status IN ('not_called', 'blocked'))
+);
+
 CREATE TABLE IF NOT EXISTS publication_metric_snapshots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
@@ -750,6 +774,16 @@ ON publication_records (project_id, created_at DESC, id DESC);
 
 CREATE INDEX IF NOT EXISTS idx_publication_records_publish_intent_id
 ON publication_records (publish_intent_id);
+
+CREATE INDEX IF NOT EXISTS idx_publish_attempts_project_id_created_at
+ON publish_attempts (project_id, created_at DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_publish_attempts_intent_id
+ON publish_attempts (publish_intent_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_publish_attempts_active_intent
+ON publish_attempts (publish_intent_id)
+WHERE attempt_status = 'created';
 
 CREATE INDEX IF NOT EXISTS idx_publication_metric_snapshots_record_captured_at
 ON publication_metric_snapshots (publication_record_id, captured_at DESC, id DESC);

@@ -239,6 +239,23 @@ export type PublishIntent = {
   last_status_change_reason: string;
 };
 
+export type PublishAttempt = {
+  id: number;
+  project_id: number;
+  publish_intent_id: number;
+  review_draft_id: number;
+  provider_id: string;
+  source_type: "fake_local" | "sandbox" | "real";
+  attempt_status: "created" | "blocked" | "cancelled" | "failed_safe";
+  guard_status: "passed_simulated" | "blocked";
+  external_call_status: "not_called" | "blocked";
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  safe_status_message: string;
+  last_status_change_reason: string;
+};
+
 export type PublicationRecord = {
   id: number;
   project_id: number;
@@ -725,6 +742,16 @@ export function rejectReviewDraft(projectId: number, reviewDraftId: number): Pro
 
 export function getPublishIntents(projectId: number): Promise<PublishIntent[]> {
   return request<PublishIntent[]>(`/api/projects/${projectId}/publish-intents`);
+}
+
+export function getPublishAttempts(projectId: number): Promise<PublishAttempt[]> {
+  return request<PublishAttempt[]>(`/api/projects/${projectId}/publish-attempts`);
+}
+
+export function createPublishAttempt(projectId: number, publishIntentId: number): Promise<PublishAttempt> {
+  return request<PublishAttempt>(`/api/projects/${projectId}/publish-intents/${publishIntentId}/attempts`, {
+    method: "POST",
+  });
 }
 
 export function createPublishIntent(

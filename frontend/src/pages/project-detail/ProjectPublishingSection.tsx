@@ -5,8 +5,10 @@ import {
   createFakePublicationMetricReviewSummary,
   confirmPublishIntent,
   createFakePublicationMetric,
+  createPublishAttempt,
   createPublishIntent,
   fakePublishIntent,
+  getPublishAttempts,
   getPublicationRecords,
   getPublishIntents,
   getReviewDrafts,
@@ -15,6 +17,7 @@ import {
   PublicationMetricReviewSummary,
   PublicationMetricSnapshot,
   PublicationRecord,
+  PublishAttempt,
   PublishIntent,
   ReviewDraft,
 } from "../../api/client";
@@ -30,6 +33,7 @@ type ProjectPublishingSectionProps = {
 
 type PublishingAction =
   | { type: "create"; id: number }
+  | { type: "attempt"; id: number }
   | { type: "confirm"; id: number }
   | { type: "cancel"; id: number }
   | { type: "fake-publish"; id: number }
@@ -39,6 +43,7 @@ type PublishingAction =
 export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: ProjectPublishingSectionProps) {
   const [reviewDrafts, setReviewDrafts] = useState<ReviewDraft[]>([]);
   const [publishIntents, setPublishIntents] = useState<PublishIntent[]>([]);
+  const [attemptsByIntentId, setAttemptsByIntentId] = useState<Record<number, PublishAttempt[]>>({});
   const [recordsByIntentId, setRecordsByIntentId] = useState<Record<number, PublicationRecord[]>>({});
   const [metricsByRecordId, setMetricsByRecordId] = useState<Record<number, PublicationMetricSnapshot[]>>({});
   const [summariesByRecordId, setSummariesByRecordId] = useState<Record<number, PublicationMetricReviewSummary[]>>({});
@@ -49,7 +54,11 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
   async function reloadPublishingWorkflow() {
     setLoading(true);
     try {
-      const [drafts, intents] = await Promise.all([getReviewDrafts(projectId), getPublishIntents(projectId)]);
+      const [drafts, intents, attempts] = await Promise.all([
+        getReviewDrafts(projectId),
+        getPublishIntents(projectId),
+        getPublishAttempts(projectId),
+      ]);
       const recordEntries = await Promise.all(
         intents.map(async (intent) => [intent.id, await getPublicationRecords(projectId, intent.id)] as const),
       );
@@ -64,6 +73,7 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
       );
       setReviewDrafts(drafts);
       setPublishIntents(intents);
+      setAttemptsByIntentId(groupAttemptsByIntent(attempts));
       setRecordsByIntentId(Object.fromEntries(recordEntries));
       setMetricsByRecordId(Object.fromEntries(metricEntries));
       setSummariesByRecordId(Object.fromEntries(summaryEntries));
@@ -128,6 +138,22 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
       await reloadPublishingWorkflow();
     } catch (err) {
       setError(formatPublishingError(err, "取消 PublishIntent 失败"));
+    } finally {
+      setAction(null);
+    }
+  }
+
+  async function handleCreateAttempt(publishIntentId: number) {
+    if (isArchived) {
+      return;
+    }
+    setAction({ type: "attempt", id: publishIntentId });
+    setError(null);
+    try {
+      await createPublishAttempt(projectId, publishIntentId);
+      await reloadPublishingWorkflow();
+    } catch (err) {
+      setError(formatPublishingError(err, "Create guarded publish attempt failed"));
     } finally {
       setAction(null);
     }
@@ -271,8 +297,10 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
                     metricsByRecordId={metricsByRecordId}
                     summariesByRecordId={summariesByRecordId}
                     records={recordsByIntentId[intent.id] ?? []}
+                    attempts={attemptsByIntentId[intent.id] ?? []}
                     onCancel={handleCancel}
                     onConfirm={handleConfirm}
+                    onCreateAttempt={handleCreateAttempt}
                     onFakePublish={handleFakePublish}
                     onGenerateFakeMetrics={handleCreateFakeMetrics}
                     onGenerateFakeMetricReviewSummary={handleCreateFakeMetricReviewSummary}
@@ -289,9 +317,11 @@ export function ProjectPublishingSection({ isArchived, projectId, refreshKey }: 
 
 function PublishIntentCard({
   action,
+  attempts,
   isArchived,
   onCancel,
   onConfirm,
+  onCreateAttempt,
   onFakePublish,
   onGenerateFakeMetrics,
   onGenerateFakeMetricReviewSummary,
@@ -301,11 +331,13 @@ function PublishIntentCard({
   records,
 }: {
   action: PublishingAction | null;
+  attempts: PublishAttempt[];
   isArchived: boolean;
   metricsByRecordId: Record<number, PublicationMetricSnapshot[]>;
   summariesByRecordId: Record<number, PublicationMetricReviewSummary[]>;
   onCancel: (publishIntentId: number) => void;
   onConfirm: (publishIntentId: number) => void;
+  onCreateAttempt: (publishIntentId: number) => void;
   onFakePublish: (publishIntentId: number) => void;
   onGenerateFakeMetrics: (publicationRecordId: number) => void;
   onGenerateFakeMetricReviewSummary: (publicationRecordId: number) => void;
@@ -316,6 +348,8 @@ function PublishIntentCard({
   const confirmed = publishIntent.publish_status === "confirmed";
   const notStartedRecord = records.find((record) => record.publication_status === "not_started");
   const canFakePublish = confirmed && Boolean(notStartedRecord);
+  const hasActiveAttempt = attempts.some((attempt) => attempt.attempt_status === "created");
+  const canCreateAttempt = confirmed && !hasActiveAttempt;
 
   return (
     <article
@@ -406,6 +440,45 @@ function PublishIntentCard({
         </p>
       )}
 
+      {confirmed && (
+        <div className="mt-4 rounded border border-sky-200 bg-sky-50 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h5 className="text-xs font-semibold uppercase text-sky-900">Guarded Publish Attempt</h5>
+              <p className="mt-1 text-sm text-sky-900">
+                Local guarded attempt only. External publish is blocked by default and the UI does not open OAuth URLs.
+              </p>
+            </div>
+            {!isArchived && canCreateAttempt && (
+              <button
+                className="rounded border border-sky-700 px-3 py-1 text-xs font-semibold text-sky-900 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={action !== null}
+                type="button"
+                onClick={() => onCreateAttempt(publishIntent.id)}
+              >
+                {action?.type === "attempt" && action.id === publishIntent.id
+                  ? "Creating guarded attempt..."
+                  : "Create guarded local attempt"}
+              </button>
+            )}
+          </div>
+          {hasActiveAttempt && (
+            <p className="mt-3 rounded border border-sky-200 bg-white p-2 text-sm text-sky-900">
+              Duplicate guarded attempts are blocked for this active Publish Intent.
+            </p>
+          )}
+          {attempts.length === 0 ? (
+            <p className="mt-3 text-sm text-sky-900">No guarded publish attempts yet.</p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {attempts.map((attempt) => (
+                <PublishAttemptItem attempt={attempt} key={attempt.id} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="mt-4">
         <h5 className="text-xs font-semibold uppercase text-stone-500">PublicationRecords</h5>
         {records.length === 0 ? (
@@ -430,6 +503,44 @@ function PublishIntentCard({
         )}
       </div>
     </article>
+  );
+}
+
+function PublishAttemptItem({ attempt }: { attempt: PublishAttempt }) {
+  return (
+    <div
+      aria-label={`PublishAttempt ${attempt.id}`}
+      className="rounded border border-sky-200 bg-white p-3"
+      data-status={attempt.attempt_status}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium text-sky-950">PublishAttempt #{attempt.id}</p>
+        <span className={getPublishAttemptStatusClass(attempt.attempt_status)}>
+          {formatStatus(attempt.attempt_status)}
+        </span>
+      </div>
+      <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase text-sky-700">Provider</dt>
+          <dd className="mt-1 text-sky-950">{attempt.provider_id}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-sky-700">Source type</dt>
+          <dd className="mt-1 text-sky-950">{attempt.source_type}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-sky-700">Guard</dt>
+          <dd className="mt-1 text-sky-950">{formatStatus(attempt.guard_status)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase text-sky-700">External call</dt>
+          <dd className="mt-1 text-sky-950">{formatStatus(attempt.external_call_status)}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 rounded border border-sky-100 bg-sky-50 p-2 text-sm text-sky-900">
+        {attempt.safe_status_message}
+      </p>
+    </div>
   );
 }
 
@@ -517,6 +628,16 @@ function getPublishStatusClass(status: PublishIntent["publish_status"]) {
   return "rounded border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800";
 }
 
+function getPublishAttemptStatusClass(status: PublishAttempt["attempt_status"]) {
+  if (status === "created") {
+    return "rounded border border-sky-300 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-900";
+  }
+  if (status === "blocked" || status === "failed_safe") {
+    return "rounded border border-red-300 bg-red-50 px-3 py-1 text-xs font-semibold text-red-800";
+  }
+  return "rounded border border-stone-300 bg-stone-50 px-3 py-1 text-xs font-semibold text-stone-800";
+}
+
 function getPublicationStatusClass(status: PublicationRecord["publication_status"]) {
   if (status === "succeeded") {
     return "rounded border border-teal-300 bg-white px-3 py-1 text-xs font-semibold text-teal-800";
@@ -525,6 +646,13 @@ function getPublicationStatusClass(status: PublicationRecord["publication_status
     return "rounded border border-red-300 bg-white px-3 py-1 text-xs font-semibold text-red-800";
   }
   return "rounded border border-amber-300 bg-white px-3 py-1 text-xs font-semibold text-amber-800";
+}
+
+function groupAttemptsByIntent(attempts: PublishAttempt[]) {
+  return attempts.reduce<Record<number, PublishAttempt[]>>((grouped, attempt) => {
+    grouped[attempt.publish_intent_id] = [...(grouped[attempt.publish_intent_id] ?? []), attempt];
+    return grouped;
+  }, {});
 }
 
 function formatPublishingError(err: unknown, fallback: string) {
