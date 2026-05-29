@@ -197,6 +197,7 @@ function Test-RcMarkdownFormatting {
         }
 
         $realLfLineCount = $lfCount + 1
+        Write-Host "RC Markdown byte check: ${path} has ${realLfLineCount} real LF lines and ${crCount} CR bytes."
         if ($realLfLineCount -lt $minimumLineCount) {
             $issues.Add("${path}: document has only ${realLfLineCount} real LF lines; minimum is ${minimumLineCount}.") | Out-Null
         }
@@ -231,8 +232,11 @@ function Test-RcMarkdownFormatting {
                 continue
             }
 
-            if ($line -match '^#\s+.+##\s+') {
+            if (($line.Contains("# ")) -and ($line.Contains(" ## "))) {
                 $issues.Add("${path}:${lineNumber}: H1 heading appears to share a line with a later heading.") | Out-Null
+            }
+            if (($line.Contains("## ")) -and ($line.Contains(" - [ ]"))) {
+                $issues.Add("${path}:${lineNumber}: H2 heading appears to share a line with checklist items.") | Out-Null
             }
             if (($line -match '##\s+') -and ($line -match '-')) {
                 $issues.Add("${path}:${lineNumber}: H2 heading appears to share a line with a list marker.") | Out-Null
