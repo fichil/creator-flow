@@ -1,6 +1,6 @@
 # 本地开发
 
-本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 2 OAuth state storage / anti-replay foundation 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface，以及 v1.0 Batch 2 internal-only state foundation 边界。当前仓库仍不接真实 Douyin API，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行 token exchange，不保存 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不上传、不发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
+本文档面向 v0.9.0 Douyin Provider POC / Sandbox Integration release 之后、v1.0 Batch 4 credential reference / encrypted storage design 阶段。它说明如何在 Windows 11 和 PowerShell 下启动本地 backend、frontend，并验证既有 local fake/manual workflow、v0.8 Provider & Credential Security Foundation、v0.9 sandbox-only POC surface、v1.0 Batch 2 internal-only state foundation、v1.0 Batch 3 token exchange boundary，以及 v1.0 Batch 4 internal-only credential storage boundary。当前仓库仍不接真实 Douyin API，不实现真实 OAuth runtime，不新增 OAuth start route，不新增 OAuth callback route，不创建 OAuth URL，不执行真实 token exchange，不保存真实 token / secret / API key / credential / authorization code / raw OAuth state / OAuth state value，不新增 encrypted payload storage，不上传、不发布、不排期、不自动发布，不抓取真实平台指标，也不接真实 Provider adapter、真实 PublisherProvider 或真实 MetricsProvider。
 
 ## 环境要求
 
@@ -329,7 +329,7 @@ v1.0 Batch 1 是 docs-only contract 批次。本批只允许新增和更新 OAut
 - ADR 0046 和 callback contract 只定义未来实现约束，不代表当前已有 route。
 - 未来 callback route 必须依赖 Batch 2 OAuth state storage / anti-replay foundation，且仍需后续单独 route 批次批准。
 - Batch 3 只建立 internal-only / fake-gated token exchange boundary；真实 token exchange 仍必须等待后续单独实现和安全验收。
-- 未来 credential storage 必须等待 Batch 4。
+- Batch 4 只建立 internal-only credential reference / encrypted storage boundary；真实 credential storage 仍必须等待后续单独实现、可靠加密与密钥管理设计以及安全验收。
 - 未来 real OAuth runtime enablement 必须等待 Batch 5 feature flag / kill switch。
 - `fake_local`、`douyin_sandbox` 和 `douyin_real` 必须严格隔离，`douyin_real` 不允许 fallback 到 `douyin_sandbox`。
 - 所有日志、audit、error response 和 test fixture 都必须 redacted，不得出现真实 token、secret、credential、authorization code、OAuth state、cookie、session、API key 或平台原始 payload。
@@ -421,6 +421,41 @@ cd ..
 ```
 
 安全扫描必须确认没有真实 token、access_token、refresh_token、secret、API key、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、bearer、raw request、raw response、本机绝对路径、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档、测试 deny-list、contract 类别和边界说明中的敏感词只能作为禁止项或扫描项出现，不得包含真实值。
+
+## v1.0 Batch 4 Credential Reference / Encrypted Storage Design 验收
+
+v1.0 Batch 4 允许新增最小 backend internal-only credential reference / credential storage boundary service 和 metadata-only reference 测试，用于未来真实 credential storage 前先验证安全边界。本批新增 ADR 0049、credential storage boundary contract、credential storage boundary test matrix、internal-only credential storage boundary service 和 backend tests。
+
+本批必须依赖 Batch 2 OAuth state storage / anti-replay foundation 和 Batch 3 token exchange boundary；没有 safe Batch 3 token exchange metadata，不得创建 credential reference metadata。credential reference 只能是 metadata-only，不得包含 raw token、secret、credential、authorization code、raw OAuth state、cookie、session、bearer、raw request 或 raw response。
+
+本批必须验证：
+
+- valid fake-gated token exchange metadata 可以创建 metadata-only credential reference 或返回 safe disabled result。
+- missing / malformed exchange metadata 必须安全失败。
+- raw access token、refresh token、authorization code、raw OAuth state、secret、client secret、credential、cookie、session、bearer、raw request 和 raw response 必须被拒绝。
+- `douyin_real` 默认 disabled / blocked，且不得 fallback 到 `douyin_sandbox`。
+- encryption provider unavailable 必须返回 safe category，不得抛出泄露 material 的异常。
+- service result、safe message、repr、dataclass output、日志、测试 fixture 和文档示例不得包含真实 token、access_token、refresh_token、secret、client_secret、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、API key、bearer、raw request 或 raw response。
+- credential storage boundary 不读取真实环境变量密钥，不调用 Douyin API，不调用 socket / requests / httpx / urllib 或任何业务外部服务。
+- 不新增 OAuth start route、OAuth callback route、OAuth URL creation route、真实 token storage、真实 credential storage、encrypted payload storage 或 frontend OAuth UI。
+
+本批仍不允许新增 OAuth start route，不允许新增 OAuth callback route，不允许创建 OAuth URL，不允许实现真实 OAuth，不允许实现真实 token exchange，不允许保存 authorization code、access token、refresh token、secret、credential、cookie、session 或 raw OAuth state，不允许读取真实环境变量密钥，不允许调用 Douyin API 或业务外部服务，不允许上传、不发布、不排期发布，不允许抓取真实指标，不允许启用 `douyin_real`，不允许使用 base64 / hash / xor / 普通编码 / 自定义算法冒充 encryption，也不允许声明 v1.0、v1.5 或 v2.0 已完成。
+
+本批本地质量门禁从仓库根目录执行：
+
+```powershell
+git diff --check
+.\scripts\test-backend.ps1
+
+cd .\frontend
+npm.cmd test
+npm.cmd run build
+cd ..
+
+.\scripts\validate-v0.9-poc.ps1
+```
+
+安全扫描必须确认没有真实 token、access_token、refresh_token、secret、client_secret、API key、credential、authorization code、raw OAuth state、OAuth state value、cookie、session、bearer、raw request、raw response、本机绝对路径、SQLite DB、`uploads/`、`dist/`、`node_modules/`、`.venv/`、运行时文件、生成媒体或真实平台返回数据进入 Git。文档、测试 deny-list、contract 类别和边界说明中的敏感词只能作为禁止项或扫描项出现，不得包含真实值。
 
 ## v0.5 Release Candidate 质量门禁
 
